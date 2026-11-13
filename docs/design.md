@@ -2,7 +2,7 @@
 
 Date: 2026-11-13
 
-Status: initial proposal for review; documentation only
+Status: first native development implementation; release validation remains open
 
 License: MIT, selected by the project owner
 
@@ -12,7 +12,7 @@ Name: Glimpse is a working name
 
 Provide useful system status in as little macOS menu-bar space as possible, while letting each user choose the information they care about. Clicking the compact icon reveals detailed status. Optional persistent information blocks expose selected numbers without requiring a click.
 
-The motivation is to replace the familiar utility of MenuMeters without depending on abandoned software. iGlance was studied as reference material, not adopted as an implementation base. Nothing in this document claims a working app or measured performance.
+The motivation is to replace the familiar utility of MenuMeters without depending on abandoned software. iGlance was studied as reference material, not adopted as an implementation base. A first development app now implements the core experience; performance and release compatibility remain unverified.
 
 ## Requirements and proposed choices
 
@@ -28,7 +28,7 @@ Three continuous columns, the initial defaults, the API choices, refresh rates, 
 | Fresh native application | Compact display and shared sampling designed together; control over minimum OS and dependencies | Monitoring accuracy, settings, and release infrastructure must be built and tested | Recommended basis for this proposal |
 | Broad dashboard with many permanent meters | Lots of information visible immediately | Competes with the primary requirement to save menu-bar space | Keep detail in the click-open panel and make persistent blocks optional |
 
-This document records a recommended approach, not approval to start application implementation.
+The owner authorized implementation of the independent native application on 2026-11-13. See [development notes](development.md) for current capabilities and validation limits.
 
 ## Compact icon and optional blocks
 
