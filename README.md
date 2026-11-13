@@ -2,17 +2,18 @@
 
 A compact, configurable, open-source system monitor for the macOS menu bar.
 
-Glimpse is designed around a small icon containing three configurable meter columns. Each column fills and changes colour according to information you choose. Click the icon to reveal detailed live status and short history graphs. Enable the optional MenuMeters-style upload/download block when you want bandwidth numbers visible all the time. Other numeric blocks are a future option.
+Glimpse is designed around a small icon containing one to eight configurable meter columns. Each column fills and changes colour according to information you choose. Drag meters into order in settings and adjust their width. Click the icon to reveal detailed live status and short history graphs; drag those panels into order or hide the ones you do not need. Enable the optional MenuMeters-style upload/download block when you want bandwidth numbers visible all the time.
 
 **Status: first development version.** A runnable app can be built from source. There is no signed/notarized public release yet. Glimpse is a working name.
 
 ## Current experience
 
-- One compact icon by default, with configurable metrics, colours, thresholds, and column order.
+- One compact icon by default, with configurable meter count, width, metrics, colours, thresholds, and drag-to-reorder controls.
 - Click for exact readings, labels, short histories, and collection status.
 - Optional upload/download readout with a stable width.
 - Native monitoring designed for low overhead; performance budgets still need measurement.
 - Local settings and measurements; no account or analytics service.
+- Opt-in start at login, automatic update checks/downloads, and manual update checks.
 
 ## Compatibility
 
@@ -27,6 +28,7 @@ The menu-bar renderer will use AppKit. Settings may use SwiftUI APIs available o
 - [iGlance assessment](docs/iglance-assessment.md): what we studied and what remains unverified.
 - [License decision](docs/licensing.md): why MIT was selected and how third-party code is handled.
 - [Development and validation](docs/development.md): build, run, test, metric definitions, and remaining checks.
+- [Updates and login](docs/updates.md): signed update configuration, login helper and free Mac App Store roadmap.
 
 With Xcode 27.2 selected, build and open the app:
 
@@ -35,7 +37,7 @@ With Xcode 27.2 selected, build and open the app:
 open build/Glimpse.app
 ```
 
-Click the three-column icon for detailed live status. Choose **Settings…** to change columns, colours, warning thresholds, units, interface, refresh cadence, and the optional bandwidth block. Reopening the app opens settings if the icon is hidden by menu-bar crowding.
+Click the icon for detailed live status. The gear button opens settings for meters, dropdown panels, colours, warning thresholds, units, interface, refresh cadence, login and updates. Reopening the app opens settings if the icon is hidden by menu-bar crowding.
 
 ```bash
 swift test
@@ -43,7 +45,9 @@ ARCH=universal ./scripts/build-app.sh
 build/Glimpse.app/Contents/MacOS/Glimpse --diagnose
 ```
 
-There are no external package dependencies. The build script applies an ad-hoc development signature, suitable for local testing rather than distribution. Do not disable Gatekeeper to run a downloaded build.
+Sparkle 2.9.6 is the sole external dependency, pinned by SwiftPM for signed direct-download updates. The build script defaults to an ad-hoc signature; set `CODESIGN_IDENTITY` to a certificate identity for development signing. Distribution requires Developer ID signing and notarization. The configured update feed has no downloadable public release yet. Do not disable Gatekeeper to run a downloaded build.
+
+Glimpse's monitoring features will remain fully free. Optional developer tips and review requests are planned for a separate Mac App Store edition; they do not unlock features. See the distribution roadmap before preparing a store submission.
 
 Contributions are welcome through issues and pull requests. For proposed behaviour, identify the user need and discuss changes to the design before implementation. Include relevant accuracy or performance evidence for changes to monitoring. Do not commit signing credentials or personal diagnostics.
 

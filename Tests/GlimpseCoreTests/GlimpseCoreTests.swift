@@ -53,11 +53,10 @@ final class GlimpseCoreTests: XCTestCase {
     func testPartialSettingsKeepKnownValuesAndSupplyMissingDefaults() throws {
         let settings = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"showBandwidth":true,"columns":[{"metric":"battery","thresholdDirection":"below","warningThreshold":20}]}"#.utf8))
         XCTAssertTrue(settings.showBandwidth)
-        XCTAssertEqual(settings.columns.count, 3)
+        XCTAssertEqual(settings.columns.count, 1)
         XCTAssertEqual(settings.columns[0].metric, .battery)
         XCTAssertEqual(settings.columns[0].warningThreshold, 20)
         XCTAssertEqual(settings.columns[0].thresholdDirection, .below)
-        XCTAssertEqual(settings.columns[1].metric, .memory)
         XCTAssertEqual(MetricPresentation.normalized(value: 6_250_000, metric: .download, networkCeiling: settings.networkCeiling), 0.5)
         XCTAssertEqual(settings.refreshInterval, 1)
         let roundTrip = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
@@ -67,17 +66,17 @@ final class GlimpseCoreTests: XCTestCase {
 
     func testCorruptedSettingsAreRepairedToUsableBoundedValues() throws {
         var settings = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"showBandwidth":"bad","refreshInterval":-2,"networkCeiling":0,"networkInterface":"  ","columns":[{"metric":"futureMetric","colour":"futureColour"}]}"#.utf8))
-        settings.columns[2] = ColumnConfiguration(metric: .download, colour: .pink, warningThreshold: .nan, criticalThreshold: -10)
+        settings.columns.append(ColumnConfiguration(metric: .download, colour: .pink, warningThreshold: .nan, criticalThreshold: -10))
         settings.refreshInterval = .infinity
         settings.networkCeiling = .nan
         settings = settings.validated()
-        XCTAssertEqual(settings.columns.count, 3)
+        XCTAssertEqual(settings.columns.count, 2)
         XCTAssertFalse(settings.showBandwidth)
         XCTAssertTrue(settings.refreshInterval.isFinite && settings.refreshInterval >= 1 && settings.refreshInterval <= 60)
         XCTAssertTrue(settings.networkCeiling.isFinite && settings.networkCeiling > 0)
         XCTAssertNil(settings.networkInterface)
-        XCTAssertNil(settings.columns[2].warningThreshold)
-        XCTAssertNil(settings.columns[2].criticalThreshold)
+        XCTAssertNil(settings.columns[1].warningThreshold)
+        XCTAssertNil(settings.columns[1].criticalThreshold)
         settings.columns = [ColumnConfiguration(metric: .cpu, colour: .blue, warningThreshold: 90, criticalThreshold: 50)]
         settings.refreshInterval = 0.001
         settings = settings.validated()

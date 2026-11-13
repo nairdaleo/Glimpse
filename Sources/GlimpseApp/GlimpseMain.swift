@@ -8,9 +8,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var store: MonitoringStore!
     private var statusController: StatusController!
     private var settingsWindow: NSWindow?
+    private var services: LifecycleServices!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         store = MonitoringStore()
+        services = LifecycleServices()
         statusController = StatusController(store: store, showSettings: { [weak self] in self?.showSettings() })
         if CommandLine.arguments.contains("--settings") { showSettings() }
     }
@@ -22,12 +24,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationWillTerminate(_ notification: Notification) { store?.stop() }
 
+    func applicationDidBecomeActive(_ notification: Notification) { services?.refreshLoginStatus() }
+
     private func showSettings() {
+        services.refreshLoginStatus()
         if settingsWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 590, height: 610), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             window.title = "Glimpse Settings"
             window.delegate = self
-            window.contentView = NSHostingView(rootView: SettingsView(store: store))
+            window.contentView = NSHostingView(rootView: SettingsView(store: store, services: services))
             window.isReleasedWhenClosed = false
             window.minSize = NSSize(width: 560, height: 590)
             window.center()
@@ -39,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) { store.setSettingsVisible(false) }
+    func windowDidBecomeKey(_ notification: Notification) { services?.refreshLoginStatus() }
 }
 
 @main

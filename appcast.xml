@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Glimpse Updates</title>
+    <link>https://github.com/nairdaleo/Glimpse</link>
+    <description>Signed updates for Glimpse. No public binary release has been published yet.</description>
+    <language>en</language>
+  </channel>
+</rss>
