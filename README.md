@@ -2,21 +2,21 @@
 
 A compact, configurable, open-source system monitor for the macOS menu bar.
 
-Glimpse is designed around a small icon containing three configurable meter columns. Each column fills and changes colour according to information you choose. Click the icon to reveal detailed live status and short history graphs. Add optional information blocks, including MenuMeters-style upload and download speeds, when you want numbers visible all the time.
+Glimpse is designed around a small icon containing three configurable meter columns. Each column fills and changes colour according to information you choose. Click the icon to reveal detailed live status and short history graphs. Enable the optional MenuMeters-style upload/download block when you want bandwidth numbers visible all the time. Other numeric blocks are a future option.
 
-**Status: design stage.** There is no runnable app or downloadable release yet. Glimpse is a working name.
+**Status: first development version.** A runnable app can be built from source. There is no signed/notarized public release yet. Glimpse is a working name.
 
-## Planned experience
+## Current experience
 
 - One compact icon by default, with configurable metrics, colours, thresholds, and column order.
 - Click for exact readings, labels, short histories, and collection status.
-- Optional upload/download readout and other numeric blocks with stable widths.
-- Native monitoring with low CPU, memory, and battery overhead.
+- Optional upload/download readout with a stable width.
+- Native monitoring designed for low overhead; performance budgets still need measurement.
 - Local settings and measurements; no account or analytics service.
 
 ## Compatibility
 
-The initial deployment target is **macOS 12 Monterey**, with native Intel and Apple silicon builds. This is a design target, not a tested compatibility claim. It is the oldest deployment target supported by the currently selected Xcode 27.2 toolchain. Going lower is worth evaluating only if an older release toolchain can preserve performance, maintainability, and verifiable support.
+The deployment target is **macOS 12 Monterey**, with a universal Intel and Apple silicon build. Native-reader tests run on the current Apple silicon development Mac; Monterey and Intel runtime support still need verification. macOS 12 is the oldest deployment target supported by the currently selected Xcode 27.2 toolchain. Going lower remains a tracked investigation.
 
 The menu-bar renderer will use AppKit. Settings may use SwiftUI APIs available on macOS 12. Newer convenience APIs must not raise the minimum version without a documented reason.
 
@@ -26,8 +26,24 @@ The menu-bar renderer will use AppKit. Settings may use SwiftUI APIs available o
 - [Design](docs/design.md): user experience, sampling, compatibility, performance goals, and validation.
 - [iGlance assessment](docs/iglance-assessment.md): what we studied and what remains unverified.
 - [License decision](docs/licensing.md): why MIT was selected and how third-party code is handled.
+- [Development and validation](docs/development.md): build, run, test, metric definitions, and remaining checks.
 
-The repository currently contains documentation only. No dependencies need installing and no build command exists yet. Once a runnable target is added, this README must provide exact setup, build, and test instructions.
+With Xcode 27.2 selected, build and open the app:
+
+```bash
+./scripts/build-app.sh
+open build/Glimpse.app
+```
+
+Click the three-column icon for detailed live status. Choose **Settings…** to change columns, colours, warning thresholds, units, interface, refresh cadence, and the optional bandwidth block. Reopening the app opens settings if the icon is hidden by menu-bar crowding.
+
+```bash
+swift test
+ARCH=universal ./scripts/build-app.sh
+build/Glimpse.app/Contents/MacOS/Glimpse --diagnose
+```
+
+There are no external package dependencies. The build script applies an ad-hoc development signature, suitable for local testing rather than distribution. Do not disable Gatekeeper to run a downloaded build.
 
 Contributions are welcome through issues and pull requests. For proposed behaviour, identify the user need and discuss changes to the design before implementation. Include relevant accuracy or performance evidence for changes to monitoring. Do not commit signing credentials or personal diagnostics.
 
