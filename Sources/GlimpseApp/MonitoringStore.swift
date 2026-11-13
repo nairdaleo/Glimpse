@@ -97,12 +97,13 @@ final class MonitoringStore: ObservableObject {
         guard !sleeping else { return }
         let version = generation
         let configuration = settings
-        let visible = detailVisible || settingsVisible
+        let visible = detailVisible
+        let configuring = settingsVisible
         let interval = max(configuration.refreshInterval, ProcessInfo.processInfo.isLowPowerModeEnabled ? 5 : 1)
         let source = DispatchSource.makeTimerSource(queue: .main)
         source.schedule(deadline: .now(), repeating: interval, leeway: .milliseconds(150))
         source.setEventHandler { [weak self, worker] in
-            worker.sample(settings: configuration, detailVisible: visible) { [weak self] result in
+            worker.sample(settings: configuration, detailVisible: visible, configurationVisible: configuring) { [weak self] result in
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self, self.generation == version else { return }
                     self.snapshot = result
@@ -121,8 +122,8 @@ private final class SamplingWorker: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.tastyjam.glimpse.sampling", qos: .utility)
     private let sampler = NativeSampler()
 
-    func sample(settings: AppSettings, detailVisible: Bool, completion: @escaping @Sendable (Snapshot) -> Void) {
-        queue.async { [self] in completion(sampler.sample(settings: settings, detailVisible: detailVisible)) }
+    func sample(settings: AppSettings, detailVisible: Bool, configurationVisible: Bool, completion: @escaping @Sendable (Snapshot) -> Void) {
+        queue.async { [self] in completion(sampler.sample(settings: settings, detailVisible: detailVisible, configurationVisible: configurationVisible)) }
     }
 
     func reset() { queue.async { [self] in sampler.resetBaselines() } }

@@ -93,8 +93,14 @@ final class NativeSamplerTests: XCTestCase {
         XCTAssertNotNil(first.readings[.thermal]?.value)
         let counters = try NativeNetworkReader.readCounters()
         XCTAssertFalse(counters.isEmpty)
-        Thread.sleep(forTimeInterval: 0.03)
-        let second = sampler.sample(settings: AppSettings(), detailVisible: true)
+        // Mach may return cached CPU ticks for a short interval. Wait for a new
+        // measurement rather than assuming a fixed 30 ms sleep advances them.
+        let deadline = ProcessInfo.processInfo.systemUptime + 2
+        var second = sampler.sample(settings: AppSettings(), detailVisible: true)
+        while second.readings[.cpu]?.value == nil && ProcessInfo.processInfo.systemUptime < deadline {
+            Thread.sleep(forTimeInterval: 0.02)
+            second = sampler.sample(settings: AppSettings(), detailVisible: true)
+        }
         XCTAssertNotNil(second.readings[.cpu]?.value, second.readings[.cpu]?.detail ?? "")
         if !second.networkInterface.isEmpty {
             XCTAssertNotNil(second.readings[.download]?.value, second.readings[.download]?.detail ?? "")

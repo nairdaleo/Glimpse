@@ -1,13 +1,15 @@
 import Foundation
 
-public struct ColumnConfiguration: Codable, Equatable, Sendable {
+public struct ColumnConfiguration: Codable, Equatable, Identifiable, Sendable {
+    public var id: UUID
     public var metric: MetricID
     public var colour: MeterColour
     public var warningThreshold: Double?
     public var criticalThreshold: Double?
     public var thresholdDirection: ThresholdDirection
 
-    public init(metric: MetricID, colour: MeterColour, warningThreshold: Double? = nil, criticalThreshold: Double? = nil, thresholdDirection: ThresholdDirection = .above) {
+    public init(metric: MetricID, colour: MeterColour, warningThreshold: Double? = nil, criticalThreshold: Double? = nil, thresholdDirection: ThresholdDirection = .above, id: UUID = UUID()) {
+        self.id = id
         self.metric = metric
         self.colour = colour
         self.warningThreshold = warningThreshold
@@ -15,9 +17,10 @@ public struct ColumnConfiguration: Codable, Equatable, Sendable {
         self.thresholdDirection = thresholdDirection
     }
 
-    private enum CodingKeys: String, CodingKey { case metric, colour, warningThreshold, criticalThreshold, thresholdDirection }
+    private enum CodingKeys: String, CodingKey { case id, metric, colour, warningThreshold, criticalThreshold, thresholdDirection }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = (try? values.decode(UUID.self, forKey: .id)) ?? UUID()
         metric = (try? values.decode(MetricID.self, forKey: .metric)) ?? .cpu
         colour = (try? values.decode(MeterColour.self, forKey: .colour)) ?? .mint
         warningThreshold = try? values.decode(Double.self, forKey: .warningThreshold)
@@ -45,6 +48,8 @@ public struct ColumnConfiguration: Codable, Equatable, Sendable {
 
 public struct AppSettings: Codable, Sendable {
     public var columns: [ColumnConfiguration]
+    public var columnScale: Double
+    public var panelMetrics: [MetricID]
     public var showBandwidth: Bool
     public var bandwidthInBits: Bool
     public var networkInterface: String?
@@ -54,6 +59,8 @@ public struct AppSettings: Codable, Sendable {
 
     public init() {
         columns = [ColumnConfiguration(metric: .cpu, colour: .mint), ColumnConfiguration(metric: .memory, colour: .purple), ColumnConfiguration(metric: .download, colour: .blue)]
+        columnScale = 1
+        panelMetrics = MetricID.allCases
         showBandwidth = false
         bandwidthInBits = false
         networkInterface = nil
@@ -62,11 +69,15 @@ public struct AppSettings: Codable, Sendable {
         monochrome = false
     }
 
-    private enum CodingKeys: String, CodingKey { case columns, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, refreshInterval, monochrome }
+    private enum CodingKeys: String, CodingKey { case columns, columnScale, panelMetrics, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, refreshInterval, monochrome }
     public init(from decoder: Decoder) throws {
         self.init()
         let values = try decoder.container(keyedBy: CodingKeys.self)
         columns = (try? values.decode([ColumnConfiguration].self, forKey: .columns)) ?? columns
+        columnScale = (try? values.decode(Double.self, forKey: .columnScale)) ?? columnScale
+        if let rawPanels = try? values.decode([String].self, forKey: .panelMetrics) {
+            panelMetrics = rawPanels.compactMap(MetricID.init(rawValue:))
+        }
         showBandwidth = (try? values.decode(Bool.self, forKey: .showBandwidth)) ?? showBandwidth
         bandwidthInBits = (try? values.decode(Bool.self, forKey: .bandwidthInBits)) ?? bandwidthInBits
         networkInterface = try? values.decode(String.self, forKey: .networkInterface)
@@ -79,8 +90,17 @@ public struct AppSettings: Codable, Sendable {
     public func validated() -> AppSettings {
         var result = self
         let defaults = AppSettings()
-        result.columns = Array(columns.prefix(3)).map { $0.validated() }
-        while result.columns.count < 3 { result.columns.append(defaults.columns[result.columns.count]) }
+        result.columns = Array(columns.prefix(8)).map { $0.validated() }
+        if result.columns.isEmpty { result.columns = [defaults.columns[0]] }
+        var columnIDs: Set<UUID> = []
+        for index in result.columns.indices {
+            while !columnIDs.insert(result.columns[index].id).inserted {
+                result.columns[index].id = UUID()
+            }
+        }
+        result.columnScale = columnScale.isFinite ? min(1.5, max(0.75, columnScale)) : 1
+        var panels: Set<MetricID> = []
+        result.panelMetrics = panelMetrics.filter { panels.insert($0).inserted }
         if !networkCeiling.isFinite || networkCeiling <= 0 { result.networkCeiling = defaults.networkCeiling }
         result.refreshInterval = refreshInterval.isFinite ? min(60, max(1, refreshInterval)) : defaults.refreshInterval
         let interface = networkInterface?.trimmingCharacters(in: .whitespacesAndNewlines)

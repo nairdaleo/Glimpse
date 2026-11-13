@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>SUFeedURL</key><string>https://raw.githubusercontent.com/nairdaleo/Glimpse/main/appcast.xml</string>
+<key>SUPublicEDKey</key><string>XorjireAvR1SE691wzVaEUPMMmQwPs0eT6cng48VZH0=</string>
+<key>SUEnableAutomaticChecks</key><false/>
+<key>SUAutomaticallyUpdate</key><false/>
+<key>SUEnableSystemProfiling</key><false/>
+</dict></plist>

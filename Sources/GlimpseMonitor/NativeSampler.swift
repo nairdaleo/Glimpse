@@ -27,11 +27,11 @@ public final class NativeSampler {
         networkMetadataTimestamp = -.infinity
     }
 
-    public func sample(settings: AppSettings, detailVisible: Bool) -> Snapshot {
+    public func sample(settings: AppSettings, detailVisible: Bool, configurationVisible: Bool = false) -> Snapshot {
         let settings = settings.validated()
         let now = ProcessInfo.processInfo.systemUptime
         var demanded = Set(settings.columns.map(\.metric))
-        if detailVisible { demanded.formUnion(MetricID.allCases) }
+        if detailVisible { demanded.formUnion(settings.panelMetrics) }
         if settings.showBandwidth { demanded.formUnion([.download, .upload]) }
         var readings: [MetricID: MetricReading] = [:]
         if demanded.contains(.cpu) {
@@ -67,29 +67,35 @@ public final class NativeSampler {
 
         var interface = ""
         var available: [String] = []
-        if demanded.contains(.download) || demanded.contains(.upload) {
+        let networkDemanded = demanded.contains(.download) || demanded.contains(.upload)
+        if networkDemanded || configurationVisible {
             do {
                 let counters = try readNetworkCounters()
                 available = counters.filter(\.usable).map(\.name).sorted()
-                if now - networkMetadataTimestamp >= 10 {
-                    physical = NativeNetworkReader.physicalInterfaces()
-                    networkMetadataTimestamp = now
-                }
-                // Route preference can change while both links stay up. Refresh
-                // this small dynamic-store value each sample, not with inventory.
-                primary = NativeNetworkReader.primaryInterface()
-                if let chosen = InterfaceSelection.select(counters, preferred: settings.networkInterface, primary: primary, physical: physical) {
-                    interface = chosen.name
-                    let rate = networkRates.update(identity: chosen.identity, received: chosen.received, sent: chosen.sent, timestamp: now)
-                    let detail = rate == nil ? "Collecting \(interface) baseline" : "\(interface) only; other interfaces excluded"
-                    if demanded.contains(.download) { readings[.download] = MetricReading(value: rate?.download, detail: detail, timestamp: now) }
-                    if demanded.contains(.upload) { readings[.upload] = MetricReading(value: rate?.upload, detail: detail, timestamp: now) }
-                } else {
-                    networkRates.reset()
-                    let detail = settings.networkInterface.map { "Interface \($0) unavailable" } ?? "No active physical interface"
-                    for metric in [MetricID.download, .upload] where demanded.contains(metric) {
-                        readings[metric] = MetricReading(value: nil, detail: detail, timestamp: now)
+                if networkDemanded {
+                    if now - networkMetadataTimestamp >= 10 {
+                        physical = NativeNetworkReader.physicalInterfaces()
+                        networkMetadataTimestamp = now
                     }
+                    // Route preference can change while both links stay up. Refresh
+                    // this small dynamic-store value each sample, not with inventory.
+                    primary = NativeNetworkReader.primaryInterface()
+                    if let chosen = InterfaceSelection.select(counters, preferred: settings.networkInterface, primary: primary, physical: physical) {
+                        interface = chosen.name
+                        let rate = networkRates.update(identity: chosen.identity, received: chosen.received, sent: chosen.sent, timestamp: now)
+                        let detail = rate == nil ? "Collecting \(interface) baseline" : "\(interface) only; other interfaces excluded"
+                        if demanded.contains(.download) { readings[.download] = MetricReading(value: rate?.download, detail: detail, timestamp: now) }
+                        if demanded.contains(.upload) { readings[.upload] = MetricReading(value: rate?.upload, detail: detail, timestamp: now) }
+                    } else {
+                        networkRates.reset()
+                        let detail = settings.networkInterface.map { "Interface \($0) unavailable" } ?? "No active physical interface"
+                        for metric in [MetricID.download, .upload] where demanded.contains(metric) {
+                            readings[metric] = MetricReading(value: nil, detail: detail, timestamp: now)
+                        }
+                    }
+                } else {
+                    // The settings picker needs inventory, not traffic samples or a baseline.
+                    networkRates.reset()
                 }
             } catch {
                 // An unread interval cannot be treated as continuous traffic on recovery.

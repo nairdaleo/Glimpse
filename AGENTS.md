@@ -1,6 +1,6 @@
 # Glimpse
 
-Compact native macOS menu-bar system monitor. Read README.md, docs/design.md, and docs/development.md before related work. The first native development app is implemented as a dependency-free Swift package.
+Compact native macOS menu-bar system monitor. Read README.md, docs/design.md, docs/development.md, and docs/updates.md before related work. The native app uses SwiftPM with pinned Sparkle for direct-download updates.
 
 ## Constraints
 
@@ -19,6 +19,9 @@ Compact native macOS menu-bar system monitor. Read README.md, docs/design.md, an
 - `build/Glimpse.app/Contents/MacOS/Glimpse --diagnose` samples native readers without opening UI.
 - Runtime on Intel/macOS 12, live VPN/interface transitions, sleep/wake, UI interaction and release performance budgets require explicit verification; compilation is not runtime coverage.
 - Source responsibilities: GlimpseCore = pure models/calculations/settings/history; GlimpseMonitor = native readers; GlimpseApp = queue confinement, persistence, AppKit status item and SwiftUI interface.
+- Meters support one to eight stable identities and width scale 0.75...1.5. Dropdown panels are independently ordered/hidden; missing new settings must preserve legacy layouts.
+- Update public metadata is in Configuration/Updates.plist; private signing key remains in the login Keychain account com.tastyjam.glimpse. Never export/commit it. No signed downloadable release has been published.
+- Login/updates are opt-in. A separate Mac App Store build must exclude Sparkle, validate the sandbox, and keep features free; tips/reviews remain release work.
 
 ## Project Tracking
 
