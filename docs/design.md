@@ -1,8 +1,11 @@
 # Glimpse design
 
-Date: 2026-11-13  
-Status: initial proposal for review; documentation only  
-License: MIT, selected by the project owner  
+Date: 2026-11-13
+
+Status: initial proposal for review; documentation only
+
+License: MIT, selected by the project owner
+
 Name: Glimpse is a working name
 
 ## Intent
