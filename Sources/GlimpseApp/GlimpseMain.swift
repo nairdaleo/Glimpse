@@ -53,7 +53,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 @main
 enum GlimpseMain {
     @MainActor static func main() {
-        if CommandLine.arguments.contains("--diagnose") {
+        if let index = CommandLine.arguments.firstIndex(of: "--render-cards"), CommandLine.arguments.indices.contains(index + 1) {
+            CardRenderer.run(directory: CommandLine.arguments[index + 1])
+        } else if CommandLine.arguments.contains("--diagnose") {
             // A terminal-only native-reader check; never exports settings or personal paths.
             let sampler = NativeSampler()
             _ = sampler.sample(settings: AppSettings(), detailVisible: true)

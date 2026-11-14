@@ -185,22 +185,10 @@ struct MetricCardContent: View {
         let size: CGFloat = compact ? 9 : 10
         Group {
             if let info = snapshot.networkInfo(for: panel.networkInterface) {
-                if let fields = appearance.connectionFields {
-                    // Manual choice: show what was picked; scroll when it overflows.
-                    ScrollView([.vertical]) {
-                        NetworkInterfaceDetails(rows: info.detailRows(fields), size: size)
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
-                    }
-                    // Fade the bottom edge so overflowing rows read as scrollable, not clipped.
-                    .mask(VStack(spacing: 0) {
-                        Rectangle()
-                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 10)
-                    })
-                } else {
-                    // Automatic: the most useful whole fields that fit this card.
-                    GeometryReader { geometry in
-                        NetworkInterfaceDetails(rows: info.fittedRows(capacity: NetworkInterfaceDetails.capacity(height: geometry.size.height, size: size)), size: size)
-                    }
+                // Whole fields that fit, automatic or from the manual choice.
+                GeometryReader { geometry in
+                    NetworkInterfaceDetails(rows: info.fittedRows(capacity: NetworkInterfaceDetails.capacity(height: geometry.size.height, size: size),
+                                                                  among: appearance.connectionFields), size: size)
                 }
             } else {
                 Text("Connection details are unavailable.").font(.system(size: size)).foregroundColor(.secondary)

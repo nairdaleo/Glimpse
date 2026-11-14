@@ -17,6 +17,7 @@ Compact native macOS menu-bar system monitor. Read README.md, docs/design.md, do
 - `./scripts/build-app.sh` builds and ad-hoc signs `build/Glimpse.app` for the host architecture.
 - `ARCH=universal ./scripts/build-app.sh` builds arm64 and x86_64 together.
 - `build/Glimpse.app/Contents/MacOS/Glimpse --diagnose` samples native readers without opening UI.
+- `build/Glimpse.app/Contents/MacOS/Glimpse --render-cards <dir>` renders saved panels at every card size with live data (light/dark) for visual audits; relaunch the app after each feature so the user can verify.
 - Runtime on Intel/macOS 12, live VPN/interface transitions, sleep/wake, UI interaction and release performance budgets require explicit verification; compilation is not runtime coverage.
 - Source responsibilities: GlimpseCore = pure models/calculations/settings/history; GlimpseMonitor = native readers; GlimpseApp = queue confinement, persistence, AppKit status item and SwiftUI interface.
 - Meters support one to eight stable identities and width scale 0.75...1.5. Dropdown panels are independently ordered/removed; missing new settings must preserve legacy layouts.

@@ -682,7 +682,7 @@ private struct ConnectionFieldsEditor: View {
                     column(Array(NetworkDetailField.priority.prefix(5)), chosen: chosen)
                     column(Array(NetworkDetailField.priority.dropFirst(5)), chosen: chosen)
                 }
-                Text("Rows that do not fit scroll inside the card.").font(.caption).foregroundColor(.secondary)
+                Text("Chosen details that do not fit this card size are left out; larger cards show more.").font(.caption).foregroundColor(.secondary)
             } else {
                 Text("Shows the most useful details that fit the card: IPv4, router, DNS, mask, MAC, then the rest.")
                     .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)

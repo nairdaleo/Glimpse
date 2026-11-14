@@ -22,14 +22,15 @@ final class MonitoringStore: ObservableObject {
     private var workspaceObservers: [NSObjectProtocol] = []
     private static let settingsKey = "glimpse.settings.v1"
 
+    static func savedSettings(_ defaults: UserDefaults = .standard) -> AppSettings {
+        guard let data = defaults.data(forKey: settingsKey),
+              let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) else { return AppSettings() }
+        return decoded.validated()
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        if let data = defaults.data(forKey: Self.settingsKey),
-           let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) {
-            settings = decoded.validated()
-        } else {
-            settings = AppSettings()
-        }
+        settings = Self.savedSettings(defaults)
         let center = NSWorkspace.shared.notificationCenter
         workspaceObservers.append(center.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.sleep() }

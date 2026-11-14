@@ -62,12 +62,13 @@ public struct NetworkInterfaceInfo: Codable, Equatable, Sendable, Identifiable {
         NetworkDetailField.allCases.filter(fields.contains).flatMap(rows)
     }
 
-    /// Automatic selection: fields in usefulness order, each included only
-    /// when all of its rows still fit in `capacity`, so nothing is cut off.
-    public func fittedRows(capacity: Int) -> [(label: String, value: String)] {
+    /// Fields in usefulness order (limited to `among` when chosen manually),
+    /// each included only when all of its rows still fit in `capacity`, so
+    /// nothing is cut off; larger cards show more.
+    public func fittedRows(capacity: Int, among fields: Set<NetworkDetailField>? = nil) -> [(label: String, value: String)] {
         var remaining = max(0, capacity)
         var chosen: Set<NetworkDetailField> = []
-        for field in NetworkDetailField.priority {
+        for field in NetworkDetailField.priority where fields?.contains(field) ?? true {
             let count = rows(for: field).count
             guard count > 0, count <= remaining else { continue }
             chosen.insert(field)
