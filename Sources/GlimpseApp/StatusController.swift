@@ -28,7 +28,6 @@ final class StatusController: NSObject, NSPopoverDelegate {
         popover.behavior = .transient
         popover.animates = false
         popover.delegate = self
-        updatePanelHost()
         store.$snapshot.combineLatest(store.$settings).sink { [weak self] _, _ in
             // @Published emits before assignment; render after both values settle.
             DispatchQueue.main.async { self?.render() }
@@ -57,6 +56,8 @@ final class StatusController: NSObject, NSPopoverDelegate {
 
     func popoverDidClose(_ notification: Notification) {
         store.setDetailVisible(false)
+        // A hidden hosting view keeps diffing every sample; togglePanel rebuilds it on open.
+        popover.contentViewController = nil
     }
 
     private func updatePanelHost() {
