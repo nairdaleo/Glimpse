@@ -75,7 +75,14 @@ enum MeterImage {
                         continue
                     }
                     let height = max(1, CGFloat(amount) * track.height)
-                    colour(column.colour, level: index < levels.count ? levels[index] : nil).setFill()
+                    if let bands = column.colourBands, !settings.monochrome, let raw {
+                        // Level bands replace warning/critical colouring for this column.
+                        let band = bands.colour(for: raw, base: column.colour)
+                        let from = band.from.nsColor.usingColorSpace(.sRGB) ?? band.from.nsColor
+                        (from.blended(withFraction: CGFloat(band.fraction), of: band.to.nsColor) ?? from).setFill()
+                    } else {
+                        colour(column.colour, level: index < levels.count ? levels[index] : nil).setFill()
+                    }
                     NSBezierPath(roundedRect: NSRect(x: track.minX, y: track.minY, width: track.width, height: height), xRadius: 1.2, yRadius: 1.2).fill()
                 }
                 for (text, row) in [(labels.upload, layout.uploadRect), (labels.download, layout.downloadRect)] {

@@ -164,3 +164,64 @@ public struct HistoryPoint: Sendable {
         self.value = value
     }
 }
+
+/// Level-based colouring: value >= highThreshold uses `high`, value <=
+/// lowThreshold uses `low`, anything between uses `middle`. A nil band uses
+/// the meter's own colour, so one, two or three colours can be chosen.
+public struct ColourBands: Codable, Equatable, Sendable {
+    public enum Style: String, Codable, CaseIterable, Sendable { case hard, gradient }
+
+    public var style: Style
+    public var high: MeterColour?
+    public var middle: MeterColour?
+    public var low: MeterColour?
+    public var highThreshold: Double
+    public var lowThreshold: Double
+
+    public static let green = MeterColour.custom(red: 0.20, green: 0.78, blue: 0.35)
+    public static let yellow = MeterColour.custom(red: 1.00, green: 0.80, blue: 0.00)
+    public static let red = MeterColour.custom(red: 1.00, green: 0.23, blue: 0.19)
+
+    public init(style: Style = .hard, high: MeterColour? = ColourBands.green, middle: MeterColour? = ColourBands.yellow,
+                low: MeterColour? = ColourBands.red, highThreshold: Double = 50, lowThreshold: Double = 20) {
+        self.style = style
+        self.high = high
+        self.middle = middle
+        self.low = low
+        self.highThreshold = highThreshold
+        self.lowThreshold = lowThreshold
+    }
+
+    /// Thresholds clamped to 0...100 with low <= high.
+    public func validated() -> ColourBands {
+        var result = self
+        func clamp(_ value: Double, _ fallback: Double) -> Double { value.isFinite ? min(100, max(0, value)) : fallback }
+        let high = clamp(highThreshold, 50), low = clamp(lowThreshold, 20)
+        result.highThreshold = max(high, low)
+        result.lowThreshold = min(high, low)
+        return result
+    }
+
+    /// The colour for `value`: blend `from` towards `to` by `fraction`
+    /// (0 for a hard change). Missing bands resolve to `base`.
+    public func colour(for value: Double, base: MeterColour) -> (from: MeterColour, to: MeterColour, fraction: Double) {
+        let high = self.high ?? base, middle = self.middle ?? base, low = self.low ?? base
+        switch style {
+        case .hard:
+            if value >= highThreshold { return (high, high, 0) }
+            if value <= lowThreshold { return (low, low, 0) }
+            return (middle, middle, 0)
+        case .gradient:
+            // Anchors: low at lowThreshold, middle (if chosen) halfway, high at highThreshold.
+            var anchors = [(lowThreshold, low)]
+            if self.middle != nil { anchors.append(((lowThreshold + highThreshold) / 2, middle)) }
+            anchors.append((highThreshold, high))
+            if value <= anchors[0].0 { return (low, low, 0) }
+            for (a, b) in zip(anchors, anchors.dropFirst()) where value <= b.0 {
+                let span = b.0 - a.0
+                return (a.1, b.1, span > 0 ? (value - a.0) / span : 1)
+            }
+            return (high, high, 0)
+        }
+    }
+}
