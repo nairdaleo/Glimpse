@@ -10,7 +10,7 @@ enum OrganizationDragPayload: Equatable {
         }
     }
     case column(UUID)
-    case panel(MetricID)
+    case panel(UUID)
 
     var kind: Kind {
         switch self { case .column: return .column; case .panel: return .panel }
@@ -18,7 +18,7 @@ enum OrganizationDragPayload: Equatable {
     var text: String {
         switch self {
         case .column(let id): return "glimpse.column.\(id.uuidString)"
-        case .panel(let metric): return "glimpse.panel.\(metric.rawValue)"
+        case .panel(let id): return "glimpse.panel.\(id.uuidString)"
         }
     }
     init?(text: String, kind: Kind) {
@@ -29,8 +29,8 @@ enum OrganizationDragPayload: Equatable {
             self = .column(id)
         case .panel:
             let prefix = "glimpse.panel."
-            guard text.hasPrefix(prefix), let metric = MetricID(rawValue: String(text.dropFirst(prefix.count))) else { return nil }
-            self = .panel(metric)
+            guard text.hasPrefix(prefix), let id = UUID(uuidString: String(text.dropFirst(prefix.count))) else { return nil }
+            self = .panel(id)
         }
     }
     var pasteboardItem: NSPasteboardItem {
@@ -60,14 +60,14 @@ enum OrganizationDrop {
                 before = edge == .before ? targetID : settings.columns.dropFirst(index + 1).first?.id
             }
             return WidgetOrganization.moveColumn(in: &settings, id: id, before: before)
-        case .panel(let metric):
-            var before: MetricID?
+        case .panel(let id):
+            var before: UUID?
             if let target {
-                guard case .panel(let targetMetric) = target,
-                      let index = settings.panelMetrics.firstIndex(of: targetMetric) else { return false }
-                before = edge == .before ? targetMetric : settings.panelMetrics.dropFirst(index + 1).first
+                guard case .panel(let targetID) = target,
+                      let index = settings.panels.firstIndex(where: { $0.id == targetID }) else { return false }
+                before = edge == .before ? targetID : settings.panels.dropFirst(index + 1).first?.id
             }
-            return WidgetOrganization.movePanel(in: &settings, metric: metric, before: before)
+            return WidgetOrganization.movePanel(in: &settings, id: id, before: before)
         }
     }
 }

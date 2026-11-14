@@ -2,9 +2,9 @@
 
 A compact, configurable, open-source system monitor for the macOS menu bar.
 
-Glimpse is designed around a small icon containing one to eight configurable meter columns. Each column fills and changes colour according to information you choose. Drag meters into order in settings and adjust their width. The special **Upload / Download** meter fills upward from its center for upload and downward for download, with separate colours. Enable the compact numeric bandwidth readout when you want exact speeds visible all the time.
+Glimpse is designed around a small icon containing one to eight configurable meter columns. Each column fills and changes colour according to information you choose. Drag meters into order in settings and adjust their width. Use the macOS colour picker or the suggested palette for custom colours. The special **Upload / Download** meter fills upward from its center for upload and downward for download, with separate colours. Enable the compact numeric bandwidth readout when you want exact speeds visible all the time.
 
-Click the icon for live status and recent graphs. Arrange and hide dropdown cards in settings, choose 1–8 cards per row and their width, and adjust each card's size, graph colour and history. The dropdown expands to fit the selected grid within screen bounds. Clicking a dropdown card opens its settings; the dropdown itself has no rearrangement or hide controls.
+Click the icon for live status and recent graphs. The **Detailed View** settings tab has a **+ Add panel** control for configurable panels. Arrange, hide and restore them, choose 1–8 panels per row and their width, and adjust each panel's metric, size, graph colour and history. Network meters and panels each choose Auto or an individual interface, so en0, en1 and en2 can be shown side by side. The Display & Network settings list interface type, local addresses and DNS/search-domain configuration. The dropdown expands to fit the selected grid within screen bounds. Clicking a dropdown card opens its settings; the Detailed View itself has no rearrangement or hide controls.
 
 **Status: first development version.** A runnable app can be built from source. There is no signed/notarized public release yet. Glimpse is a working name.
 

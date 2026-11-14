@@ -26,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationDidBecomeActive(_ notification: Notification) { services?.refreshLoginStatus() }
 
-    private func showSettings(panel: MetricID? = nil) {
+    private func showSettings(panel: UUID? = nil) {
         services.refreshLoginStatus()
         if settingsWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 590, height: 610), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)

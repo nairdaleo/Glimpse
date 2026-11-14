@@ -20,7 +20,7 @@ final class DemandTests: XCTestCase {
         let sampler = NativeSampler(networkReader: {
             reads += 1
             return [InterfaceCounter(name: "utun99", index: 99, flags: Int32(IFF_UP | IFF_RUNNING), received: UInt64(reads * 1_000), sent: UInt64(reads * 2_000))]
-        })
+        }, metadataReader: { _ in [] })
         var settings = AppSettings()
         settings.columns = [ColumnConfiguration(metric: .thermal, colour: .mint)]
         settings.panelMetrics = []
@@ -31,7 +31,7 @@ final class DemandTests: XCTestCase {
         let hidden = sampler.sample(settings: settings, detailVisible: true)
         XCTAssertTrue(hidden.availableInterfaces.isEmpty)
         XCTAssertEqual(reads, 1)
-        settings.columns = [ColumnConfiguration(metric: .download, colour: .blue)]
+        settings.columns = [ColumnConfiguration(metric: .download, colour: .blue, networkInterface: "utun99")]
         let firstDemand = sampler.sample(settings: settings, detailVisible: false)
         XCTAssertNil(firstDemand.readings[.download]?.value)
         XCTAssertNotNil(sampler.sample(settings: settings, detailVisible: false).readings[.download]?.value)
@@ -46,7 +46,7 @@ final class DemandTests: XCTestCase {
             return [InterfaceCounter(name: "utun99", index: 99, flags: Int32(IFF_UP | IFF_RUNNING), received: received, sent: sent)]
         })
         var settings = AppSettings()
-        settings.columns = [ColumnConfiguration(metric: .download, colour: .orange, isCombinedNetwork: true, secondaryColour: .purple)]
+        settings.columns = [ColumnConfiguration(metric: .download, colour: .orange, isCombinedNetwork: true, secondaryColour: .purple, networkInterface: "utun99")]
         settings.panelMetrics = []
         settings.showBandwidth = false
         settings.networkInterface = "utun99"

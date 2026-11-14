@@ -4,10 +4,10 @@ import GlimpseCore
 struct StatusPanel: View {
     @ObservedObject var store: MonitoringStore
     var showSettings: () -> Void
-    var editCard: (MetricID) -> Void
+    var editCard: (UUID) -> Void
     var maximumSize: CGSize
 
-    init(store: MonitoringStore, showSettings: @escaping () -> Void, editCard: @escaping (MetricID) -> Void,
+    init(store: MonitoringStore, showSettings: @escaping () -> Void, editCard: @escaping (UUID) -> Void,
          maximumSize: CGSize = CGSize(width: 1600, height: 1000)) {
         self.store = store
         self.showSettings = showSettings
@@ -22,7 +22,7 @@ struct StatusPanel: View {
             Divider()
             ScrollView([.horizontal, .vertical]) {
                 VStack(alignment: .leading, spacing: 0) {
-                    if store.settings.panelMetrics.isEmpty {
+                    if store.settings.panels.isEmpty {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("All detail panels are hidden.").font(.callout)
                             Button("Choose panels…", action: showSettings).font(.caption)
@@ -30,19 +30,19 @@ struct StatusPanel: View {
                     } else {
                         LazyVGrid(columns: Array(repeating: GridItem(.fixed(layout.cardWidth), spacing: StatusPanelLayout.spacing, alignment: .topLeading), count: layout.columns),
                                   alignment: .leading, spacing: StatusPanelLayout.spacing) {
-                            ForEach(store.settings.panelMetrics) { metric in
-                                MetricCard(metric: metric, reading: store.snapshot.readings[metric],
-                                           points: store.history.samples[metric] ?? [], settings: store.settings,
-                                           width: layout.cardWidth, height: layout.cardHeights[metric] ?? 150,
-                                           edit: { editCard(metric) })
+                            ForEach(store.settings.panels) { panel in
+                                MetricCard(panel: panel, snapshot: store.snapshot, history: store.history,
+                                           networkHistory: store.networkHistory, settings: store.settings,
+                                           width: layout.cardWidth, height: layout.panelHeights[panel.id] ?? 150,
+                                           edit: { editCard(panel.id) })
                             }
                         }.frame(width: layout.gridWidth, alignment: .leading)
                     }
                     if layout.showsNetwork {
-                        Text(store.snapshot.networkInterface.isEmpty ? "Network: finding an interface…" : "Network: \(store.snapshot.networkInterface)")
+                        Text("Auto: " + store.snapshot.interfaceLabel(nil))
                             .font(.system(size: 10)).foregroundColor(.secondary).lineLimit(1)
                             .frame(width: layout.gridWidth, height: StatusPanelLayout.networkHeight, alignment: .leading)
-                            .help("One interface at a time. History stays on this Mac and clears when you quit.")
+                            .help("Each network panel measures its selected interface. History stays on this Mac and clears when you quit.")
                     }
                 }.padding(StatusPanelLayout.padding)
             }
@@ -75,47 +75,75 @@ struct StatusPanel: View {
 }
 
 private struct MetricCard: View {
-    let metric: MetricID
-    let reading: MetricReading?
-    let points: [HistoryPoint]
+    let panel: PanelConfiguration
+    let snapshot: Snapshot
+    let history: MetricHistory
+    let networkHistory: NetworkHistory
     let settings: AppSettings
     let width: CGFloat
     let height: CGFloat
     var edit: () -> Void
 
-    private var appearance: PanelAppearance { settings.panelAppearance(for: metric) }
+    private var appearance: PanelAppearance { panel.appearance }
     private var compact: Bool { appearance.size == .compact }
     private var large: Bool { appearance.size == .large }
+    private var reading: MetricReading? { snapshot.displayReading(for: panel.metric, interface: panel.networkInterface) }
+    private var graphHeight: CGFloat { compact ? 12 : large ? 44 : 28 }
 
     var body: some View {
         Button(action: edit) {
             VStack(alignment: .leading, spacing: compact ? 4 : 6) {
-                Text(metric.title).font(.system(size: compact ? 10 : 11, weight: .medium)).foregroundColor(.secondary)
-                Text(MetricPresentation.formatted(value: reading?.value, metric: metric, bits: settings.bandwidthInBits))
-                    .font(.system(size: compact ? 18 : large ? 28 : 21, weight: .medium, design: .rounded))
-                    .monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
-                if appearance.showsHistory && StatusPanelLayout.supportsHistory(metric) {
-                    HistoryGraph(points: points, ceiling: ceiling, colour: Color(appearance.colour.nsColor))
-                        .frame(height: compact ? 14 : large ? 48 : 30)
-                        .accessibilityLabel("Recent \(metric.title) history")
+                Text(panel.displayTitle).font(.system(size: compact ? 10 : 11, weight: .medium)).foregroundColor(.secondary)
+                if panel.isNetwork {
+                    Text(snapshot.interfaceLabel(panel.networkInterface))
+                        .font(.system(size: compact ? 9 : 10)).foregroundColor(.secondary).lineLimit(1)
                 }
-                Text(reading?.detail ?? "Waiting for a reading")
-                    .font(.system(size: compact ? 9 : 10)).foregroundColor(.secondary)
-                    .lineLimit(compact ? 1 : large ? 4 : 3)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                if panel.isCombinedNetwork {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("↑ " + formatted(.upload))
+                        Text("↓ " + formatted(.download))
+                    }.font(.system(size: compact ? 11 : large ? 19 : 15, weight: .medium, design: .rounded))
+                        .monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+                } else {
+                    Text(formatted(panel.metric))
+                        .font(.system(size: compact ? 18 : large ? 28 : 21, weight: .medium, design: .rounded))
+                        .monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+                }
+                if appearance.showsHistory && StatusPanelLayout.supportsHistory(panel.metric) {
+                    ZStack {
+                        HistoryGraph(points: points(panel.metric), ceiling: ceiling, colour: Color(appearance.colour.nsColor))
+                        if panel.isCombinedNetwork {
+                            HistoryGraph(points: points(.upload), ceiling: ceiling, colour: Color(appearance.colour.nsColor).opacity(0.5))
+                        }
+                    }.frame(height: graphHeight)
+                        .accessibilityLabel("Recent \(panel.displayTitle) history")
+                }
+                if !compact || !panel.isNetwork {
+                    if !panel.isCombinedNetwork || large {
+                        Text(reading?.detail ?? "Waiting for a reading")
+                            .font(.system(size: compact ? 9 : 10)).foregroundColor(.secondary)
+                            .lineLimit(compact ? 1 : large ? 3 : 2)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                }
                 Spacer(minLength: 0)
             }.padding(11).frame(width: width, height: height, alignment: .topLeading)
                 .background(Color.primary.opacity(0.045)).cornerRadius(9)
                 .contentShape(RoundedRectangle(cornerRadius: 9))
         }.buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityHint("Opens settings for this card")
-            .help("Edit \(metric.title) card settings")
+            .accessibilityHint("Opens settings for this panel")
+            .help("Edit \(panel.displayTitle) panel settings")
     }
 
-    private var ceiling: Double {
-        metric == .download || metric == .upload ? settings.networkCeiling : 100
+    private func formatted(_ metric: MetricID) -> String {
+        MetricPresentation.formatted(value: snapshot.displayReading(for: metric, interface: panel.networkInterface)?.value,
+                                     metric: metric, bits: settings.bandwidthInBits)
     }
+    private func points(_ metric: MetricID) -> [HistoryPoint] {
+        panel.isNetwork ? networkHistory.points(for: metric, interface: panel.networkInterface, snapshot: snapshot) : history.samples[metric] ?? []
+    }
+    private var ceiling: Double { panel.isNetwork ? settings.networkCeiling : 100 }
 }
 
 private struct HistoryGraph: View {

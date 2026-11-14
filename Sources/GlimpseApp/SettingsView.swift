@@ -6,10 +6,10 @@ struct SettingsView: View {
     @ObservedObject var store: MonitoringStore
     @ObservedObject var services: LifecycleServices
     @State private var selectedColumnID: UUID? = nil
-    @State private var selectedPanelID: MetricID? = nil
+    @State private var selectedPanelID: UUID? = nil
     @State private var selectedTab: Tab = .columns
 
-    init(store: MonitoringStore, services: LifecycleServices, requestedPanel: MetricID? = nil) {
+    init(store: MonitoringStore, services: LifecycleServices, requestedPanel: UUID? = nil) {
         self.store = store
         self.services = services
         _selectedPanelID = State(initialValue: requestedPanel)
@@ -28,7 +28,7 @@ struct SettingsView: View {
             }.padding(.bottom, 6)
             TabView(selection: $selectedTab) {
                 columnSettings.tabItem { Text("Columns") }.tag(Tab.columns)
-                panelSettings.tabItem { Text("Dropdown Panels") }.tag(Tab.panels)
+                panelSettings.tabItem { Text("Detailed View") }.tag(Tab.panels)
                 displaySettings.padding(20).tabItem { Text("Display & Network") }.tag(Tab.display)
                 generalSettings.padding(20).tabItem { Text("General") }.tag(Tab.general)
             }
@@ -81,6 +81,7 @@ struct SettingsView: View {
                                     }
                                     Text("\(index + 1) · \(column.displayTitle)").font(.caption)
                                         .multilineTextAlignment(.center).lineLimit(2)
+                                        .frame(height: 30, alignment: .top)
                                 }
                                 .frame(width: 94, height: 84)
                                 .background(selectedID == column.id ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.04))
@@ -136,9 +137,19 @@ struct SettingsView: View {
     private var panelSettings: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Picker("Cards per row", selection: setting(\.panelColumns)) {
-                    ForEach(1...8, id: \.self) { Text("\($0)").tag($0) }
-                }.frame(width: 210)
+                HStack {
+                    Picker("Cards per row", selection: setting(\.panelColumns)) {
+                        ForEach(1...8, id: \.self) { Text("\($0)").tag($0) }
+                    }.frame(width: 210)
+                    Spacer()
+                    Menu {
+                        Button("Upload / Download") { addPanel(metric: .download, combined: true) }
+                        ForEach(MetricID.allCases) { metric in
+                            Button(metric.title) { addPanel(metric: metric) }
+                        }
+                    } label: { Label("Add panel", systemImage: "plus") }
+                    .disabled(store.settings.panels.count + store.settings.hiddenPanels.count >= 32)
+                }
                 HStack {
                     Text("Card width")
                     Slider(value: setting(\.panelCardWidth), in: 120...240, step: 4).accessibilityLabel("Card width")
@@ -147,26 +158,29 @@ struct SettingsView: View {
                 Text("Visible panels").font(.headline)
                 Text("Drag either side of a card to place it before or after. The blue line marks the drop position. Click to edit.")
                     .font(.caption).foregroundColor(.secondary)
-                if store.settings.panelMetrics.isEmpty {
-                    Text("All dropdown panels are hidden. Restore one below.")
+                if store.settings.panels.isEmpty {
+                    Text("All detail panels are hidden. Add or restore one below.")
                         .font(.callout).foregroundColor(.secondary).padding(.vertical, 8)
                 } else {
                     ScrollView(.horizontal, showsIndicators: true) {
                         VStack(spacing: 8) {
                             LazyVGrid(columns: Array(repeating: GridItem(.fixed(112), spacing: 8), count: organizerColumns), spacing: 8) {
-                                ForEach(Array(store.settings.panelMetrics.enumerated()), id: \.element) { index, metric in
-                                    OrganizationTile(payload: .panel(metric), kind: .panel, isSelected: selectedPanel == metric, label: "Panel \(index + 1), \(metric.title)", select: { selectedPanelID = metric }, drop: { payload, edge in
-                                        completeDrop(payload, target: .panel(metric), edge: edge)
+                                ForEach(Array(store.settings.panels.enumerated()), id: \.element.id) { index, panel in
+                                    OrganizationTile(payload: .panel(panel.id), kind: .panel, isSelected: selectedPanel?.id == panel.id,
+                                                     label: "Panel \(index + 1), \(panel.displayTitle)", select: { selectedPanelID = panel.id }, drop: { payload, edge in
+                                        completeDrop(payload, target: .panel(panel.id), edge: edge)
                                     }) {
-                                        VStack(spacing: 6) {
+                                        VStack(spacing: 4) {
                                             Image(systemName: "line.3.horizontal").font(.caption).foregroundColor(.secondary)
-                                            Text("\(index + 1) · \(metric.title)").font(.caption)
-                                            Text(store.settings.panelAppearance(for: metric).size.title).font(.caption2).foregroundColor(.secondary)
-                                        }.frame(width: 112, height: 76)
-                                            .background(selectedPanel == metric ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.04))
+                                            Text("\(index + 1) · \(panel.displayTitle)").font(.caption)
+                                                .multilineTextAlignment(.center).lineLimit(2).frame(height: 30, alignment: .top)
+                                            Text(panel.isNetwork ? (panel.networkInterface ?? "Auto") : panel.appearance.size.title)
+                                                .font(.caption2).foregroundColor(.secondary)
+                                        }.frame(width: 112, height: 84)
+                                            .background(selectedPanel?.id == panel.id ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.04))
                                             .cornerRadius(8)
-                                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(selectedPanel == metric ? Color.accentColor : Color.clear, lineWidth: 1.5))
-                                    }.frame(width: 112, height: 76)
+                                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(selectedPanel?.id == panel.id ? Color.accentColor : Color.clear, lineWidth: 1.5))
+                                    }.frame(width: 112, height: 84)
                                 }
                             }
                             OrganizationTile(payload: nil, kind: .panel, label: "Drop panel at end", select: {}, drop: { payload, edge in
@@ -179,33 +193,39 @@ struct SettingsView: View {
                         }.frame(width: CGFloat(organizerColumns) * 112 + CGFloat(organizerColumns - 1) * 8).padding(2)
                     }
                 }
-                if let metric = selectedPanel {
+                if let panel = selectedPanel {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Text("\(metric.title) panel").font(.headline)
+                            Text("\(panel.displayTitle) panel").font(.headline)
                             Spacer()
-                            Button("Move earlier") { movePanel(metric, offset: -1) }
-                                .disabled(!store.settings.panelMetrics.contains(metric) || store.settings.panelMetrics.first == metric)
-                            Button("Move later") { movePanel(metric, offset: 1) }
-                                .disabled(!store.settings.panelMetrics.contains(metric) || store.settings.panelMetrics.last == metric)
-                            Button("Hide") { store.change { WidgetOrganization.setPanel(in: &$0, metric: metric, visible: false) } }
-                                .disabled(!store.settings.panelMetrics.contains(metric))
+                            Button("Move earlier") { movePanel(panel.id, offset: -1) }
+                                .disabled(store.settings.panels.first?.id == panel.id)
+                            Button("Move later") { movePanel(panel.id, offset: 1) }
+                                .disabled(store.settings.panels.last?.id == panel.id)
+                            Button("Hide") { store.change { _ = WidgetOrganization.hidePanel(in: &$0, id: panel.id) } }
+                            Button { store.change { _ = WidgetOrganization.removePanel(from: &$0, id: panel.id) } } label: {
+                                Image(systemName: "trash")
+                            }.help("Remove this panel configuration")
+                                .accessibilityLabel("Remove \(panel.displayTitle) panel")
                         }.font(.caption)
-                        PanelEditor(store: store, metric: metric)
+                        PanelEditor(store: store, id: panel.id)
                     }.padding(12).background(Color.primary.opacity(0.04)).cornerRadius(8)
                 }
-                if !hiddenPanels.isEmpty {
+                if !store.settings.hiddenPanels.isEmpty {
                     Divider().padding(.vertical, 4)
                     Text("Hidden panels").font(.headline)
-                    ForEach(hiddenPanels) { metric in
+                    ForEach(store.settings.hiddenPanels) { panel in
                         HStack {
-                            Button(metric.title) { selectedPanelID = metric }.buttonStyle(.plain)
-                                .accessibilityLabel("Edit hidden \(metric.title) panel")
+                            Text(panel.displayTitle + (panel.isNetwork ? " · " + (panel.networkInterface ?? "Auto") : ""))
                             Spacer()
                             Button("Restore") {
-                                store.change { WidgetOrganization.setPanel(in: &$0, metric: metric, visible: true) }
-                                selectedPanelID = metric
-                            }.accessibilityLabel("Restore \(metric.title) panel")
+                                store.change { _ = WidgetOrganization.restorePanel(in: &$0, id: panel.id) }
+                                selectedPanelID = panel.id
+                            }.accessibilityLabel("Restore \(panel.displayTitle) panel")
+                            Button { store.change { _ = WidgetOrganization.removePanel(from: &$0, id: panel.id) } } label: {
+                                Image(systemName: "trash")
+                            }.help("Remove this saved panel configuration")
+                                .accessibilityLabel("Remove hidden \(panel.displayTitle) panel")
                         }.padding(.vertical, 4)
                     }
                 }
@@ -213,22 +233,29 @@ struct SettingsView: View {
         }
     }
 
-    private var selectedPanel: MetricID? { selectedPanelID ?? store.settings.panelMetrics.first }
-    private var organizerColumns: Int { min(store.settings.panelColumns, max(1, store.settings.panelMetrics.count)) }
+    private var selectedPanel: PanelConfiguration? {
+        store.settings.panels.first { $0.id == selectedPanelID } ?? store.settings.panels.first
+    }
+    private var organizerColumns: Int { min(store.settings.panelColumns, max(1, store.settings.panels.count)) }
 
-    private var hiddenPanels: [MetricID] { MetricID.allCases.filter { !store.settings.panelMetrics.contains($0) } }
-
-    private func movePanel(_ metric: MetricID, offset: Int) {
+    private func addPanel(metric: MetricID, combined: Bool = false) {
         store.change { settings in
-            guard let index = settings.panelMetrics.firstIndex(of: metric) else { return }
+            selectedPanelID = WidgetOrganization.addPanel(to: &settings, metric: metric, isCombinedNetwork: combined)
+        }
+    }
+
+    private func movePanel(_ id: UUID, offset: Int) {
+        store.change { settings in
+            guard let index = settings.panels.firstIndex(where: { $0.id == id }) else { return }
             let destination = index + offset
-            guard settings.panelMetrics.indices.contains(destination) else { return }
-            let target = offset < 0 ? settings.panelMetrics[destination] : settings.panelMetrics.dropFirst(destination + 1).first
-            _ = WidgetOrganization.movePanel(in: &settings, metric: metric, before: target)
+            guard settings.panels.indices.contains(destination) else { return }
+            let target = offset < 0 ? settings.panels[destination].id : settings.panels.dropFirst(destination + 1).first?.id
+            _ = WidgetOrganization.movePanel(in: &settings, id: id, before: target)
         }
     }
 
     private var displaySettings: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 20) {
             Toggle("Show upload and download speeds beside the icon", isOn: setting(\.showBandwidth))
             Toggle("Use bits per second for bandwidth", isOn: setting(\.bandwidthInBits))
@@ -243,14 +270,24 @@ struct SettingsView: View {
                     .frame(width: 80)
                 Text("\(unit) (\(bits ? "bits" : "bytes"))").foregroundColor(.secondary)
             }
-            Picker("Measure traffic on", selection: Binding(get: { store.settings.networkInterface ?? "" }, set: { value in store.change { $0.networkInterface = value.isEmpty ? nil : value } })) {
-                Text("Automatic · physical interface").tag("")
-                ForEach(interfaceNames, id: \.self) { interface in Text(interface).tag(interface) }
-            }
-            Text("Automatic measures one active physical interface. Select a VPN interface explicitly to measure its tunnel traffic instead. Interfaces are never added together.")
+            NetworkInterfacePicker(title: "Bandwidth readout interface", selection: setting(\.networkInterface), snapshot: store.snapshot)
+            Text("Each network meter and detail panel has its own interface choice. Auto follows one active physical interface; counters from different interfaces are never added together.")
                 .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+            Divider()
+            Text("Network interfaces").font(.headline)
+            Text("Local addresses and interface-specific DNS configuration. DNS servers and search domains are not a list of visited websites.")
+                .font(.caption).foregroundColor(.secondary)
+            ForEach(store.snapshot.interfaceDetails, id: \.name) { info in
+                DisclosureGroup("\(info.name) · \(info.kind)") {
+                    NetworkInterfaceDetails(info: info).padding(.top, 6)
+                }
+            }
+            if store.snapshot.interfaceDetails.isEmpty {
+                Text("Loading network interfaces…").font(.caption).foregroundColor(.secondary)
+            }
             Spacer()
         }
+    }
     }
 
     private var generalSettings: some View {
@@ -367,6 +404,10 @@ private struct ColumnEditor: View {
                     colourPicker("Colour", keyPath: \.colour).frame(width: 155)
                 }
             }
+            if configuration.isNetwork {
+                NetworkInterfacePicker(selection: Binding(get: { configuration.networkInterface }, set: { value in edit { $0.networkInterface = value } }), snapshot: store.snapshot)
+                SelectedInterfaceDetails(selection: configuration.networkInterface, snapshot: store.snapshot)
+            }
             if configuration.isCombinedNetwork {
                 HStack {
                     colourPicker("Upload", keyPath: \.colour)
@@ -416,9 +457,7 @@ private struct ColumnEditor: View {
     }
 
     private func colourPicker(_ title: String, keyPath: WritableKeyPath<ColumnConfiguration, MeterColour>) -> some View {
-        Picker(title, selection: column(keyPath)) {
-            ForEach(MeterColour.allCases) { colour in Text(colour.title).tag(colour) }
-        }
+        PaletteColourPicker(title: title, selection: column(keyPath))
     }
 
     private func thresholdField(_ keyPath: WritableKeyPath<ColumnConfiguration, Double?>, fallback: Double) -> some View {
@@ -445,29 +484,44 @@ private struct ColumnEditor: View {
 
 private struct PanelEditor: View {
     @ObservedObject var store: MonitoringStore
-    let metric: MetricID
+    let id: UUID
+
+    private var panel: PanelConfiguration {
+        store.settings.panels.first { $0.id == id } ?? PanelConfiguration(metric: .cpu, id: id)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Card size", selection: appearance(\.size)) {
+            Picker("Metric", selection: Binding(get: { panel.isCombinedNetwork ? "combined" : panel.metric.rawValue }, set: { value in
+                edit { panel in
+                    panel.isCombinedNetwork = value == "combined"
+                    panel.metric = MetricID(rawValue: value) ?? .download
+                }
+            })) {
+                Text("Upload / Download").tag("combined")
+                ForEach(MetricID.allCases) { Text($0.title).tag($0.rawValue) }
+            }
+            Picker("Card size", selection: configuration(\.appearance.size)) {
                 ForEach(PanelCardSize.allCases) { Text($0.title).tag($0) }
             }
-            if StatusPanelLayout.supportsHistory(metric) {
-                Picker("Graph colour", selection: appearance(\.colour)) {
-                    ForEach(MeterColour.allCases) { Text($0.title).tag($0) }
-                }
-                Toggle("Show history graph", isOn: appearance(\.showsHistory))
+            if panel.isNetwork {
+                NetworkInterfacePicker(selection: configuration(\.networkInterface), snapshot: store.snapshot)
+                SelectedInterfaceDetails(selection: panel.networkInterface, snapshot: store.snapshot)
+            }
+            if StatusPanelLayout.supportsHistory(panel.metric) {
+                PaletteColourPicker(title: "Graph colour", selection: configuration(\.appearance.colour))
+                Toggle("Show history graph", isOn: configuration(\.appearance.showsHistory))
             }
         }
     }
 
-    private func appearance<Value>(_ keyPath: WritableKeyPath<PanelAppearance, Value>) -> Binding<Value> {
-        Binding(get: { store.settings.panelAppearance(for: metric)[keyPath: keyPath] }, set: { value in
-            store.change { settings in
-                var appearance = settings.panelAppearance(for: metric)
-                appearance[keyPath: keyPath] = value
-                settings.panelAppearances[metric.rawValue] = appearance
-            }
-        })
+    private func configuration<Value>(_ keyPath: WritableKeyPath<PanelConfiguration, Value>) -> Binding<Value> {
+        Binding(get: { panel[keyPath: keyPath] }, set: { value in edit { $0[keyPath: keyPath] = value } })
+    }
+    private func edit(_ change: (inout PanelConfiguration) -> Void) {
+        store.change { settings in
+            guard let index = settings.panels.firstIndex(where: { $0.id == id }) else { return }
+            change(&settings.panels[index])
+        }
     }
 }

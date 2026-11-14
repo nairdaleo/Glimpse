@@ -12,10 +12,10 @@ final class StatusController: NSObject, NSPopoverDelegate {
     private var appearanceObserver: NSKeyValueObservation?
     private var thresholds: [UUID: ThresholdLatch] = [:]
     private var downloadThresholds: [UUID: ThresholdLatch] = [:]
-    private let showSettings: (MetricID?) -> Void
+    private let showSettings: (UUID?) -> Void
     private var maximumPanelSize = CGSize(width: 1400, height: 850)
 
-    init(store: MonitoringStore, showSettings: @escaping (MetricID?) -> Void) {
+    init(store: MonitoringStore, showSettings: @escaping (UUID?) -> Void) {
         self.store = store
         self.showSettings = showSettings
         super.init()
@@ -67,7 +67,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
         popover.contentSize = StatusPanelLayout(settings: store.settings, maximumSize: maximumPanelSize).size
     }
 
-    private func openSettings(_ metric: MetricID?) {
+    private func openSettings(_ metric: UUID?) {
         popover.performClose(nil)
         showSettings(metric)
     }
@@ -79,7 +79,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
         downloadThresholds = downloadThresholds.filter { id, _ in settings.columns.contains { $0.id == id && $0.isCombinedNetwork } }
         let levels = settings.columns.map { column in
             var latch = thresholds[column.id] ?? ThresholdLatch()
-            let result = latch.evaluate(value: store.snapshot.readings[column.isCombinedNetwork ? .upload : column.metric]?.value, column: column,
+            let result = latch.evaluate(value: store.snapshot.displayReading(for: column.isCombinedNetwork ? .upload : column.metric, interface: column.networkInterface)?.value, column: column,
                                        deadband: column.metric == .thermal ? 0 : (column.metric == .download || column.metric == .upload ? settings.networkCeiling * 0.01 : 1))
             thresholds[column.id] = latch
             return result
@@ -87,7 +87,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
         let secondaryLevels: [ThresholdLevel?] = settings.columns.map { column in
             guard column.isCombinedNetwork else { return nil }
             var latch = downloadThresholds[column.id] ?? ThresholdLatch()
-            let result = latch.evaluate(value: store.snapshot.readings[.download]?.value, column: column, deadband: settings.networkCeiling * 0.01)
+            let result = latch.evaluate(value: store.snapshot.displayReading(for: .download, interface: column.networkInterface)?.value, column: column, deadband: settings.networkCeiling * 0.01)
             downloadThresholds[column.id] = latch
             return result
         }
@@ -100,11 +100,11 @@ final class StatusController: NSObject, NSPopoverDelegate {
         }
         let summary = settings.columns.map { column in
             if column.isCombinedNetwork {
-                let up = MetricPresentation.formatted(value: store.snapshot.readings[.upload]?.value, metric: .upload, bits: settings.bandwidthInBits)
-                let down = MetricPresentation.formatted(value: store.snapshot.readings[.download]?.value, metric: .download, bits: settings.bandwidthInBits)
-                return "Upload: \(up), Download: \(down)"
+                let up = MetricPresentation.formatted(value: store.snapshot.displayReading(for: .upload, interface: column.networkInterface)?.value, metric: .upload, bits: settings.bandwidthInBits)
+                let down = MetricPresentation.formatted(value: store.snapshot.displayReading(for: .download, interface: column.networkInterface)?.value, metric: .download, bits: settings.bandwidthInBits)
+                return "\(column.networkInterface ?? "Auto"): Upload \(up), Download \(down)"
             }
-            return "\(column.displayTitle): \(MetricPresentation.formatted(value: store.snapshot.readings[column.metric]?.value, metric: column.metric, bits: settings.bandwidthInBits))"
+            return "\(column.displayTitle)\(column.isNetwork ? " (" + (column.networkInterface ?? "Auto") + ")" : ""): \(MetricPresentation.formatted(value: store.snapshot.displayReading(for: column.metric, interface: column.networkInterface)?.value, metric: column.metric, bits: settings.bandwidthInBits))"
         }.joined(separator: ", ")
         button.toolTip = summary
         button.setAccessibilityLabel("Glimpse. \(summary). Show detailed status.")
