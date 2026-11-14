@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         store = MonitoringStore()
         services = LifecycleServices()
-        statusController = StatusController(store: store, showSettings: { [weak self] in self?.showSettings() })
+        statusController = StatusController(store: store, showSettings: { [weak self] metric in self?.showSettings(panel: metric) })
         if CommandLine.arguments.contains("--settings") { showSettings() }
     }
 
@@ -26,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationDidBecomeActive(_ notification: Notification) { services?.refreshLoginStatus() }
 
-    private func showSettings() {
+    private func showSettings(panel: MetricID? = nil) {
         services.refreshLoginStatus()
         if settingsWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 590, height: 610), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
@@ -37,6 +37,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             window.minSize = NSSize(width: 560, height: 590)
             window.center()
             settingsWindow = window
+        }
+        if let panel = panel {
+            settingsWindow?.contentView = NSHostingView(rootView: SettingsView(store: store, services: services, requestedPanel: panel))
         }
         NSApp.activate(ignoringOtherApps: true)
         store.setSettingsVisible(true)
