@@ -148,18 +148,18 @@ struct SettingsView: View {
                             Button(metric.title) { addPanel(metric: metric) }
                         }
                     } label: { Label("Add panel", systemImage: "plus") }
-                    .disabled(store.settings.panels.count + store.settings.hiddenPanels.count >= 32)
+                    .disabled(store.settings.panels.count >= 32)
                 }
                 HStack {
                     Text("Card width")
                     Slider(value: setting(\.panelCardWidth), in: 120...240, step: 4).accessibilityLabel("Card width")
                     Text("\(Int(store.settings.panelCardWidth)) pt").monospacedDigit().frame(width: 50, alignment: .trailing)
                 }
-                Text("Visible panels").font(.headline)
+                Text("Panels").font(.headline)
                 Text("Drag either side of a card to place it before or after. The blue line marks the drop position. Click to edit.")
                     .font(.caption).foregroundColor(.secondary)
                 if store.settings.panels.isEmpty {
-                    Text("All detail panels are hidden. Add or restore one below.")
+                    Text("No panels yet. Use + Add panel to choose what to show.")
                         .font(.callout).foregroundColor(.secondary).padding(.vertical, 8)
                 } else {
                     ScrollView(.horizontal, showsIndicators: true) {
@@ -202,7 +202,6 @@ struct SettingsView: View {
                                 .disabled(store.settings.panels.first?.id == panel.id)
                             Button("Move later") { movePanel(panel.id, offset: 1) }
                                 .disabled(store.settings.panels.last?.id == panel.id)
-                            Button("Hide") { store.change { _ = WidgetOrganization.hidePanel(in: &$0, id: panel.id) } }
                             Button { store.change { _ = WidgetOrganization.removePanel(from: &$0, id: panel.id) } } label: {
                                 Image(systemName: "trash")
                             }.help("Remove this panel configuration")
@@ -211,24 +210,7 @@ struct SettingsView: View {
                         PanelEditor(store: store, id: panel.id)
                     }.padding(12).background(Color.primary.opacity(0.04)).cornerRadius(8)
                 }
-                if !store.settings.hiddenPanels.isEmpty {
-                    Divider().padding(.vertical, 4)
-                    Text("Hidden panels").font(.headline)
-                    ForEach(store.settings.hiddenPanels) { panel in
-                        HStack {
-                            Text(panel.displayTitle + (panel.isNetwork ? " · " + (panel.networkInterface ?? "Auto") : ""))
-                            Spacer()
-                            Button("Restore") {
-                                store.change { _ = WidgetOrganization.restorePanel(in: &$0, id: panel.id) }
-                                selectedPanelID = panel.id
-                            }.accessibilityLabel("Restore \(panel.displayTitle) panel")
-                            Button { store.change { _ = WidgetOrganization.removePanel(from: &$0, id: panel.id) } } label: {
-                                Image(systemName: "trash")
-                            }.help("Remove this saved panel configuration")
-                                .accessibilityLabel("Remove hidden \(panel.displayTitle) panel")
-                        }.padding(.vertical, 4)
-                    }
-                }
+
             }.padding(16)
         }
     }

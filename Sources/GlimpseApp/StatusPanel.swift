@@ -24,7 +24,7 @@ struct StatusPanel: View {
                 VStack(alignment: .leading, spacing: 0) {
                     if store.settings.panels.isEmpty {
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("All detail panels are hidden.").font(.callout)
+                            Text("No detail panels added.").font(.callout)
                             Button("Choose panels…", action: showSettings).font(.caption)
                         }.frame(width: layout.gridWidth, height: layout.gridHeight, alignment: .leading)
                     } else {

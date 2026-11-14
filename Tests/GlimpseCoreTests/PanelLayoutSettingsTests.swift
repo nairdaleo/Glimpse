@@ -46,7 +46,7 @@ final class PanelLayoutSettingsTests: XCTestCase {
         }
     }
 
-    func testValidationKeepsKnownAppearanceKeysEvenForHiddenPanels() {
+    func testValidationKeepsKnownLegacyAppearanceKeysForUnselectedMetrics() {
         var settings = AppSettings()
         let custom = PanelAppearance(size: .compact, colour: .orange, showsHistory: false)
         settings.panelMetrics = []

@@ -19,9 +19,9 @@ Compact native macOS menu-bar system monitor. Read README.md, docs/design.md, do
 - `build/Glimpse.app/Contents/MacOS/Glimpse --diagnose` samples native readers without opening UI.
 - Runtime on Intel/macOS 12, live VPN/interface transitions, sleep/wake, UI interaction and release performance budgets require explicit verification; compilation is not runtime coverage.
 - Source responsibilities: GlimpseCore = pure models/calculations/settings/history; GlimpseMonitor = native readers; GlimpseApp = queue confinement, persistence, AppKit status item and SwiftUI interface.
-- Meters support one to eight stable identities and width scale 0.75...1.5. Dropdown panels are independently ordered/hidden; missing new settings must preserve legacy layouts.
+- Meters support one to eight stable identities and width scale 0.75...1.5. Dropdown panels are independently ordered/removed; missing new settings must preserve legacy layouts.
 - Combined network is a column display mode requiring separate upload/download readings, never a net scalar. Its upper half is upload and lower half download, with independent colours/threshold state.
-- Dropdown arrangement/hiding is settings-only. Cards open their editor when clicked. Panel columns1...8, width120...240 and per-card size/colour/history drive StatusPanelLayout and screen-bounded popover sizing.
+- Detailed View arrangement/removal is settings-only. Cards open their editor when clicked. Panel columns1...8, width120...240 and per-card size/colour/history drive StatusPanelLayout and screen-bounded popover sizing.
 - Update public metadata is in Configuration/Updates.plist; private signing key remains in the login Keychain account com.tastyjam.glimpse. Never export/commit it. No signed downloadable release has been published.
 - Login/updates are opt-in. A separate Mac App Store build must exclude Sparkle, validate the sandbox, and keep features free; tips/reviews remain release work.
 

@@ -163,7 +163,6 @@ public struct AppSettings: Codable, Sendable {
     public var columns: [ColumnConfiguration]
     public var columnScale: Double
     public var panels: [PanelConfiguration]
-    public var hiddenPanels: [PanelConfiguration]
     public var panelColumns: Int
     public var panelCardWidth: Double
     private var legacyPanelAppearances: [String: PanelAppearance]
@@ -178,7 +177,6 @@ public struct AppSettings: Codable, Sendable {
         columns = [ColumnConfiguration(metric: .cpu, colour: .mint), ColumnConfiguration(metric: .memory, colour: .purple), ColumnConfiguration(metric: .download, colour: .blue)]
         columnScale = 1
         panels = MetricID.allCases.map { PanelConfiguration(metric: $0) }
-        hiddenPanels = []
         panelColumns = 2
         panelCardWidth = 156
         legacyPanelAppearances = [:]
@@ -200,12 +198,10 @@ public struct AppSettings: Codable, Sendable {
         set {
             let appearances = panelAppearances
             var seen: Set<MetricID> = []
-            let previous = panels + hiddenPanels
+            let previous = panels
             let next = newValue.filter { seen.insert($0).inserted }.map { metric in
                 previous.first { $0.metric == metric } ?? PanelConfiguration(metric: metric, networkInterface: metric == .upload || metric == .download ? networkInterface : nil, appearance: appearances[metric.rawValue] ?? PanelAppearance())
             }
-            let visibleIDs = Set(next.map(\.id))
-            hiddenPanels = previous.filter { !visibleIDs.contains($0.id) }
             panels = next
             legacyPanelAppearances = appearances
         }
@@ -214,7 +210,7 @@ public struct AppSettings: Codable, Sendable {
         get {
             var result = legacyPanelAppearances
             var seen: Set<MetricID> = []
-            for panel in panels + hiddenPanels where seen.insert(panel.metric).inserted {
+            for panel in panels where seen.insert(panel.metric).inserted {
                 if panel.appearance != PanelAppearance() || result[panel.metric.rawValue] != nil {
                     result[panel.metric.rawValue] = panel.appearance
                 }
@@ -226,13 +222,10 @@ public struct AppSettings: Codable, Sendable {
             for index in panels.indices {
                 panels[index].appearance = newValue[panels[index].metric.rawValue] ?? PanelAppearance()
             }
-            for index in hiddenPanels.indices {
-                hiddenPanels[index].appearance = newValue[hiddenPanels[index].metric.rawValue] ?? PanelAppearance()
-            }
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, hiddenPanels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, refreshInterval, monochrome }
+    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, refreshInterval, monochrome }
     public init(from decoder: Decoder) throws {
         self.init()
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -246,7 +239,6 @@ public struct AppSettings: Codable, Sendable {
         legacyPanelAppearances = (try? values.decode([String: PanelAppearance].self, forKey: .panelAppearances)) ?? [:]
         if let decodedPanels = try? values.decode([PanelConfiguration].self, forKey: .panels) {
             panels = decodedPanels
-            hiddenPanels = (try? values.decode([PanelConfiguration].self, forKey: .hiddenPanels)) ?? []
         } else {
             let rawPanels = (try? values.decode([String].self, forKey: .panelMetrics)) ?? MetricID.allCases.map(\.rawValue)
             panels = MetricID.allCases.map { metric in
@@ -269,8 +261,7 @@ public struct AppSettings: Codable, Sendable {
         try values.encode(columns, forKey: .columns)
         try values.encode(columnScale, forKey: .columnScale)
         try values.encode(panels, forKey: .panels)
-        try values.encode(hiddenPanels, forKey: .hiddenPanels)
-        // Retain hidden legacy styles for the compatibility restore controls.
+        // Retain legacy metric-based appearance data for older settings documents.
         try values.encode(panelAppearances, forKey: .panelAppearances)
         try values.encode(panelColumns, forKey: .panelColumns)
         try values.encode(panelCardWidth, forKey: .panelCardWidth)
@@ -283,7 +274,7 @@ public struct AppSettings: Codable, Sendable {
     }
 
     public func panelAppearance(for metric: MetricID) -> PanelAppearance {
-        (panels + hiddenPanels).first { $0.metric == metric }?.appearance ?? legacyPanelAppearances[metric.rawValue] ?? PanelAppearance()
+        panels.first { $0.metric == metric }?.appearance ?? legacyPanelAppearances[metric.rawValue] ?? PanelAppearance()
     }
 
     public func validated() -> AppSettings {
@@ -302,10 +293,6 @@ public struct AppSettings: Codable, Sendable {
         var panelIDs: Set<UUID> = []
         for index in result.panels.indices {
             while !panelIDs.insert(result.panels[index].id).inserted { result.panels[index].id = UUID() }
-        }
-        result.hiddenPanels = Array(hiddenPanels.prefix(max(0, 32 - result.panels.count))).map { $0.validated() }
-        for index in result.hiddenPanels.indices {
-            while !panelIDs.insert(result.hiddenPanels[index].id).inserted { result.hiddenPanels[index].id = UUID() }
         }
         result.panelColumns = min(8, max(1, panelColumns))
         result.panelCardWidth = panelCardWidth.isFinite ? min(240, max(120, panelCardWidth)) : 156

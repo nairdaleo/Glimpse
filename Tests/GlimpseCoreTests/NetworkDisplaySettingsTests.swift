@@ -23,19 +23,13 @@ final class NetworkDisplaySettingsTests: XCTestCase {
         XCTAssertEqual(restored.panels, settings.panels)
     }
 
-    func testLegacyEmptyLayoutMigratesHiddenStylesAndRestoresTheSameCard() throws {
+    func testLegacyEmptyLayoutPreservesEmptySelectionAndLegacyAppearanceData() throws {
         let data = Data(#"{"panelMetrics":[],"networkInterface":"utun3","panelAppearances":{"upload":{"size":"large","colour":"orange","showsHistory":false}}}"#.utf8)
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
         XCTAssertTrue(settings.panels.isEmpty)
-        let original = try XCTUnwrap(settings.hiddenPanels.first { $0.metric == .upload })
-        XCTAssertEqual(original.networkInterface, "utun3")
-        XCTAssertEqual(original.appearance, PanelAppearance(size: .large, colour: .orange, showsHistory: false))
-        var restored = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
-        XCTAssertTrue(WidgetOrganization.restorePanel(in: &restored, id: original.id))
-        XCTAssertEqual(restored.panels, [original])
-        XCTAssertTrue(WidgetOrganization.hidePanel(in: &restored, id: original.id))
+        XCTAssertEqual(settings.panelAppearance(for: .upload), PanelAppearance(size: .large, colour: .orange, showsHistory: false))
+        let restored = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
         XCTAssertTrue(restored.panels.isEmpty)
-        XCTAssertEqual(restored.hiddenPanels.first { $0.id == original.id }, original)
     }
 
     func testRepeatedNetworkPanelsKeepIndependentIdentityAppearanceAndInterfaceWhenReordered() throws {
@@ -48,12 +42,10 @@ final class NetworkDisplaySettingsTests: XCTestCase {
         XCTAssertEqual(Set(original.map(\.id)).count, 3)
         XCTAssertTrue(WidgetOrganization.movePanel(in: &settings, id: third, before: first))
         XCTAssertEqual(settings.panels, [original[2], original[0], original[1]])
-        XCTAssertTrue(WidgetOrganization.hidePanel(in: &settings, id: second))
+        XCTAssertTrue(WidgetOrganization.removePanel(from: &settings, id: second))
         var restored = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
         XCTAssertEqual(restored.panels, settings.panels)
-        XCTAssertEqual(restored.hiddenPanels, [original[1]])
-        XCTAssertTrue(WidgetOrganization.restorePanel(in: &restored, id: second))
-        XCTAssertEqual(restored.panels.last, original[1])
+        XCTAssertFalse(restored.panels.contains { $0.id == second })
         XCTAssertTrue(WidgetOrganization.removePanel(from: &restored, id: first))
         XCTAssertFalse(WidgetOrganization.removePanel(from: &restored, id: first))
     }
@@ -62,7 +54,6 @@ final class NetworkDisplaySettingsTests: XCTestCase {
         let data = Data(#"{"networkInterface":"en7","panels":[{"metric":"upload","networkInterface":null},{"metric":"download","networkInterface":"  en9 "},{"metric":"cpu","networkInterface":"en0"}]}"#.utf8)
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
         XCTAssertEqual(settings.panels.map(\.networkInterface), [nil, "en9", nil])
-        XCTAssertTrue(settings.hiddenPanels.isEmpty)
         XCTAssertEqual(settings.panels[0].requiredMetrics, [.upload])
         let combined = PanelConfiguration(metric: .cpu, isCombinedNetwork: true)
         XCTAssertEqual(combined.requiredMetrics, [.upload, .download])
@@ -70,30 +61,29 @@ final class NetworkDisplaySettingsTests: XCTestCase {
         XCTAssertTrue(combined.isNetwork)
     }
 
-    func testValidationRepairsIdentityCollisionsAcrossVisibleAndHiddenAndBoundsTotalCount() {
+    func testValidationRepairsIdentityCollisionsAndBoundsPanelCount() {
         var settings = AppSettings()
         let panel = PanelConfiguration(metric: .download, networkInterface: "en0")
-        settings.panels = Array(repeating: panel, count: 20)
-        settings.hiddenPanels = Array(repeating: panel, count: 20)
+        settings.panels = Array(repeating: panel, count: 40)
         let validated = settings.validated()
-        XCTAssertEqual(validated.panels.count, 20)
-        XCTAssertEqual(validated.hiddenPanels.count, 12)
+        XCTAssertEqual(validated.panels.count, 32)
         XCTAssertEqual(validated.panels[0].id, panel.id)
-        XCTAssertEqual(Set((validated.panels + validated.hiddenPanels).map(\.id)).count, 32)
+        XCTAssertEqual(Set(validated.panels.map(\.id)).count, 32)
         XCTAssertEqual(validated.validated().panels, validated.panels)
         settings = validated
         XCTAssertNil(WidgetOrganization.addPanel(to: &settings, metric: .cpu))
-        XCTAssertTrue(WidgetOrganization.hidePanel(in: &settings, id: panel.id))
-        XCTAssertTrue(WidgetOrganization.restorePanel(in: &settings, id: panel.id))
+        XCTAssertTrue(WidgetOrganization.removePanel(from: &settings, id: panel.id))
+        XCTAssertNotNil(WidgetOrganization.addPanel(to: &settings, metric: .cpu))
     }
 
-    func testLegacyMetricSetterReusesHiddenIdentityWithoutChangingOtherConfiguration() {
+    func testLegacyMetricSetterPreservesExistingPanelsAndDoesNotRestoreRemovedIdentities() {
         var settings = AppSettings()
         let original = settings.panels[0]
+        let download = settings.panels.first { $0.metric == .download }
         settings.panelMetrics = [.memory, .download]
         settings.panelMetrics = [.download, .cpu, .cpu]
         XCTAssertEqual(settings.panelMetrics, [.download, .cpu])
-        XCTAssertEqual(settings.panels.last, original)
-        XCTAssertTrue(settings.hiddenPanels.contains { $0.metric == .memory })
+        XCTAssertEqual(settings.panels.first, download)
+        XCTAssertNotEqual(settings.panels.last?.id, original.id)
     }
 }
