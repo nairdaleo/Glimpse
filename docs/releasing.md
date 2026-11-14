@@ -33,21 +33,17 @@ The store edition is a separate build of the same sources: sandboxed (`Configura
 | Step | How | Result |
 | --- | --- | --- |
 | Local check | `scripts/make-pkg.sh` | `build/AppStore/Glimpse.app` and `build/Glimpse-<version>-AppStore.pkg`. Without distribution certificates the app is ad-hoc signed, which is enough to run it in the sandbox. |
-| Upload | Actions → **App Store upload** → Run workflow with a release tag | `app-store.yml` runs the tests, signs with the distribution certificates and provisioning profile, uploads the package to App Store Connect and pushes the tag `v<version>-build<N>`. |
+| Upload | `git checkout v0.3.0 && KEYS_ENV=<your env file> VERSION=0.3.0 UPLOAD=1 scripts/make-pkg.sh` | Signs with the distribution certificates and provisioning profile from the login keychain, uploads the package to App Store Connect and pushes the tag `v<version>-build<N>`. Run it right after promoting the GitHub release. |
 | Release | App Store Connect | Test through TestFlight, attach the build to a version and submit for review by hand. |
 
-One-time setup (owner), in addition to the `ASC_*` secrets above:
+The upload runs **locally only**. App Store Connect credentials for the store edition are not stored in GitHub, and there is no upload workflow. The script reads `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_PATH` and `PROVISIONING_PROFILE` (path to the profile) from the environment, or from a private env file whose path is given in `KEYS_ENV`, and refuses to upload from a tree with uncommitted changes.
+
+One-time setup (owner):
 
 1. developer.apple.com → Identifiers: register the App ID `com.tastyjam.glimpse` (macOS).
-2. Certificates: create **Apple Distribution** (or *Mac App Distribution*) and **Mac Installer Distribution**, install both, then export the two identities together from Keychain Access as one `.p12`.
-3. Profiles: create a **Mac App Store Connect** provisioning profile for that App ID and certificate; download it.
+2. Certificates: create **Apple Distribution** (or *Mac App Distribution*) and **Mac Installer Distribution** and install both in the login keychain.
+3. Profiles: create a **Mac App Store Connect** provisioning profile for that App ID and certificate; download it and point `PROVISIONING_PROFILE` at it.
 4. App Store Connect → Apps → + → New App (macOS, bundle ID `com.tastyjam.glimpse`).
-
-| Secret | What to put in it |
-| --- | --- |
-| `MAS_CERTS_P12_BASE64` | `base64 -i MacAppStore.p12 \| pbcopy`; delete the `.p12` afterwards. |
-| `MAS_CERTS_P12_PASSWORD` | The password chosen for that export. |
-| `MAS_PROVISIONING_PROFILE_BASE64` | `base64 -i Glimpse.provisionprofile \| pbcopy`. |
 
 The first upload also needs an app icon (#16); App Store Connect rejects packages without one. Remaining store work (tips, review prompts, hiding **Remove Glimpse…**, which cannot trash a sandboxed app) is tracked in #7.
 

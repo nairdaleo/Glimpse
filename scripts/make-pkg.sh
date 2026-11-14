@@ -9,11 +9,21 @@
 # "3rd Party Mac Developer Installer" identities in the keychain. Without them
 # the app is ad-hoc signed and the package unsigned: enough to test the sandbox
 # locally, not uploadable.
-# Upload: UPLOAD=1 with ASC_KEY_ID, ASC_ISSUER_ID and ASC_PRIVATE_KEY_PATH sends
-# the package to App Store Connect.
+# Upload: UPLOAD=1 sends the package to App Store Connect and pushes the tag
+# v<version>-build<N>. This runs locally only; App Store Connect credentials
+# are never stored in GitHub. ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY_PATH
+# and PROVISIONING_PROFILE come from the environment, or from the env file
+# that KEYS_ENV points at.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+upload="${UPLOAD:-0}"
+if [[ "$upload" == "1" ]]; then
+    if [[ -n "${KEYS_ENV:-}" ]]; then set -a; . "$KEYS_ENV"; set +a; fi
+    : "${VERSION:?Set VERSION for an upload}" "${PROVISIONING_PROFILE:?}" "${ASC_KEY_ID:?}" "${ASC_ISSUER_ID:?}" "${ASC_PRIVATE_KEY_PATH:?}"
+    # The upload is tagged at this commit, so it must be exactly what was built.
+    [[ -z "$(git status --porcelain)" ]] || { echo "Commit or stash changes before uploading." >&2; exit 1; }
+fi
 version="${VERSION:-0.3.0}"
 build_number="${BUILD_NUMBER:-$(git rev-list --count HEAD)}"
 identities="$(security find-identity -v)"
@@ -33,15 +43,16 @@ else
     echo "WARNING: no App Store distribution identities; $pkg is for local testing only." >&2
 fi
 
-if [[ "${UPLOAD:-0}" == "1" ]]; then
-    [[ -n "$app_identity" && -n "$installer_identity" && -n "${PROVISIONING_PROFILE:-}" ]] \
-        || { echo "Upload needs distribution identities and PROVISIONING_PROFILE." >&2; exit 1; }
-    : "${ASC_KEY_ID:?}" "${ASC_ISSUER_ID:?}" "${ASC_PRIVATE_KEY_PATH:?}"
+if [[ "$upload" == "1" ]]; then
+    [[ -n "$app_identity" && -n "$installer_identity" ]] || { echo "Upload needs the distribution identities in the keychain." >&2; exit 1; }
     # altool finds the key by file name in API_PRIVATE_KEYS_DIR.
     keys="$(mktemp -d)"
     trap 'rm -rf "$keys"' EXIT
     cp "$ASC_PRIVATE_KEY_PATH" "$keys/AuthKey_$ASC_KEY_ID.p8"
     API_PRIVATE_KEYS_DIR="$keys" xcrun altool --upload-app --type macos --file "$pkg" \
         --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+    tag="v$version-build$build_number"
+    git tag -a "$tag" -m "App Store Connect upload: Glimpse $version ($build_number)"
+    git push origin "$tag"
 fi
 echo "$pkg"
