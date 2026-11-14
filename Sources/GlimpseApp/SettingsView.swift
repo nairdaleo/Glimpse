@@ -90,12 +90,6 @@ struct SettingsView: View {
                             }
                             .frame(width: 94, height: 84)
                         }
-                        OrganizationTile(payload: nil, kind: .column, label: "Drop meter at end", select: {}, drop: { payload, edge in
-                            completeDrop(payload, target: nil, edge: edge)
-                        }) {
-                            Text("Drop at end").font(.caption).foregroundColor(.secondary)
-                                .frame(width: 70, height: 84).background(Color.primary.opacity(0.025)).cornerRadius(8)
-                        }.frame(width: 70, height: 84)
                     }.padding(2)
                 }
                 HStack {
@@ -183,13 +177,6 @@ struct SettingsView: View {
                                     }.frame(width: 112, height: 84)
                                 }
                             }
-                            OrganizationTile(payload: nil, kind: .panel, label: "Drop panel at end", select: {}, drop: { payload, edge in
-                                completeDrop(payload, target: nil, edge: edge)
-                            }) {
-                                Text("Drop at end").font(.caption).foregroundColor(.secondary)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .background(Color.primary.opacity(0.025)).cornerRadius(8)
-                            }.frame(height: 36)
                         }.frame(width: CGFloat(organizerColumns) * 112 + CGFloat(organizerColumns - 1) * 8).padding(2)
                     }
                 }
