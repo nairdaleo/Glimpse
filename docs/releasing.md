@@ -8,7 +8,7 @@ Releases are built in GitHub Actions from tags. Nothing unsigned is ever publish
 | Test it | Download the pre-release DMG on Apple silicon and Intel Macs | Gatekeeper should open it without warnings. |
 | Promote | Actions → **Promote release candidate** → Run workflow with `rc_tag` | `promote-release.yml` re-attaches the identical notarized DMG as `Glimpse-0.3.0.dmg` under release `v0.3.0` at the rc's commit, marks it latest, and commits an updated `appcast.xml` to `main` so Sparkle offers the update. |
 
-`VERSION` comes from the tag (`v0.3.0-rc.1` → `0.3.0`); the build number is the commit count, so it always increases. Every uploaded build is tagged at the commit it was built from by construction. The Homebrew cask bump is tracked in #15.
+`VERSION` comes from the tag (`v0.3.0-rc.1` → `0.3.0`); the build number is the commit count, so it always increases. Every uploaded build is tagged at the commit it was built from by construction. Promotion also bumps the Homebrew cask in `nairdaleo/homebrew-tap` from `packaging/homebrew/glimpse.rb.template` when `HOMEBREW_TAP_TOKEN` is set (users then `brew install --cask nairdaleo/tap/glimpse`).
 
 ## One-time setup (owner)
 
@@ -21,6 +21,7 @@ Add these as repository secrets (Settings → Secrets and variables → Actions 
 | `ASC_KEY_ID` | App Store Connect API key ID used for notarization (the Admin key). |
 | `ASC_ISSUER_ID` | The App Store Connect issuer ID. |
 | `ASC_PRIVATE_KEY` | Contents of the key's `AuthKey_<ID>.p8` file (`pbcopy < AuthKey_<ID>.p8`). |
+| `HOMEBREW_TAP_TOKEN` | Optional, for the cask bump. Create the public repo `nairdaleo/homebrew-tap` (empty, default branch `main`), then a fine-grained personal access token limited to that repository with **Contents: Read and write**. |
 | `SPARKLE_ED_PRIVATE_KEY` | Promotion only. `.build/artifacts/sparkle/Sparkle/bin/generate_keys --account com.tastyjam.glimpse -x sparkle.key`, paste the file's contents, then delete the file. Its public half is already in `Configuration/Updates.plist`. |
 
 Locally, `scripts/make-dmg.sh` does the same build with the login keychain and the `ASC_*` variables from your own environment; see [updates.md](updates.md).
