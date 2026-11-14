@@ -4,7 +4,16 @@ Glimpse uses Sparkle 2 for update checking, signed downloads, installation and r
 
 A development build without release configuration shows that updates are unavailable and disables update controls. No feed URL or signing key is invented. The updater starts only when the app's Info.plist contains an HTTPS `SUFeedURL` with a host and a `SUPublicEDKey` that decodes to 32 bytes, and Sparkle accepts its configuration. This metadata check does not prove that a feed is reachable or that a release is published.
 
-## Release configuration
+## Packaging a DMG
+
+```bash
+VERSION=0.3.0 scripts/make-dmg.sh   # → build/Glimpse-0.3.0.dmg and .sha256
+```
+
+The script builds a universal app (`BUILD_NUMBER` defaults to the commit count, so it always increases), renders the gradient drag-to-Applications background (`scripts/dmg/background.swift`) and lays out the window with a pinned `dmgbuild` in `.build/dmg-venv`, which writes Finder metadata directly and works headless on CI. Signing uses `CODESIGN_IDENTITY`, else the first *Developer ID Application* identity in the keychain, else ad-hoc with a warning — ad-hoc DMGs are for local testing only; Gatekeeper blocks them when downloaded. With a Developer ID identity the app is signed with the hardened runtime and secure timestamps (Sparkle inside-out), the DMG is signed, and when `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_PRIVATE_KEY_PATH` point at an App Store Connect API key it is notarized with `notarytool`, stapled and checked with `spctl`. `NOTARIZE=0` skips notarization.
+
+The About tab reports version, build and the embedded commit (`GlimpseCommit`, suffixed `-dirty` for uncommitted builds).
+
 
 `Configuration/Updates.plist` contains the public updater configuration. The matching private Ed25519 key is stored in the release owner's login Keychain under Sparkle account `com.tastyjam.glimpse`; only the public key is committed. The initial checked-in appcast has no downloadable release. A configured updater with an empty feed does not mean that a signed public binary has been released.
 
