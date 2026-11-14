@@ -81,6 +81,9 @@ struct OrganizationTile<Content: View>: NSViewRepresentable {
     let label: String
     let select: () -> Void
     let drop: (OrganizationDragPayload, OrganizationDropEdge) -> Bool
+    /// Reports the hovered payload and marked edge while a drag is over this tile,
+    /// and `(nil, nil)` when the pointer leaves or the session ends.
+    var hover: (OrganizationDragPayload?, OrganizationDropEdge?) -> Void = { _, _ in }
     @ViewBuilder let content: () -> Content
 
     func makeNSView(context: Context) -> OrganizationTileView<Content> {
@@ -92,6 +95,7 @@ struct OrganizationTile<Content: View>: NSViewRepresentable {
         view.kind = kind
         view.select = select
         view.drop = drop
+        view.hover = hover
         view.setAccessibilityLabel(label)
         view.setAccessibilitySelected(isSelected)
         view.registerForDraggedTypes([kind.pasteboardType])
@@ -105,6 +109,7 @@ final class OrganizationTileView<Content: View>: NSView, NSDraggingSource {
     var kind: OrganizationDragPayload.Kind = .column
     var select: () -> Void = {}
     var drop: (OrganizationDragPayload, OrganizationDropEdge) -> Bool = { _, _ in false }
+    var hover: (OrganizationDragPayload?, OrganizationDropEdge?) -> Void = { _, _ in }
     private let hosting: NSHostingView<AnyView>
     private var pressedAt: NSPoint?
     private var isDragging = false
@@ -182,13 +187,19 @@ final class OrganizationTileView<Content: View>: NSView, NSDraggingSource {
         payload == nil || convert(sender.draggingLocation, from: nil).x >= bounds.midX ? .after : .before
     }
     private func updateDestination(_ sender: NSDraggingInfo) -> NSDragOperation {
-        guard acceptedPayload(sender) != nil else { clearDestination(); return [] }
+        guard let incoming = acceptedPayload(sender) else { clearDestination(); return [] }
         if let event = NSApp.currentEvent { _ = autoscroll(with: event) }
         edge = destinationEdge(sender)
+        hover(incoming, edge)
         refreshAppearance()
         return .move
     }
-    private func clearDestination() { edge = nil; refreshAppearance() }
+    private func clearDestination() {
+        let hadDestination = edge != nil
+        edge = nil
+        if hadDestination { hover(nil, nil) }
+        refreshAppearance()
+    }
     func refreshAppearance() {
         hosting.rootView = AnyView(content
             .opacity(isDragging ? 0.35 : 1)

@@ -7,6 +7,7 @@ struct SettingsView: View {
     @ObservedObject var services: LifecycleServices
     @State private var selectedColumnID: UUID? = nil
     @State private var selectedPanelID: UUID? = nil
+    @State private var dropPreview: DropPreview? = nil
     @State private var selectedTab: Tab = .columns
 
     init(store: MonitoringStore, services: LifecycleServices, requestedPanel: UUID? = nil) {
@@ -121,6 +122,17 @@ struct SettingsView: View {
         return changed
     }
 
+    /// Runs the drop against a copy of the settings and reports where the
+    /// dragged card would be placed, so the preview can draw a ghost there.
+    private func destinationPreview(_ payload: OrganizationDragPayload?, _ edge: OrganizationDropEdge?, target: OrganizationDragPayload) -> DropPreview? {
+        guard let payload, case .panel(let draggedID) = payload, let edge,
+              case .panel(let targetID) = target else { return nil }
+        var copy = store.settings
+        guard OrganizationDrop.apply(payload, target: target, edge: edge, settings: &copy) else { return nil }
+        let previewLayout = StatusPanelLayout(settings: copy, maximumSize: CGSize(width: 10000, height: 10000))
+        return previewLayout.placements[draggedID].map { DropPreview(id: draggedID, rect: $0) }
+    }
+
     private func addColumn(metric: MetricID, combined: Bool = false) {
         store.change { settings in
             guard let id = WidgetOrganization.addColumn(to: &settings, metric: metric) else { return }
@@ -173,6 +185,9 @@ struct SettingsView: View {
                                     OrganizationTile(payload: .panel(panel.id), kind: .panel, isSelected: selectedPanel?.id == panel.id,
                                                      label: "Panel \(index + 1), \(panel.displayTitle), \(panel.appearance.size.title)", select: { selectedPanelID = panel.id }, drop: { payload, edge in
                                         completeDrop(payload, target: .panel(panel.id), edge: edge)
+                                    }, hover: { incoming, edge in
+                                        let next = destinationPreview(incoming, edge, target: .panel(panel.id))
+                                        if dropPreview != next { dropPreview = next }
                                     }) {
                                         MetricCardContent(panel: panel, snapshot: store.snapshot, history: store.history,
                                                           networkHistory: store.networkHistory, settings: store.settings,
@@ -184,6 +199,17 @@ struct SettingsView: View {
                                 }
                             }
                         }.frame(width: layout.gridWidth, height: layout.gridHeight, alignment: .topLeading).padding(2)
+                            .overlay {
+                                if let dropPreview {
+                                    RoundedRectangle(cornerRadius: 9)
+                                        .fill(Color.accentColor.opacity(0.08))
+                                        .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [5, 3])))
+                                        .frame(width: dropPreview.rect.width, height: dropPreview.rect.height)
+                                        .offset(x: dropPreview.rect.minX, y: dropPreview.rect.minY)
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                }
+                            }
                     }.frame(height: min(360, layout.gridHeight + 4))
                 }
                 if let panel = selectedPanel {
@@ -333,6 +359,13 @@ struct SettingsView: View {
         formatter.maximumFractionDigits = 2
         return formatter
     }()
+}
+
+/// Where a dragged panel card would land if dropped now, computed by running
+/// the real layout on a simulated drop so the ghost always matches the outcome.
+private struct DropPreview: Equatable {
+    let id: UUID
+    let rect: CGRect
 }
 
 /// Decimal text field that can be cleared while editing. Keystrokes that
