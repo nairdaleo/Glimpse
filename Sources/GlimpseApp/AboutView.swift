@@ -49,6 +49,10 @@ struct AboutView: View {
                     Link("Contact Support", destination: URL(string: "mailto:support@tastyjam.ca?subject=Glimpse%20Support")!)
                     Link("Source code on GitHub", destination: URL(string: "https://github.com/nairdaleo/Glimpse")!)
                 }.font(.callout)
+                HStack(spacing: 16) {
+                    Link("Privacy Policy", destination: URL(string: "https://tastyjam.ca/glimpse/privacy.html")!)
+                    Link("Terms of Use", destination: URL(string: "https://tastyjam.ca/glimpse/terms.html")!)
+                }.font(.callout)
                 Divider()
                 Text("Licences").font(.headline)
                 HStack(spacing: 16) {
