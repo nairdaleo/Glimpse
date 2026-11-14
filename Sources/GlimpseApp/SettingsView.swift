@@ -331,6 +331,7 @@ struct SettingsView: View {
             Text("Local by design").font(.headline)
             Text("Settings stay on this Mac. Recent measurements are kept in memory and disappear when you quit. There is no account or analytics service.")
                 .font(.callout).foregroundColor(.secondary)
+            #if !APP_STORE // ponytail: a sandboxed store app can't trash itself; users delete it from Launchpad/Finder
             HStack {
                 Text("Removing Glimpse turns off Start at login, moves the app to the Trash and quits.")
                     .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -344,6 +345,7 @@ struct SettingsView: View {
             } message: {
                 Text("Start at login is turned off and the app is moved to the Trash, so you can restore it from there.")
             }
+            #endif
             Spacer()
         }
         }
