@@ -23,6 +23,16 @@ final class PanelAppearanceMigrationTests: XCTestCase {
         XCTAssertTrue(restored.panels[0].appearance.showsConnectionDetails)
     }
 
+    func testCombineFlagDefaultsToOffAndSurvivesRoundTrip() throws {
+        XCTAssertFalse(PanelAppearance().combinesNext)
+        let legacy = try JSONDecoder().decode(PanelAppearance.self, from: Data(#"{"size":"compact","colour":"blue"}"#.utf8))
+        XCTAssertFalse(legacy.combinesNext)
+        var settings = AppSettings()
+        settings.panels = [.init(metric: .cpu, appearance: .init(size: .compact, combinesNext: true))]
+        let restored = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertTrue(restored.panels[0].appearance.combinesNext)
+    }
+
     func testMalformedNewAppearanceFieldsFallBackIndependently() throws {
         let data = Data(#"{"size":"compact","colour":"pink","largeOrientation":"future","showsConnectionDetails":"invalid","showsHistory":false}"#.utf8)
         let appearance = try JSONDecoder().decode(PanelAppearance.self, from: data)

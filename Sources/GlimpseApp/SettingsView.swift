@@ -156,14 +156,18 @@ struct SettingsView: View {
                     Text("\(Int(store.settings.panelCardWidth)) pt").monospacedDigit().frame(width: 50, alignment: .trailing)
                 }
                 Text("Detailed View preview").font(.headline)
-                Text("Drag either side of a card to place it before or after. Click to edit. Compact cards share a regular slot; large cards use two slots.")
+                Text("Drag either side of a card to place it before or after. Click to edit. Compact cards share a regular slot; large cards use two slots. A compact card can combine with the next compact card into one card.")
                     .font(.caption).foregroundColor(.secondary)
                 if store.settings.panels.isEmpty {
                     Text("No panels yet. Use + Add panel to choose what to show.")
                         .font(.callout).foregroundColor(.secondary).padding(.vertical, 8)
                 } else {
+                    let partnerIDs = Set(layout.embeds.values)
                     ScrollView([.horizontal, .vertical], showsIndicators: true) {
                         ZStack(alignment: .topLeading) {
+                            ForEach(layout.mergedSurfaces.sorted(by: { $0.key.uuidString < $1.key.uuidString }), id: \.key) { _, rect in
+                                CombinedSlotSurface(rect: rect)
+                            }
                             ForEach(Array(store.settings.panels.enumerated()), id: \.element.id) { index, panel in
                                 if let rect = layout.placements[panel.id] {
                                     OrganizationTile(payload: .panel(panel.id), kind: .panel, isSelected: selectedPanel?.id == panel.id,
@@ -172,7 +176,8 @@ struct SettingsView: View {
                                     }) {
                                         MetricCardContent(panel: panel, snapshot: store.snapshot, history: store.history,
                                                           networkHistory: store.networkHistory, settings: store.settings,
-                                                          width: rect.width, height: rect.height)
+                                                          width: rect.width, height: rect.height,
+                                                          surface: !partnerIDs.contains(panel.id) && layout.embeds[panel.id] == nil)
                                             .overlay(RoundedRectangle(cornerRadius: 9).stroke(selectedPanel?.id == panel.id ? Color.accentColor : Color.clear, lineWidth: 2))
                                     }.frame(width: rect.width, height: rect.height)
                                         .offset(x: rect.minX, y: rect.minY)
@@ -234,7 +239,7 @@ struct SettingsView: View {
                 let bits = store.settings.bandwidthInBits
                 let unit = BandwidthCeilingInput.unit(bits: bits)
                 Text("Network column full at")
-                TextField(unit, value: Binding(get: { BandwidthCeilingInput.displayValue(bytesPerSecond: store.settings.networkCeiling, bits: bits) }, set: { value in store.change { $0.networkCeiling = BandwidthCeilingInput.bytesPerSecond(displayValue: value, bits: bits) } }), formatter: Self.numberFormatter)
+                DecimalField(placeholder: unit, value: Binding(get: { BandwidthCeilingInput.displayValue(bytesPerSecond: store.settings.networkCeiling, bits: bits) }, set: { value in store.change { $0.networkCeiling = BandwidthCeilingInput.bytesPerSecond(displayValue: value, bits: bits) } }))
                     .id(bits)
                     .frame(width: 80)
                 Text("\(unit) (\(bits ? "bits" : "bytes"))").foregroundColor(.secondary)
@@ -328,6 +333,29 @@ struct SettingsView: View {
         formatter.maximumFractionDigits = 2
         return formatter
     }()
+}
+
+/// Decimal text field that can be cleared while editing. Keystrokes that
+/// parse update the value immediately; an empty or invalid draft keeps the
+/// stored value and is replaced by the formatted value when editing ends.
+private struct DecimalField: View {
+    let placeholder: String
+    @Binding var value: Double
+    @State private var draft: String?
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField(placeholder, text: Binding(
+            get: { draft ?? SettingsView.numberFormatter.string(from: NSNumber(value: value)) ?? "\(value)" },
+            set: { text in
+                draft = text
+                if let number = SettingsView.numberFormatter.number(from: text) {
+                    value = number.doubleValue
+                }
+            }))
+            .focused($focused)
+            .onChange(of: focused) { if !$0 { draft = nil } }
+    }
 }
 
 private struct ColumnEditor: View {
@@ -430,7 +458,7 @@ private struct ColumnEditor: View {
     }
 
     private func thresholdField(_ keyPath: WritableKeyPath<ColumnConfiguration, Double?>, fallback: Double) -> some View {
-        TextField("Value", value: Binding(get: { configuration[keyPath: keyPath] ?? fallback }, set: { value in edit { $0[keyPath: keyPath] = value } }), formatter: SettingsView.numberFormatter).frame(width: 90)
+        DecimalField(placeholder: "Value", value: Binding(get: { configuration[keyPath: keyPath] ?? fallback }, set: { value in edit { $0[keyPath: keyPath] = value } })).frame(width: 90)
     }
 
     private func edit(_ change: (inout ColumnConfiguration) -> Void) {
@@ -459,6 +487,12 @@ private struct PanelEditor: View {
         store.settings.panels.first { $0.id == id } ?? PanelConfiguration(metric: .cpu, id: id)
     }
 
+    private var canCombineWithNext: Bool {
+        guard let index = store.settings.panels.firstIndex(where: { $0.id == id }),
+              store.settings.panels.indices.contains(index + 1) else { return false }
+        return store.settings.panels[index + 1].appearance.size == .compact
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Picker("Metric", selection: Binding(get: { panel.isCombinedNetwork ? "combined" : panel.metric.rawValue }, set: { value in
@@ -476,6 +510,13 @@ private struct PanelEditor: View {
             if panel.appearance.size == .large {
                 Picker("Large card layout", selection: configuration(\.appearance.largeOrientation)) {
                     ForEach(PanelLargeOrientation.allCases) { Text($0.title).tag($0) }
+                }
+            }
+            if panel.appearance.size == .compact {
+                Toggle("Combine with next compact card", isOn: configuration(\.appearance.combinesNext))
+                if panel.appearance.combinesNext && !canCombineWithNext {
+                    Text("No compact card follows this card in reading order.")
+                        .font(.caption).foregroundColor(.secondary)
                 }
             }
             if panel.isNetwork {

@@ -111,16 +111,19 @@ public struct PanelAppearance: Codable, Equatable, Sendable {
     public var showsHistory: Bool
     public var largeOrientation: PanelLargeOrientation
     public var showsConnectionDetails: Bool
+    /// Combine this compact card with the next compact card into one slot.
+    public var combinesNext: Bool
 
-    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true, largeOrientation: PanelLargeOrientation = .vertical, showsConnectionDetails: Bool = false) {
+    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true, largeOrientation: PanelLargeOrientation = .vertical, showsConnectionDetails: Bool = false, combinesNext: Bool = false) {
         self.size = size
         self.colour = colour
         self.showsHistory = showsHistory
         self.largeOrientation = largeOrientation
         self.showsConnectionDetails = showsConnectionDetails
+        self.combinesNext = combinesNext
     }
 
-    private enum CodingKeys: String, CodingKey { case size, colour, showsHistory, largeOrientation, showsConnectionDetails }
+    private enum CodingKeys: String, CodingKey { case size, colour, showsHistory, largeOrientation, showsConnectionDetails, combinesNext }
     public init(from decoder: Decoder) throws {
         self.init()
         guard let values = try? decoder.container(keyedBy: CodingKeys.self) else { return }
@@ -129,6 +132,7 @@ public struct PanelAppearance: Codable, Equatable, Sendable {
         showsHistory = (try? values.decode(Bool.self, forKey: .showsHistory)) ?? showsHistory
         largeOrientation = (try? values.decode(PanelLargeOrientation.self, forKey: .largeOrientation)) ?? largeOrientation
         showsConnectionDetails = (try? values.decode(Bool.self, forKey: .showsConnectionDetails)) ?? showsConnectionDetails
+        combinesNext = (try? values.decode(Bool.self, forKey: .combinesNext)) ?? false
     }
 }
 
