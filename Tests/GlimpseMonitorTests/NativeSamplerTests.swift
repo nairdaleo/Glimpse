@@ -4,6 +4,16 @@ import GlimpseCore
 @testable import GlimpseMonitor
 
 final class NativeSamplerTests: XCTestCase {
+    func testPerCoreTicksReturnsOneBaselinePerLogicalCore() throws {
+        let cores = try NativeSystemReader.perCoreTicks()
+        XCTAssertEqual(cores.count, ProcessInfo.processInfo.activeProcessorCount)
+        XCTAssertFalse(cores.isEmpty)
+        // Tick buckets are monotonic counters; every bucket must be present.
+        for ticks in cores {
+            XCTAssertGreaterThan(ticks.user + ticks.system + ticks.idle, 0)
+        }
+    }
+
     func testConnectionMetadataIsCollectedOnlyForOptedInCardsOrSettings() {
         var now: TimeInterval = 1
         var metadataReads = 0
