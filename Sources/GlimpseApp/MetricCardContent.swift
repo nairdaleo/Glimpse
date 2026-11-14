@@ -48,9 +48,9 @@ struct MetricCardContent: View {
                 graph.frame(maxWidth: .infinity, maxHeight: .infinity).frame(minHeight: 8)
             } else if panel.metric == .disk {
                 capacityBar.frame(height: 5).padding(.top, 4)
-                readingDetail(lines: 1, size: 9)
+                readingDetail(lines: 2, size: 9, shrinks: true)
             } else if !panel.isNetwork {
-                readingDetail(lines: panel.metric == .battery ? 2 : 1, size: 9)
+                readingDetail(lines: panel.metric == .battery ? 3 : 1, size: 9, shrinks: true)
             }
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -158,10 +158,13 @@ struct MetricCardContent: View {
             .help(snapshot.interfaceLabel(panel.networkInterface))
     }
 
-    private func readingDetail(lines: Int, size: CGFloat) -> some View {
+    /// `shrinks` lets compact cards scale text down slightly to fit every
+    /// line in the remaining height instead of truncating with an ellipsis.
+    private func readingDetail(lines: Int, size: CGFloat, shrinks: Bool = false) -> some View {
         Text(reading?.detail ?? "Waiting for a reading")
             .font(.system(size: size)).foregroundColor(.secondary).lineLimit(lines)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .minimumScaleFactor(shrinks ? 0.75 : 1)
+            .frame(maxWidth: .infinity, maxHeight: shrinks ? .infinity : nil, alignment: .topLeading)
     }
 
     private func connectionDetails() -> some View {
