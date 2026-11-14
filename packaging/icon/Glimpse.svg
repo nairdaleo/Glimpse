@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Glimpse app icon master. Original artwork (not an SF Symbol).
+       macOS icon grid: 824x824 body at (100,100), corner radius 185.
+       Edit here or in Penpot (import this file, export SVG back);
+       scripts/make-icon.sh turns it into the .icns used by the build. -->
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A2E37"/><stop offset="1" stop-color="#121418"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.35"/></filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#body)" filter="url(#shadow)"/>
+  <!-- one column per metric, like the menu-bar meter: CPU, memory, network up/down -->
+  <rect x="262" y="430" width="92" height="270" rx="46" fill="#30D158"/>
+  <rect x="398" y="290" width="92" height="410" rx="46" fill="#0A84FF"/>
+  <rect x="534" y="360" width="92" height="340" rx="46" fill="#FFD60A"/>
+  <rect x="670" y="500" width="92" height="200" rx="46" fill="#BF5AF2"/>
+  <!-- glint: the quick look -->
+  <circle cx="716" cy="300" r="34" fill="#FFFFFF" opacity="0.9"/>
+</svg>

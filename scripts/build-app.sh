@@ -58,6 +58,7 @@ cat > "$bundle/Contents/Info.plist" <<PLIST
 <key>CFBundleExecutable</key><string>Glimpse</string>
 <key>CFBundleIdentifier</key><string>com.tastyjam.glimpse</string>
 <key>CFBundleName</key><string>Glimpse</string>
+<key>CFBundleIconFile</key><string>Glimpse</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>$version</string>
 <key>CFBundleVersion</key><string>$build_number</string>
@@ -73,6 +74,7 @@ if [[ -f "$bundle/Contents/LICENSE" ]]; then
     mv "$bundle/Contents/LICENSE" "$bundle/Contents/Resources/LICENSE"
 fi
 cp LICENSE "$bundle/Contents/Resources/LICENSE"
+scripts/make-icon.sh "$bundle/Contents/Resources/Glimpse.icns" >/dev/null
 app_sign_flags=("${sign_flags[@]}")
 helper_sign_flags=("${sign_flags[@]}")
 if [[ -z "$app_store" ]]; then
