@@ -9,6 +9,7 @@ extension MeterColour {
         case .purple: return .systemPurple
         case .orange: return .systemOrange
         case .pink: return .systemPink
+        case .custom(let rgb): return NSColor(srgbRed: rgb.red, green: rgb.green, blue: rgb.blue, alpha: 1)
         }
     }
 }
@@ -37,8 +38,8 @@ enum MeterImage {
                         return base.nsColor
                     }
                     if column.isCombinedNetwork {
-                        let halves = DuplexGaugeLayout(track: track, upload: snapshot.readings[.upload]?.value,
-                                                       download: snapshot.readings[.download]?.value, ceiling: settings.networkCeiling)
+                        let halves = DuplexGaugeLayout(track: track, upload: snapshot.displayReading(for: .upload, interface: column.networkInterface)?.value,
+                                                       download: snapshot.displayReading(for: .download, interface: column.networkInterface)?.value, ceiling: settings.networkCeiling)
                         let upColour = colour(column.colour, level: index < levels.count ? levels[index] : nil)
                         let downColour = colour(column.secondaryColour, level: index < secondaryLevels.count ? secondaryLevels[index] : nil)
                         for (rect, fill, upper) in [(halves.upload, upColour, true), (halves.download, downColour, false)] {
@@ -63,7 +64,7 @@ enum MeterImage {
                         center.stroke()
                         continue
                     }
-                    let raw = snapshot.readings[column.metric]?.value
+                    let raw = snapshot.displayReading(for: column.metric, interface: column.networkInterface)?.value
                     guard let amount = MetricPresentation.normalized(value: raw, metric: column.metric, networkCeiling: settings.networkCeiling) else {
                         NSColor.secondaryLabelColor.setStroke()
                         let slash = NSBezierPath()

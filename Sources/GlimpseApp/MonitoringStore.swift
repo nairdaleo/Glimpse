@@ -8,6 +8,7 @@ final class MonitoringStore: ObservableObject {
     @Published private(set) var settings: AppSettings
     @Published private(set) var snapshot = Snapshot(timestamp: ProcessInfo.processInfo.systemUptime)
     @Published private(set) var history = MetricHistory()
+    @Published private(set) var networkHistory = NetworkHistory()
     @Published private(set) var detailVisible = false
 
     private let worker = SamplingWorker()
@@ -108,6 +109,7 @@ final class MonitoringStore: ObservableObject {
                     guard let self = self, self.generation == version else { return }
                     self.snapshot = result
                     self.history.append(result)
+                    self.networkHistory.append(result)
                 }
             }
         }

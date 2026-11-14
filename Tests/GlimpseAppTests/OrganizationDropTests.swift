@@ -14,19 +14,29 @@ final class OrganizationDropTests: XCTestCase {
     func testPanelDropUsesBothSidesAndCanAppend() {
         var settings = AppSettings()
         settings.panelMetrics = [.cpu, .memory, .download]
-        XCTAssertTrue(OrganizationDrop.apply(.panel(.cpu), target: .panel(.memory), edge: .after, settings: &settings))
+        let ids = settings.panels.map(\.id)
+        XCTAssertTrue(OrganizationDrop.apply(.panel(ids[0]), target: .panel(ids[1]), edge: .after, settings: &settings))
         XCTAssertEqual(settings.panelMetrics, [.memory, .cpu, .download])
-        XCTAssertTrue(OrganizationDrop.apply(.panel(.download), target: .panel(.memory), edge: .before, settings: &settings))
+        XCTAssertTrue(OrganizationDrop.apply(.panel(ids[2]), target: .panel(ids[1]), edge: .before, settings: &settings))
         XCTAssertEqual(settings.panelMetrics, [.download, .memory, .cpu])
-        XCTAssertTrue(OrganizationDrop.apply(.panel(.download), target: nil, edge: .after, settings: &settings))
+        XCTAssertTrue(OrganizationDrop.apply(.panel(ids[2]), target: nil, edge: .after, settings: &settings))
         XCTAssertEqual(settings.panelMetrics, [.memory, .cpu, .download])
+    }
+
+    func testDuplicateNetworkPanelsKeepTheirIndependentConfigurationWhenMoved() {
+        var settings = AppSettings()
+        let wifi = PanelConfiguration(metric: .download, networkInterface: "en0")
+        let ethernet = PanelConfiguration(metric: .download, networkInterface: "en1")
+        settings.panels = [wifi, ethernet]
+        XCTAssertTrue(OrganizationDrop.apply(.panel(wifi.id), target: .panel(ethernet.id), edge: .after, settings: &settings))
+        XCTAssertEqual(settings.panels, [ethernet, wifi])
     }
 
     func testInvalidAndSelfDropsDoNotChangeSettings() {
         var settings = AppSettings()
         let original = settings
-        XCTAssertFalse(OrganizationDrop.apply(.panel(.cpu), target: .column(settings.columns[0].id), edge: .before, settings: &settings))
-        XCTAssertFalse(OrganizationDrop.apply(.panel(.cpu), target: .panel(.cpu), edge: .after, settings: &settings))
+        XCTAssertFalse(OrganizationDrop.apply(.panel(settings.panels[0].id), target: .column(settings.columns[0].id), edge: .before, settings: &settings))
+        XCTAssertFalse(OrganizationDrop.apply(.panel(settings.panels[0].id), target: .panel(settings.panels[0].id), edge: .after, settings: &settings))
         XCTAssertFalse(OrganizationDrop.apply(.column(UUID()), target: nil, edge: .after, settings: &settings))
         XCTAssertEqual(settings.columns, original.columns)
         XCTAssertEqual(settings.panelMetrics, original.panelMetrics)

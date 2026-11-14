@@ -4,6 +4,29 @@ import GlimpseCore
 @testable import GlimpseApp
 
 final class WidgetRenderingTests: XCTestCase {
+    func testNetworkMeterUsesItsOwnInterfaceRatherThanGlobalReadout() throws {
+        var settings = AppSettings()
+        settings.networkCeiling = 100
+        settings.columns = [ColumnConfiguration(metric: .download, colour: .blue, networkInterface: "en1")]
+        let snapshot = Snapshot(timestamp: 1, readings: [.download: MetricReading(value: 0, detail: "global", timestamp: 1)], networkReadings: [
+            "en0": NetworkInterfaceReading(identity: "en0:1", name: "en0", download: MetricReading(value: 0, detail: "", timestamp: 1), upload: MetricReading(value: 0, detail: "", timestamp: 1)),
+            "en1": NetworkInterfaceReading(identity: "en1:2", name: "en1", download: MetricReading(value: 100, detail: "", timestamp: 1), upload: MetricReading(value: 0, detail: "", timestamp: 1))
+        ], automaticNetworkInterface: "en0")
+        func centreColour() throws -> NSColor {
+            let image = MeterImage.make(settings: settings, snapshot: snapshot, levels: [.normal], appearance: NSAppearance(named: .aqua)!)
+            var rect = CGRect(origin: .zero, size: image.size)
+            let cg = try XCTUnwrap(image.cgImage(forProposedRect: &rect, context: nil, hints: nil))
+            let bitmap = NSBitmapImageRep(cgImage: cg)
+            let track = MeterImage.layout(settings: settings, snapshot: snapshot).meterRects[0]
+            let scale = CGFloat(bitmap.pixelsWide) / image.size.width
+            return try XCTUnwrap(bitmap.colorAt(x: Int(track.midX * scale), y: Int(track.midY * scale))?.usingColorSpace(.sRGB))
+        }
+        let explicit = try centreColour()
+        settings.columns[0].networkInterface = nil
+        let automatic = try centreColour()
+        XCTAssertGreaterThan(abs(explicit.blueComponent - automatic.blueComponent) + abs(explicit.redComponent - automatic.redComponent), 0.2)
+    }
+
     func testOneToEightMetersAndScaleChangeWidthWithoutChangingVerticalAlignment() {
         let one = StatusWidgetLayout(columnCount: 1, scale: 1, showBandwidth: false)
         let eight = StatusWidgetLayout(columnCount: 8, scale: 1.5, showBandwidth: false)
