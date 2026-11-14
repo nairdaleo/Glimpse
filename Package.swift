@@ -11,7 +11,7 @@ let package = Package(
         .executable(name: "GlimpseLoginHelper", targets: ["GlimpseLoginHelper"])
     ],
     dependencies: [
-        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.9.6")
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1")
     ],
     targets: [
         .target(name: "GlimpseCore"),
