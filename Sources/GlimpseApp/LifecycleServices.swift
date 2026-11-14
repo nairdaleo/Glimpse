@@ -24,6 +24,27 @@ final class LifecycleServices: ObservableObject {
         configureUpdater()
     }
 
+    /// Uninstall: turn off Start at login, optionally forget settings, move
+    /// this app bundle to the Trash (restorable), then quit.
+    func removeApp(deletingSettings: Bool) {
+        setLoginEnabled(false)
+        if deletingSettings, let domain = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: domain)
+        }
+        NSWorkspace.shared.recycle([Bundle.main.bundleURL]) { _, error in
+            DispatchQueue.main.async {
+                if let error {
+                    let alert = NSAlert()
+                    alert.messageText = "Glimpse could not be moved to the Trash"
+                    alert.informativeText = error.localizedDescription + " Quit Glimpse and drag it to the Trash instead."
+                    alert.runModal()
+                    return
+                }
+                NSApp.terminate(nil)
+            }
+        }
+    }
+
     func setLoginEnabled(_ enabled: Bool) {
         if #available(macOS 13.0, *) {
             let service = SMAppService.mainApp

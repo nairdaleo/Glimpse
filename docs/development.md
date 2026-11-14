@@ -27,7 +27,7 @@ xcrun vtool -show-build build/Glimpse.app/Contents/MacOS/Glimpse
 codesign --verify --deep --strict build/Glimpse.app
 ```
 
-Start at login is configured in the General settings tab. Turn it off, quit via the status panel and move the app to the Trash to uninstall. Remove any separately/manually added login item in macOS Login Items. Preferences remain in the `com.tastyjam.glimpse` defaults domain; remove them separately only if you want to reset saved choices. Update signing and distribution details are in [updates.md](updates.md).
+Start at login is configured in the General settings tab. **Remove Glimpse…** there uninstalls (login item off, optional settings removal, app to Trash, quit); manually, turn it off, quit via the status panel and move the app to the Trash. Remove any separately/manually added login item in macOS Login Items. Preferences remain in the `com.tastyjam.glimpse` defaults domain; remove them separately only if you want to reset saved choices. Update signing and distribution details are in [updates.md](updates.md).
 
 ## Reader diagnostic
 
