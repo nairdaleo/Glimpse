@@ -31,7 +31,7 @@ The menu-bar renderer will use AppKit. Settings may use SwiftUI APIs available o
 - [License decision](docs/licensing.md): why MIT was selected and how third-party code is handled.
 - [Development and validation](docs/development.md): build, run, test, metric definitions, and remaining checks.
 - [Updates and login](docs/updates.md): signed update configuration, login helper and free Mac App Store roadmap.
-- [Releasing](docs/releasing.md): CI, release-candidate tags, promotion to releases and the secrets they need.
+- [Releasing](docs/releasing.md): CI, and the local release script for GitHub Releases, Sparkle, Homebrew and the App Store.
 - [Performance](docs/performance.md): measured idle CPU and memory against the budgets, and how to measure.
 
 With Xcode 27.2 selected, build and open the app:

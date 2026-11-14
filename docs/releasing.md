@@ -1,30 +1,25 @@
 # Releasing
 
-Releases are built in GitHub Actions from tags. Nothing unsigned is ever published: the workflows stop with an error until the secrets below exist.
+Releases are published from the owner's Mac with `scripts/release.sh`. Signing, notarization, the Sparkle update key and App Store Connect credentials stay local; GitHub stores no release secrets, and CI only tests and builds.
 
-| Step | How | Result |
+```bash
+scripts/release.sh --env <private env file> --version 0.3.0 --rc 1   # pre-release
+scripts/release.sh --env <private env file> --version 0.3.0          # final release
+```
+
+| Step | Pre-release (`--rc N`) | Final release |
 | --- | --- | --- |
-| Release candidate | `git tag v0.3.0-rc.1 && git push origin v0.3.0-rc.1` | `release-candidate.yml` runs the tests, builds the universal DMG, signs it with Developer ID, notarizes and staples it, and attaches `Glimpse-0.3.0-rc.1.dmg` + `.sha256` to a **pre-release**. |
-| Test it | Download the pre-release DMG on Apple silicon and Intel Macs | Gatekeeper should open it without warnings. |
-| Promote | Actions → **Promote release candidate** → Run workflow with `rc_tag` | `promote-release.yml` re-attaches the identical notarized DMG as `Glimpse-0.3.0.dmg` under release `v0.3.0` at the rc's commit, marks it latest, and commits an updated `appcast.xml` to `main` so Sparkle offers the update. |
+| Checks before anything is published | on `main`, clean, equal to `origin/main`, tag unused, Developer ID identity present, `ASC_*` set | same, plus the Homebrew tap exists |
+| `swift test` | ✓ | ✓ |
+| Universal DMG signed with Developer ID, notarized, stapled (`scripts/make-dmg.sh`); stops if it is not notarized | ✓ | ✓ |
+| Annotated tag, GitHub release with DMG + `.sha256`, generated notes | `vX.Y.Z-rc.N`, pre-release | `vX.Y.Z`, latest |
+| App Store package uploaded (`scripts/make-pkg.sh --upload`, see below); a failure is reported and the release continues; `--no-app-store` skips it | — | ✓ |
+| `appcast.xml` regenerated with Sparkle's `generate_appcast` using the key in the login keychain (account `com.tastyjam.glimpse`), committed and pushed to `main` | — | ✓ |
+| Cask `Casks/glimpse.rb` in the tap `nairdaleo/homebrew-tastyjam` rendered from `packaging/homebrew/glimpse.rb.template` and pushed with your own git credentials | — | ✓ |
 
-`VERSION` comes from the tag (`v0.3.0-rc.1` → `0.3.0`); the build number is the commit count, so it always increases. Every uploaded build is tagged at the commit it was built from by construction. Promotion also bumps the Homebrew cask in `nairdaleo/homebrew-tap` from `packaging/homebrew/glimpse.rb.template` when `HOMEBREW_TAP_TOKEN` is set (users then `brew install --cask nairdaleo/tap/glimpse`).
+The env file provides `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_PRIVATE_KEY_PATH` (notarization and upload) and `PROVISIONING_PROFILE` (App Store). The build number is the commit count, so it always increases, and every uploaded build is tagged at the commit it was built from. Users install with `brew install --cask nairdaleo/tastyjam/glimpse`.
 
-## One-time setup (owner)
-
-Add these as repository secrets (Settings → Secrets and variables → Actions → New repository secret). They never leave GitHub's encrypted store; the workflows delete the temporary keychain and key file after each run.
-
-| Secret | What to put in it |
-| --- | --- |
-| `DEVELOPER_ID_P12_BASE64` | Keychain Access → My Certificates → right-click **Developer ID Application: …** → Export… as `.p12` with a password, then `base64 -i DeveloperID.p12 \| pbcopy` and paste. Delete the `.p12` file afterwards. Requires the certificate from #12. |
-| `DEVELOPER_ID_P12_PASSWORD` | The password chosen for that export. |
-| `ASC_KEY_ID` | App Store Connect API key ID used for notarization (the Admin key). |
-| `ASC_ISSUER_ID` | The App Store Connect issuer ID. |
-| `ASC_PRIVATE_KEY` | Contents of the key's `AuthKey_<ID>.p8` file (`pbcopy < AuthKey_<ID>.p8`). |
-| `HOMEBREW_TAP_TOKEN` | Optional, for the cask bump. Create the public repo `nairdaleo/homebrew-tap` (empty, default branch `main`), then a fine-grained personal access token limited to that repository with **Contents: Read and write**. |
-| `SPARKLE_ED_PRIVATE_KEY` | Promotion only. `.build/artifacts/sparkle/Sparkle/bin/generate_keys --account com.tastyjam.glimpse -x sparkle.key`, paste the file's contents, then delete the file. Its public half is already in `Configuration/Updates.plist`. |
-
-Locally, `scripts/make-dmg.sh` does the same build with the login keychain and the `ASC_*` variables from your own environment; see [updates.md](updates.md).
+One-time setup (owner): the Developer ID Application certificate in the login keychain (#12), and the public tap repository `nairdaleo/homebrew-tastyjam` (#15).
 
 ## Mac App Store
 
@@ -33,10 +28,10 @@ The store edition is a separate build of the same sources: sandboxed (`Configura
 | Step | How | Result |
 | --- | --- | --- |
 | Local check | `scripts/make-pkg.sh` | `build/AppStore/Glimpse.app` and `build/Glimpse-<version>-AppStore.pkg`. Without distribution certificates the app is ad-hoc signed, which is enough to run it in the sandbox. |
-| Upload | `git checkout v0.3.0 && scripts/make-pkg.sh --env <your env file> --version 0.3.0 --upload` | Signs with the distribution certificates and provisioning profile from the login keychain, uploads the package to App Store Connect and pushes the tag `v<version>-build<N>`. Run it right after promoting the GitHub release. |
+| Upload | Part of `scripts/release.sh`; alone: `git checkout v0.3.0 && scripts/make-pkg.sh --env <your env file> --version 0.3.0 --upload` | Signs with the distribution certificates and provisioning profile from the login keychain, uploads the package to App Store Connect and pushes the tag `v<version>-build<N>`. |
 | Release | App Store Connect | Test through TestFlight, attach the build to a version and submit for review by hand. |
 
-The upload runs **locally only**. App Store Connect credentials for the store edition are not stored in GitHub, and there is no upload workflow. The script reads `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_PATH` and `PROVISIONING_PROFILE` (path to the profile) from the environment or from the private env file given with `--env`, and refuses to upload from a tree with uncommitted changes. The older `KEYS_ENV=`, `VERSION=` and `UPLOAD=1` variables still work; a flag wins over its variable.
+The upload runs **locally only**, like the rest of the release. The script reads `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_PATH` and `PROVISIONING_PROFILE` (path to the profile) from the environment or from the private env file given with `--env`, and refuses to upload from a tree with uncommitted changes. The older `KEYS_ENV=`, `VERSION=` and `UPLOAD=1` variables still work; a flag wins over its variable.
 
 One-time setup (owner):
 
@@ -45,7 +40,7 @@ One-time setup (owner):
 3. Profiles: create a **Mac App Store Connect** provisioning profile for that App ID and certificate; download it and point `PROVISIONING_PROFILE` at it.
 4. App Store Connect → Apps → + → New App (macOS, bundle ID `com.tastyjam.glimpse`).
 
-The first upload also needs an app icon (#16); App Store Connect rejects packages without one. Remaining store work (tips, review prompts, hiding **Remove Glimpse…**, which cannot trash a sandboxed app) is tracked in #7.
+The first upload also needs an app icon (#16); App Store Connect rejects packages without one. Remaining store work (tips, review prompts) is tracked in #7.
 
 ## CI
 
