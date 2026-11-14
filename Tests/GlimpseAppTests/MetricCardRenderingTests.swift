@@ -56,12 +56,13 @@ final class MetricCardRenderingTests: XCTestCase {
         ]
         for (kind, base) in kinds {
             for (size, appearance, width, height) in sizes {
-                for details in base.isNetwork ? [false, true] : [false] {
+                for mode in base.isNetwork ? ["", "-details", "-details-manual"] : [""] {
                     var panel = base
                     panel.appearance = appearance
-                    panel.appearance.showsConnectionDetails = details
+                    panel.appearance.showsConnectionDetails = !mode.isEmpty
+                    if mode == "-details-manual" { panel.appearance.connectionFields = Set(NetworkDetailField.allCases) }
                     try save(render(panel, snapshot: snapshot, width: width, height: height),
-                             name: "card-\(kind)-\(size)\(details ? "-details" : "").png")
+                             name: "card-\(kind)-\(size)\(mode).png")
                 }
             }
         }

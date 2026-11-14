@@ -59,33 +59,46 @@ public struct NetworkInterfaceInfo: Codable, Equatable, Sendable, Identifiable {
     /// Extra values get an empty label; missing values read "—"; proxy rows
     /// appear only when a proxy is configured.
     public func detailRows(_ fields: Set<NetworkDetailField> = Set(NetworkDetailField.allCases)) -> [(label: String, value: String)] {
-        var rows: [(label: String, value: String)] = []
-        for field in NetworkDetailField.allCases where fields.contains(field) {
-            let values: [String]
-            switch field {
-            case .status: values = [statusText]
-            case .ipv4: values = ipv4Addresses
-            case .subnetMask: values = subnetMasks
-            case .router: values = routers
-            case .ipv6: values = ipv6Addresses
-            case .dns: values = dnsServers
-            case .searchDomains: values = searchDomains
-            case .mac: values = macAddress.map { [$0] } ?? []
-            case .proxy: values = proxies
-            }
-            if values.isEmpty {
-                if field != .proxy { rows.append((field.label, "—")) }
-                continue
-            }
-            for (index, value) in values.enumerated() { rows.append((index == 0 ? field.label : "", value)) }
+        NetworkDetailField.allCases.filter(fields.contains).flatMap(rows)
+    }
+
+    /// Automatic selection: fields in usefulness order, each included only
+    /// when all of its rows still fit in `capacity`, so nothing is cut off.
+    public func fittedRows(capacity: Int) -> [(label: String, value: String)] {
+        var remaining = max(0, capacity)
+        var chosen: Set<NetworkDetailField> = []
+        for field in NetworkDetailField.priority {
+            let count = rows(for: field).count
+            guard count > 0, count <= remaining else { continue }
+            chosen.insert(field)
+            remaining -= count
         }
-        return rows
+        return NetworkDetailField.priority.filter(chosen.contains).flatMap(rows)
+    }
+
+    private func rows(for field: NetworkDetailField) -> [(label: String, value: String)] {
+        let values: [String]
+        switch field {
+        case .status: values = [statusText]
+        case .ipv4: values = ipv4Addresses
+        case .subnetMask: values = subnetMasks
+        case .router: values = routers
+        case .ipv6: values = ipv6Addresses
+        case .dns: values = dnsServers
+        case .searchDomains: values = searchDomains
+        case .mac: values = macAddress.map { [$0] } ?? []
+        case .proxy: values = proxies
+        }
+        if values.isEmpty { return field == .proxy ? [] : [(field.label, "—")] }
+        return values.enumerated().map { (index, value) in (index == 0 ? field.label : "", value) }
     }
 }
 
 public enum NetworkDetailField: String, Codable, CaseIterable, Identifiable, Sendable {
     case status, ipv4, subnetMask, router, ipv6, dns, searchDomains, mac, proxy
     public var id: String { rawValue }
+    /// Most useful first; the order automatic selection fills a card in.
+    public static let priority: [NetworkDetailField] = [.ipv4, .router, .dns, .subnetMask, .mac, .searchDomains, .status, .ipv6, .proxy]
     /// Short row label for cards.
     public var label: String {
         switch self {

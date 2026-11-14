@@ -180,22 +180,34 @@ struct MetricCardContent: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
+    @ViewBuilder
     private func connectionDetails() -> some View {
-        ScrollView([.vertical]) {
-            Group {
-                if let info = snapshot.networkInfo(for: panel.networkInterface) {
-                    NetworkInterfaceDetails(info: info, fields: appearance.connectionFields, size: compact ? 9 : 10)
+        let size: CGFloat = compact ? 9 : 10
+        Group {
+            if let info = snapshot.networkInfo(for: panel.networkInterface) {
+                if let fields = appearance.connectionFields {
+                    // Manual choice: show what was picked; scroll when it overflows.
+                    ScrollView([.vertical]) {
+                        NetworkInterfaceDetails(rows: info.detailRows(fields), size: size)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    // Fade the bottom edge so overflowing rows read as scrollable, not clipped.
+                    .mask(VStack(spacing: 0) {
+                        Rectangle()
+                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 10)
+                    })
                 } else {
-                    Text("Connection details are unavailable.").font(.caption).foregroundColor(.secondary)
+                    // Automatic: the most useful whole fields that fit this card.
+                    GeometryReader { geometry in
+                        NetworkInterfaceDetails(rows: info.fittedRows(capacity: NetworkInterfaceDetails.capacity(height: geometry.size.height, size: size)), size: size)
+                    }
                 }
-            }.frame(maxWidth: .infinity, alignment: .topLeading)
-        }.frame(maxWidth: .infinity, maxHeight: .infinity)
-            // Fade the bottom edge so overflowing rows read as scrollable, not clipped.
-            .mask(VStack(spacing: 0) {
-                Rectangle()
-                LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 10)
-            })
-            .accessibilityLabel("Connection details for " + snapshot.interfaceLabel(panel.networkInterface))
+            } else {
+                Text("Connection details are unavailable.").font(.system(size: size)).foregroundColor(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .accessibilityLabel("Connection details for " + snapshot.interfaceLabel(panel.networkInterface))
     }
 
     private var graph: some View {
