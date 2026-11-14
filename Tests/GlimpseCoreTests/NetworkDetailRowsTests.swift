@@ -19,10 +19,19 @@ final class NetworkDetailRowsTests: XCTestCase {
         XCTAssertEqual(withProxy.detailRows([.router, .proxy]).map(\.value), ["192.0.2.1", "HTTPS proxy.example.test:8080"])
     }
 
-    func testConnectionFieldsDefaultToAllAndRoundTrip() throws {
-        XCTAssertEqual(PanelAppearance().connectionFields, Set(NetworkDetailField.allCases))
-        let legacy = try JSONDecoder().decode(PanelAppearance.self, from: Data(#"{"showsConnectionDetails":true}"#.utf8))
-        XCTAssertEqual(legacy.connectionFields, Set(NetworkDetailField.allCases))
+    func testAutomaticFitAddsWholeFieldsInUsefulnessOrder() {
+        XCTAssertEqual(info.fittedRows(capacity: 1).map(\.label), ["IPv4"])
+        XCTAssertEqual(info.fittedRows(capacity: 2).map(\.label), ["IPv4", "Router"])
+        // DNS has two servers: skipped at 3 rows, so Mask fills the slot instead.
+        XCTAssertEqual(info.fittedRows(capacity: 3).map(\.label), ["IPv4", "Router", "Mask"])
+        XCTAssertEqual(info.fittedRows(capacity: 4).map(\.label), ["IPv4", "Router", "DNS", ""])
+        XCTAssertTrue(info.fittedRows(capacity: 0).isEmpty)
+    }
+
+    func testConnectionFieldsDefaultToAutomaticAndRoundTrip() throws {
+        XCTAssertNil(PanelAppearance().connectionFields)
+        let earlierAll = try JSONDecoder().decode(PanelAppearance.self, from: Data(#"{"connectionFields":["status","ipv4","subnetMask","router","ipv6","dns","searchDomains","mac","proxy"]}"#.utf8))
+        XCTAssertNil(earlierAll.connectionFields, "The earlier all-fields default reads as automatic.")
         let chosen = PanelAppearance(connectionFields: [.ipv4, .router])
         XCTAssertEqual(try JSONDecoder().decode(PanelAppearance.self, from: JSONEncoder().encode(chosen)).connectionFields, [.ipv4, .router])
         let future = try JSONDecoder().decode(PanelAppearance.self, from: Data(#"{"connectionFields":["mac","futureField"]}"#.utf8))

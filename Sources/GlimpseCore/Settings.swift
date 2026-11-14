@@ -151,10 +151,11 @@ public struct PanelAppearance: Codable, Equatable, Sendable {
     public var showsHistory: Bool
     public var largeOrientation: PanelLargeOrientation
     public var showsConnectionDetails: Bool
-    /// Rows shown in connection details; all by default.
-    public var connectionFields: Set<NetworkDetailField>
+    /// Rows chosen manually for connection details; nil fits the most
+    /// useful rows to the card automatically.
+    public var connectionFields: Set<NetworkDetailField>?
 
-    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true, largeOrientation: PanelLargeOrientation = .vertical, showsConnectionDetails: Bool = false, connectionFields: Set<NetworkDetailField> = Set(NetworkDetailField.allCases)) {
+    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true, largeOrientation: PanelLargeOrientation = .vertical, showsConnectionDetails: Bool = false, connectionFields: Set<NetworkDetailField>? = nil) {
         self.size = size
         self.colour = colour
         self.showsHistory = showsHistory
@@ -174,7 +175,9 @@ public struct PanelAppearance: Codable, Equatable, Sendable {
         showsConnectionDetails = (try? values.decode(Bool.self, forKey: .showsConnectionDetails)) ?? showsConnectionDetails
         // Unknown future field names are dropped rather than failing the set.
         if let raw = try? values.decode([String].self, forKey: .connectionFields) {
-            connectionFields = Set(raw.compactMap(NetworkDetailField.init(rawValue:)))
+            let fields = Set(raw.compactMap(NetworkDetailField.init(rawValue:)))
+            // The short-lived "all fields" default means automatic, not a choice.
+            connectionFields = fields == Set(NetworkDetailField.allCases) ? nil : fields
         }
     }
 }

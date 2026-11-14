@@ -37,12 +37,24 @@ struct NetworkInterfacePicker: View {
 /// One-line label/value rows; long values truncate in the middle and show
 /// in full on hover. Selectable so addresses can be copied.
 struct NetworkInterfaceDetails: View {
-    let info: NetworkInterfaceInfo
-    var fields: Set<NetworkDetailField> = Set(NetworkDetailField.allCases)
+    let rows: [(label: String, value: String)]
     var size: CGFloat = 11
 
+    init(rows: [(label: String, value: String)], size: CGFloat = 11) {
+        self.rows = rows
+        self.size = size
+    }
+
+    /// Every field, for Settings.
+    init(info: NetworkInterfaceInfo) { self.init(rows: info.detailRows()) }
+
+    /// Whole rows that fit `height`; line height is about 1.2 × the font size.
+    static func capacity(height: CGFloat, size: CGFloat) -> Int {
+        guard height.isFinite, height > 0 else { return 0 }
+        return Int((height + size * 0.25) / (size * 1.2 + size * 0.25))
+    }
+
     var body: some View {
-        let rows = info.detailRows(fields)
         VStack(alignment: .leading, spacing: size * 0.25) {
             ForEach(rows.indices, id: \.self) { index in
                 HStack(alignment: .firstTextBaseline, spacing: 6) {

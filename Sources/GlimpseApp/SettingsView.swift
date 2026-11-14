@@ -627,21 +627,7 @@ private struct PanelEditor: View {
             if panel.isNetwork {
                 Toggle("Show connection details", isOn: configuration(\.appearance.showsConnectionDetails))
                 if panel.appearance.showsConnectionDetails {
-                    // Two columns of checkboxes; rows scroll in the card when they overflow.
-                    let fields = NetworkDetailField.allCases
-                    HStack(alignment: .top, spacing: 24) {
-                        ForEach([Array(fields.prefix(5)), Array(fields.dropFirst(5))], id: \.self) { column in
-                            VStack(alignment: .leading, spacing: 4) {
-                                ForEach(column) { field in
-                                    Toggle(field.title, isOn: Binding(get: { panel.appearance.connectionFields.contains(field) }, set: { on in
-                                        edit {
-                                            if on { $0.appearance.connectionFields.insert(field) } else { $0.appearance.connectionFields.remove(field) }
-                                        }
-                                    })).font(.caption)
-                                }
-                            }
-                        }
-                    }.padding(.leading, 18)
+                    ConnectionFieldsEditor(fields: configuration(\.appearance.connectionFields)).padding(.leading, 18)
                 }
                 NetworkInterfacePicker(selection: configuration(\.networkInterface), snapshot: store.snapshot)
                 SelectedInterfaceDetails(selection: panel.networkInterface, snapshot: store.snapshot)
@@ -679,5 +665,40 @@ private struct ColourBandsPreview: View {
             }
         }.cornerRadius(3)
             .accessibilityLabel("Colour preview from 0 to 100 percent")
+    }
+}
+
+/// Automatic (fit the most useful rows to the card) or a manual checkbox set.
+private struct ConnectionFieldsEditor: View {
+    @Binding var fields: Set<NetworkDetailField>?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle("Choose details manually", isOn: Binding(get: { fields != nil }, set: { manual in
+                fields = manual ? [.ipv4, .router, .dns] : nil
+            })).font(.caption)
+            if let chosen = fields {
+                HStack(alignment: .top, spacing: 24) {
+                    column(Array(NetworkDetailField.priority.prefix(5)), chosen: chosen)
+                    column(Array(NetworkDetailField.priority.dropFirst(5)), chosen: chosen)
+                }
+                Text("Rows that do not fit scroll inside the card.").font(.caption).foregroundColor(.secondary)
+            } else {
+                Text("Shows the most useful details that fit the card: IPv4, router, DNS, mask, MAC, then the rest.")
+                    .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func column(_ items: [NetworkDetailField], chosen: Set<NetworkDetailField>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(items) { field in
+                Toggle(field.title, isOn: Binding(get: { chosen.contains(field) }, set: { on in
+                    var next = chosen
+                    if on { next.insert(field) } else { next.remove(field) }
+                    fields = next
+                })).font(.caption)
+            }
+        }
     }
 }
