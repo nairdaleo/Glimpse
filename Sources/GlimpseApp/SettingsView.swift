@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var selectedPanelID: UUID? = nil
     @State private var dropPreview: DropPreview? = nil
     @State private var selectedTab: Tab = .columns
+    @State private var confirmingRemoval = false
 
     init(store: MonitoringStore, services: LifecycleServices, requestedPanel: UUID? = nil) {
         self.store = store
@@ -330,8 +331,19 @@ struct SettingsView: View {
             Text("Local by design").font(.headline)
             Text("Settings stay on this Mac. Recent measurements are kept in memory and disappear when you quit. There is no account or analytics service.")
                 .font(.callout).foregroundColor(.secondary)
-            Text("To remove Glimpse, turn off Start at login, quit, and move the app to the Trash.")
-                .font(.caption).foregroundColor(.secondary)
+            HStack {
+                Text("Removing Glimpse turns off Start at login, moves the app to the Trash and quits.")
+                    .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button("Remove Glimpse…", role: .destructive) { confirmingRemoval = true }
+            }
+            .alert("Remove Glimpse?", isPresented: $confirmingRemoval) {
+                Button("Remove Glimpse", role: .destructive) { services.removeApp(deletingSettings: false) }
+                Button("Remove Glimpse and Settings", role: .destructive) { services.removeApp(deletingSettings: true) }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Start at login is turned off and the app is moved to the Trash, so you can restore it from there.")
+            }
             Spacer()
         }
         }
