@@ -34,25 +34,25 @@ struct NetworkInterfacePicker: View {
     }
 }
 
+/// One-line label/value rows; long values truncate in the middle and show
+/// in full on hover. Selectable so addresses can be copied.
 struct NetworkInterfaceDetails: View {
     let info: NetworkInterfaceInfo
+    var fields: Set<NetworkDetailField> = Set(NetworkDetailField.allCases)
+    var size: CGFloat = 11
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("\(info.displayName) · \(info.kind)").font(.callout)
-            Text(info.isUp ? (info.isRunning ? "Active interface" : "Enabled · no active link") : "Inactive interface")
-                .font(.caption).foregroundColor(.secondary)
-            details("IPv4", info.ipv4Addresses)
-            details("IPv6", info.ipv6Addresses)
-            details("DNS servers", info.dnsServers)
-            details("Search domains", info.searchDomains)
-        }.textSelection(.enabled)
-    }
-    private func details(_ title: String, _ values: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(title).foregroundColor(.secondary)
-            Text(values.isEmpty ? "Not reported" : values.joined(separator: ", "))
-                .fixedSize(horizontal: false, vertical: true)
-        }.font(.caption)
+        let rows = info.detailRows(fields)
+        VStack(alignment: .leading, spacing: size * 0.25) {
+            ForEach(rows.indices, id: \.self) { index in
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(rows[index].label).foregroundColor(.secondary)
+                        .frame(width: size * 3.6, alignment: .leading)
+                    Text(rows[index].value).lineLimit(1).truncationMode(.middle)
+                        .help(rows[index].value)
+                }
+            }
+        }.font(.system(size: size)).textSelection(.enabled)
     }
 }
 

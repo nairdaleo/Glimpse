@@ -269,7 +269,7 @@ enum NativeSystemReader {
         let usedText = DataSizePresentation.string(bytes: Double(min(used, total)), units: units)
         let totalText = DataSizePresentation.string(bytes: Double(total), units: units)
         return MetricReading(value: min(100, Double(used) / Double(total) * 100),
-                             detail: "\(usedText) used of \(totalText) · Usage, not memory pressure", timestamp: timestamp)
+                             detail: "\(usedText) used of \(totalText)", timestamp: timestamp)
     }
 
     static func battery(timestamp: TimeInterval) -> MetricReading {

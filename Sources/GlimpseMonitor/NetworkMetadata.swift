@@ -26,6 +26,8 @@ enum NativeNetworkMetadata {
         let patterns = ["State:/Network/Service/[^/]+/(IPv4|IPv6|DNS)", "Setup:/Network/Service/[^/]+/Interface"] as CFArray
         let values = SCDynamicStoreCopyMultiple(nil, nil, patterns) as? [String: Any] ?? [:]
         let dns = DNSConfiguration.byInterface(storeValues: values)
+        let routers = routersByInterface(storeValues: values)
+        let proxies = SCDynamicStoreCopyProxies(nil) as? [String: Any] ?? [:]
         let counterByName = Dictionary(counters.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
         let names = Set(counterByName.keys).union(descriptions.keys)
         return names.sorted().map { name in
@@ -34,7 +36,9 @@ enum NativeNetworkMetadata {
                                         kind: descriptions[name]?.kind ?? fallbackKind(name: name, flags: flags),
                                         isUp: flags & Int32(IFF_UP) != 0, isRunning: flags & Int32(IFF_RUNNING) != 0,
                                         ipv4Addresses: addresses[name]?.ipv4 ?? [], ipv6Addresses: addresses[name]?.ipv6 ?? [],
-                                        dnsServers: dns[name]?.servers ?? [], searchDomains: dns[name]?.searchDomains ?? [])
+                                        dnsServers: dns[name]?.servers ?? [], searchDomains: dns[name]?.searchDomains ?? [],
+                                        subnetMasks: addresses[name]?.masks ?? [], routers: routers[name] ?? [],
+                                        macAddress: addresses[name]?.mac, proxies: proxySummary(proxies, interface: name))
         }
     }
 
@@ -44,27 +48,80 @@ enum NativeNetworkMetadata {
         return "Other"
     }
 
-    private static func localAddresses() -> [String: (ipv4: [String], ipv6: [String])] {
+    struct LocalAddresses { var ipv4: [String] = []; var ipv6: [String] = []; var masks: [String] = []; var mac: String? }
+
+    private static func localAddresses() -> [String: LocalAddresses] {
         var first: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&first) == 0, let first else { return [:] }
         defer { freeifaddrs(first) }
-        var result: [String: (ipv4: [String], ipv6: [String])] = [:]
+        func numeric(_ address: UnsafeMutablePointer<sockaddr>) -> String? {
+            var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            let length = socklen_t(address.pointee.sa_len)
+            guard length > 0, getnameinfo(address, length, &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST) == 0 else { return nil }
+            return String(cString: host)
+        }
+        var result: [String: LocalAddresses] = [:]
         var cursor: UnsafeMutablePointer<ifaddrs>? = first
         while let entry = cursor {
             defer { cursor = entry.pointee.ifa_next }
             guard let address = entry.pointee.ifa_addr else { continue }
-            let family = Int32(address.pointee.sa_family)
-            guard family == AF_INET || family == AF_INET6 else { continue }
-            var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-            let length = socklen_t(address.pointee.sa_len)
-            guard length > 0, getnameinfo(address, length, &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST) == 0 else { continue }
             let name = String(cString: entry.pointee.ifa_name)
-            let value = String(cString: host)
-            var pair = result[name] ?? ([], [])
-            if family == AF_INET { pair.ipv4.append(value) } else { pair.ipv6.append(value) }
-            result[name] = pair
+            var info = result[name] ?? LocalAddresses()
+            switch Int32(address.pointee.sa_family) {
+            case AF_INET:
+                guard let value = numeric(address) else { continue }
+                info.ipv4.append(value)
+                if let mask = entry.pointee.ifa_netmask, let text = numeric(mask) { info.masks.append(text) }
+            case AF_INET6:
+                guard let value = numeric(address) else { continue }
+                info.ipv6.append(value)
+            case AF_LINK:
+                info.mac = address.withMemoryRebound(to: sockaddr_dl.self, capacity: 1) { link in
+                    let dl = link.pointee
+                    guard dl.sdl_alen == 6 else { return nil }
+                    return withUnsafeBytes(of: dl.sdl_data) { data in
+                        let start = Int(dl.sdl_nlen)
+                        guard start + 6 <= data.count else { return nil }
+                        return (start..<start + 6).map { String(format: "%02x", data[$0]) }.joined(separator: ":")
+                    }
+                }
+            default: continue
+            }
+            result[name] = info
         }
-        return result.mapValues { (Array(Set($0.ipv4)).sorted(), Array(Set($0.ipv6)).sorted()) }
+        return result.mapValues { LocalAddresses(ipv4: Array(Set($0.ipv4)).sorted(), ipv6: Array(Set($0.ipv6)).sorted(),
+                                                 masks: Array(Set($0.masks)).sorted(), mac: $0.mac) }
+    }
+
+    /// IPv4 router per interface from service state.
+    static func routersByInterface(storeValues: [String: Any]) -> [String: [String]] {
+        var result: [String: [String]] = [:]
+        for (key, value) in storeValues where key.hasPrefix("State:/Network/Service/") && key.hasSuffix("/IPv4") {
+            guard let ipv4 = value as? [String: Any], let name = ipv4[kSCPropInterfaceName as String] as? String,
+                  let router = ipv4[kSCPropNetIPv4Router as String] as? String else { continue }
+            result[name, default: []].append(router)
+        }
+        return result.mapValues { Array(Set($0)).sorted() }
+    }
+
+    /// Enabled proxies for an interface: its scoped settings when present,
+    /// otherwise the system-wide ones. Empty means none configured.
+    static func proxySummary(_ proxies: [String: Any], interface: String) -> [String] {
+        let settings = (proxies["__SCOPED__"] as? [String: Any])?[interface] as? [String: Any] ?? proxies
+        func enabled(_ key: String) -> Bool { (settings[key] as? NSNumber)?.boolValue == true }
+        var result: [String] = []
+        for (name, enable, host, port) in [("HTTP", "HTTPEnable", "HTTPProxy", "HTTPPort"),
+                                           ("HTTPS", "HTTPSEnable", "HTTPSProxy", "HTTPSPort"),
+                                           ("SOCKS", "SOCKSEnable", "SOCKSProxy", "SOCKSPort")] where enabled(enable) {
+            guard let server = settings[host] as? String, !server.isEmpty else { continue }
+            let portText = (settings[port] as? NSNumber).map { ":\($0)" } ?? ""
+            result.append("\(name) \(server)\(portText)")
+        }
+        if enabled("ProxyAutoConfigEnable"), let url = settings["ProxyAutoConfigURLString"] as? String, !url.isEmpty {
+            result.append("PAC \(url)")
+        }
+        if enabled("ProxyAutoDiscoveryEnable") { result.append("Auto-discovery") }
+        return result
     }
 }
 
