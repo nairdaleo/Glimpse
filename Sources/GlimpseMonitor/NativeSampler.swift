@@ -30,7 +30,7 @@ public final class NativeSampler {
     public func sample(settings: AppSettings, detailVisible: Bool, configurationVisible: Bool = false) -> Snapshot {
         let settings = settings.validated()
         let now = ProcessInfo.processInfo.systemUptime
-        var demanded = Set(settings.columns.map(\.metric))
+        var demanded = Set(settings.columns.flatMap(\.requiredMetrics))
         if detailVisible { demanded.formUnion(settings.panelMetrics) }
         if settings.showBandwidth { demanded.formUnion([.download, .upload]) }
         var readings: [MetricID: MetricReading] = [:]

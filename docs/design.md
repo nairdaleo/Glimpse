@@ -42,15 +42,21 @@ Use continuous fill initially; a three-dot segmented style can be compared in th
 
 Optional numeric blocks can show bandwidth or selected percentages. The bandwidth block offers two labelled rows, for example `↑ 240 KB/s` and `↓ 12 MB/s`, with explicit byte units and a bits/second option. Use monospaced digits and a reserved width so traffic changes do not move neighbouring items. Define formatting and maximum widths for large values. Begin with blocks inside one status item to avoid extra inter-item spacing. Independently draggable status items are a later option if users need that control.
 
+The fixed 80-point bandwidth reservation left excessive trailing space in real use. The renderer now measures the active units and reserves a four-character numeric field (`999` or `99.9`), expanding for any longer formatter output. Digit changes within a unit remain stable without a large empty tail. Unit changes can resize the widget slightly.
+
+The combined Upload / Download gauge fills upward from the center for upload and downward for download. Each half uses the network ceiling independently, its own colour and threshold latch, and a distinct missing-reading marker. Equal traffic fills both halves instead of cancelling into a net value. This ColumnConfiguration display mode demands the two real scalar metrics; it creates no synthetic combined reading. Existing layouts retain individual meters until the user selects the new mode.
+
 A metric's high value is not automatically a problem: CPU activity can be intentional, disk usage reflects capacity, and low battery reverses the usual warning direction. Threshold configuration must include direction and units. Memory fullness must not be described as memory pressure; recoverable caches and compression make that interpretation misleading.
 
 ## Click-open detailed status
 
-Clicking the icon toggles a live, anchored panel. Its top section explains the three columns in order with metric names, exact values, units, and collection state. Below, show CPU, memory, network, battery when present, disk capacity, and supported thermal status in compact sections. Provide short history graphs where repeated sampling is useful, particularly CPU and upload/download. A settings action and Quit remain easy to find.
+Clicking the icon toggles a live, anchored card grid with selected CPU, memory, network, battery, disk capacity and thermal panels. It no longer repeats a separate menu-bar summary above the cards. Provide short history graphs where repeated sampling is useful, particularly CPU and upload/download. A gear settings action and Quit remain easy to find.
 
 Opening the panel does not reread every metric independently. It observes the same timestamped snapshots as the icon and optional blocks. Additional panel-only collectors start while needed and stop when the panel closes. Historical graphs represent collected samples only; missing periods are gaps, not zeroes or interpolated data. Keep at most five minutes of recent data in bounded memory initially. History begins when the app or collector starts and is not persisted to disk.
 
-Dropdown cards support direct drag reordering and individual hiding. Settings restores hidden cards and offers keyboard-accessible ordering controls. Hiding a card does not remove its menu-bar meter; collection stops only when neither display requires it. The gear button opens settings and retains an accessible label and Command-comma shortcut.
+Dropdown cards are arranged/hidden only in the settings organizer, using drag/drop or keyboard-accessible ordering controls. Clicking a dropdown card opens its settings editor; selecting an organizer tile edits the same card. Hiding a card does not remove its menu-bar meter; collection stops only when neither display requires it. The gear button retains an accessible label and Command-comma shortcut.
+
+The panel grid has one-to-eight cards per row, a shared card width of 120–240 points, and individual Compact/Regular/Large sizes, graph colours and history visibility. Row height follows its tallest card. More columns make the popup wider and shorter; fewer columns make it narrower and taller. StatusPanelLayout computes the size, capped to the active screen; scrolling preserves the requested grid instead of silently wrapping to fewer columns. Extra unused columns are not reserved when fewer cards are visible.
 
 Keyboard activation, Escape to dismiss, VoiceOver labels, and readable values are required. Colour is never the only status cue. Expose stale and unsupported readings explicitly. Relaunching the app should bring settings or status forward even if its menu-bar item is crowded out.
 

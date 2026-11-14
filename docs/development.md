@@ -10,7 +10,9 @@ swift test
 open build/Glimpse.app
 ```
 
-The app runs in the menu bar without a Dock icon. Clicking its icon toggles detailed status. Settings has a drag-to-organize shelf of one to eight meters, width scale, assignment/order, palette, optional threshold colours/direction, monochrome meters, bandwidth readout/units, interface, refresh and reset. Dropdown cards can be dragged into order, hidden and restored. The panel's gear opens settings, including opt-in login/update controls. Reopening the app opens settings. For a direct settings launch:
+The app runs in the menu bar without a Dock icon. Clicking its icon toggles detailed status. Settings has a drag-to-organize shelf of one to eight meters, width scale, assignment/order, palette, optional threshold colours/direction, monochrome meters, bandwidth readout/units, interface, refresh and reset. Add or select **Upload / Download** for a two-colour meter: upper half upload, lower half download. Exact rates remain independent in the tooltip and detail panels.
+
+Dropdown cards are dragged into order, hidden and restored only in the settings organizer. Choose 1–8 cards per row and a shared card width; each card has size, graph colour and history options. Clicking a dropdown card opens its editor. The popup sizes to its row maxima and column widths, with scrolling when constrained by the screen. The gear opens settings, including opt-in login/update controls. Reopening the app opens settings. For a direct settings launch:
 
 ```bash
 open build/Glimpse.app --args --settings
@@ -40,7 +42,8 @@ This terminal mode reads all metrics twice, separated by 1.1 seconds to establis
 - `GlimpseCore` contains Sendable value snapshots/settings, normalization and explicit-unit formatting, CPU/rate arithmetic, threshold handling, and bounded history. Invalid settings are repaired to safe defaults.
 - `GlimpseMonitor.NativeSampler` owns mutable native-reader state. It has no internal timer and is not thread safe by itself. The app's private SamplingWorker confines every operation to one serial utility queue; only value snapshots cross back to the main thread.
 - `GlimpseApp.MonitoringStore` owns the main-thread display state, persisted settings, timer lifecycle, and sleep/power notifications. Old results from replaced configurations are discarded.
-- `StatusController` renders a single AppKit status item and presents the SwiftUI status panel. `SettingsView` edits settings through the store. No web runtime or external frameworks are bundled.
+- `StatusController` renders a single AppKit status item and presents the SwiftUI status panel. `SettingsView` edits settings through the store. Sparkle is the only bundled external framework; there is no web runtime.
+- `BandwidthReadout` measures a four-character numeric budget in the displayed units instead of reserving 80 points. `DuplexGaugeLayout` keeps directional fills independent. `StatusPanelLayout` is shared by the SwiftUI view and popover controller so their sizing agrees.
 
 The default icon collects CPU, memory and download. The optional bandwidth block also demands upload. Opening status demands only visible dropdown panels; hidden panels add no demand unless a meter needs them. Opening settings permits network inventory enumeration for the picker without publishing hidden readings or creating rate baselines. CPU and network read at the selected cadence; memory caches for 2 seconds, battery for 10, disk capacity for 30 and thermal state for 5. Low Power Mode imposes a 5-second minimum cadence. Sampling pauses during system sleep and rate baselines are reset before wake sampling. Settings changes preserve elapsed-time rate calculations; a newly selected interface begins with an unavailable baseline reading.
 

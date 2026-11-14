@@ -2,14 +2,16 @@
 
 A compact, configurable, open-source system monitor for the macOS menu bar.
 
-Glimpse is designed around a small icon containing one to eight configurable meter columns. Each column fills and changes colour according to information you choose. Drag meters into order in settings and adjust their width. Click the icon to reveal detailed live status and short history graphs; drag those panels into order or hide the ones you do not need. Enable the optional MenuMeters-style upload/download block when you want bandwidth numbers visible all the time.
+Glimpse is designed around a small icon containing one to eight configurable meter columns. Each column fills and changes colour according to information you choose. Drag meters into order in settings and adjust their width. The special **Upload / Download** meter fills upward from its center for upload and downward for download, with separate colours. Enable the compact numeric bandwidth readout when you want exact speeds visible all the time.
+
+Click the icon for live status and recent graphs. Arrange and hide dropdown cards in settings, choose 1–8 cards per row and their width, and adjust each card's size, graph colour and history. The dropdown expands to fit the selected grid within screen bounds. Clicking a dropdown card opens its settings; the dropdown itself has no rearrangement or hide controls.
 
 **Status: first development version.** A runnable app can be built from source. There is no signed/notarized public release yet. Glimpse is a working name.
 
 ## Current experience
 
 - One compact icon by default, with configurable meter count, width, metrics, colours, thresholds, and drag-to-reorder controls.
-- Click for exact readings, labels, short histories, and collection status.
+- Click for exact readings, labels, short histories, and collection status in a resizable card grid.
 - Optional upload/download readout with a stable width.
 - Native monitoring designed for low overhead; performance budgets still need measurement.
 - Local settings and measurements; no account or analytics service.
