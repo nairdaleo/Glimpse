@@ -534,7 +534,7 @@ private struct ColumnEditor: View {
             })) {
                 ForEach(1...3, id: \.self) { Text("\($0)").tag($0) }
             }.pickerStyle(.segmented).frame(width: 220)
-            colourPicker(stops.isEmpty ? "Colour" : "Colour 1", keyPath: \.colour)
+            PaletteColourPicker(title: stops.isEmpty ? "Colour" : "Colour 1", selection: column(\.colour), showsTitle: false)
             ForEach(stops.indices, id: \.self) { index in
                 HStack(alignment: .top, spacing: 12) {
                     HStack {
@@ -546,7 +546,7 @@ private struct ColumnEditor: View {
                     }
                     PaletteColourPicker(title: "Colour \(index + 2)", selection: Binding(get: { stops[index].colour }, set: { colour in
                         edit { $0.colourBands?.stops[index].colour = colour }
-                    }))
+                    }), showsTitle: false)
                 }
             }
             if let bands {
