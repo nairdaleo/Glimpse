@@ -2,8 +2,8 @@ import AppKit
 import SwiftUI
 
 /// Build details, licences, support and links. The direct-download build
-/// supports development through Ko-fi; a Mac App Store build would use
-/// in-app purchase tips instead.
+/// supports development through Ko-fi; the Mac App Store build uses in-app
+/// purchase tips instead (external payment links are not allowed there).
 struct AboutView: View {
     private let info = Bundle.main.infoDictionary ?? [:]
     private var version: String { info["CFBundleShortVersionString"] as? String ?? "development" }
@@ -37,6 +37,12 @@ struct AboutView: View {
                 }
                 Divider()
                 Text("Support").font(.headline)
+                #if APP_STORE
+                Text("Glimpse is free, with every feature included. If it is useful to you, a tip helps keep it going.")
+                    .font(.callout).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                TipJarView()
+                Link("More apps by Tasty Jam", destination: URL(string: "https://tastyjam.ca")!)
+                #else
                 Text("Glimpse is free and open source. If it is useful to you, a coffee helps keep it going.")
                     .font(.callout).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 12) {
@@ -45,6 +51,7 @@ struct AboutView: View {
                     }.buttonStyle(.borderedProminent)
                     Link("More apps by Tasty Jam", destination: URL(string: "https://tastyjam.ca")!)
                 }
+                #endif
                 HStack(spacing: 16) {
                     Link("Contact Support", destination: URL(string: "mailto:support@tastyjam.ca?subject=Glimpse%20Support")!)
                     Link("Source code on GitHub", destination: URL(string: "https://github.com/nairdaleo/Glimpse")!)
