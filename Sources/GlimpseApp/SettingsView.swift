@@ -2,7 +2,7 @@ import SwiftUI
 import GlimpseCore
 
 struct SettingsView: View {
-    private enum Tab: Hashable { case columns, panels, display, general }
+    private enum Tab: Hashable { case columns, panels, display, general, about }
     @ObservedObject var store: MonitoringStore
     @ObservedObject var services: LifecycleServices
     @State private var selectedColumnID: UUID? = nil
@@ -32,6 +32,7 @@ struct SettingsView: View {
                 panelSettings.tabItem { Text("Detailed View") }.tag(Tab.panels)
                 displaySettings.padding(20).tabItem { Text("Display & Network") }.tag(Tab.display)
                 generalSettings.padding(20).tabItem { Text("General") }.tag(Tab.general)
+                AboutView().padding(20).tabItem { Text("About") }.tag(Tab.about)
             }
             HStack {
                 Spacer()
@@ -331,23 +332,6 @@ struct SettingsView: View {
                 .font(.callout).foregroundColor(.secondary)
             Text("To remove Glimpse, turn off Start at login, quit, and move the app to the Trash.")
                 .font(.caption).foregroundColor(.secondary)
-            HStack {
-                Text("License: MIT").font(.caption).foregroundColor(.secondary)
-                Spacer()
-                Link(destination: URL(string: "https://github.com/nairdaleo/Glimpse")!) {
-                    Image("GitHubMark", bundle: .module)
-                        .renderingMode(.template)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                        .foregroundColor(.primary)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help("Source code and issue tracker on GitHub")
-                .accessibilityLabel("Glimpse on GitHub")
-            }
             Spacer()
         }
         }

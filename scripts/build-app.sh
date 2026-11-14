@@ -5,6 +5,14 @@ cd "$(dirname "$0")/.."
 configuration="${CONFIGURATION:-release}"
 architecture="${ARCH:-$(uname -m)}"
 signing_identity="${CODESIGN_IDENTITY:--}"
+version="${VERSION:-0.2.0}"
+build_number="${BUILD_NUMBER:-2}"
+# Distribution identities need the hardened runtime and a secure timestamp
+# for notarization; ad-hoc development builds keep plain signatures.
+sign_flags=(--force --sign "$signing_identity")
+if [[ "$signing_identity" != "-" ]]; then
+    sign_flags+=(--options runtime --timestamp)
+fi
 if [[ "$architecture" != "arm64" && "$architecture" != "x86_64" && "$architecture" != "universal" ]]; then
     echo "ARCH must be arm64, x86_64, or universal" >&2
     exit 2
@@ -26,7 +34,7 @@ if [[ ! -d "$binary_dir/$resource_bundle" ]]; then
     exit 1
 fi
 ditto "$binary_dir/$resource_bundle" "$bundle/Contents/Resources/$resource_bundle"
-cat > "$bundle/Contents/Info.plist" <<'PLIST'
+cat > "$bundle/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -34,11 +42,12 @@ cat > "$bundle/Contents/Info.plist" <<'PLIST'
 <key>CFBundleIdentifier</key><string>com.tastyjam.glimpse</string>
 <key>CFBundleName</key><string>Glimpse</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.2.0</string>
-<key>CFBundleVersion</key><string>2</string>
+<key>CFBundleShortVersionString</key><string>$version</string>
+<key>CFBundleVersion</key><string>$build_number</string>
 <key>LSMinimumSystemVersion</key><string>12.0</string>
 <key>LSUIElement</key><true/>
 <key>NSHighResolutionCapable</key><true/>
+<key>GlimpseCommit</key><string>$(git rev-parse --short HEAD 2>/dev/null || echo unknown)$(git diff --quiet HEAD 2>/dev/null || echo -dirty)</string>
 <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Tasty Jam App Development. MIT licensed.</string>
 </dict></plist>
 PLIST
@@ -62,12 +71,19 @@ PY
 sparkle_source=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 ditto "$sparkle_source" "$bundle/Contents/Frameworks/Sparkle.framework"
 cp .build/artifacts/sparkle/Sparkle/LICENSE "$bundle/Contents/Resources/Sparkle-LICENSE"
-codesign --force --deep --sign "$signing_identity" "$bundle/Contents/Frameworks/Sparkle.framework"
+# Sign Sparkle inside-out, as its documentation describes; the Downloader
+# service keeps its sandbox entitlements.
+sparkle="$bundle/Contents/Frameworks/Sparkle.framework"
+codesign "${sign_flags[@]}" "$sparkle/Versions/B/XPCServices/Installer.xpc"
+codesign "${sign_flags[@]}" --preserve-metadata=entitlements "$sparkle/Versions/B/XPCServices/Downloader.xpc"
+codesign "${sign_flags[@]}" "$sparkle/Versions/B/Autoupdate"
+codesign "${sign_flags[@]}" "$sparkle/Versions/B/Updater.app"
+codesign "${sign_flags[@]}" "$sparkle"
 
 helper="$bundle/Contents/Library/LoginItems/GlimpseLoginHelper.app"
 mkdir -p "$helper/Contents/MacOS"
 cp "$binary_dir/GlimpseLoginHelper" "$helper/Contents/MacOS/GlimpseLoginHelper"
-cat > "$helper/Contents/Info.plist" <<'PLIST'
+cat > "$helper/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -75,13 +91,17 @@ cat > "$helper/Contents/Info.plist" <<'PLIST'
 <key>CFBundleIdentifier</key><string>com.tastyjam.glimpse.loginhelper</string>
 <key>CFBundleName</key><string>Glimpse Login Helper</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.2.0</string>
-<key>CFBundleVersion</key><string>2</string>
+<key>CFBundleShortVersionString</key><string>$version</string>
+<key>CFBundleVersion</key><string>$build_number</string>
 <key>LSMinimumSystemVersion</key><string>12.0</string>
 <key>LSUIElement</key><true/>
 </dict></plist>
 PLIST
-codesign --force --sign "$signing_identity" "$helper"
-codesign --force --sign "$signing_identity" "$bundle"
+codesign "${sign_flags[@]}" "$helper"
+codesign "${sign_flags[@]}" "$bundle"
 codesign --verify --deep --strict "$bundle"
-echo "Built $bundle ($architecture). Distribution still requires Developer ID signing and notarization."
+if [[ "$signing_identity" == "-" ]]; then
+    echo "Built $bundle $version ($build_number, $architecture), ad-hoc signed for local use."
+else
+    echo "Built $bundle $version ($build_number, $architecture), signed by $signing_identity."
+fi
