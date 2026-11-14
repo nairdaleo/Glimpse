@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 import GlimpseCore
 
 struct SettingsView: View {
@@ -34,7 +33,6 @@ struct SettingsView: View {
                 generalSettings.padding(20).tabItem { Text("General") }.tag(Tab.general)
             }
             HStack {
-                Text("Glimpse · MIT licensed").font(.caption).foregroundColor(.secondary)
                 Spacer()
                 Button("Reset settings") { store.resetSettings() }
             }
@@ -62,12 +60,14 @@ struct SettingsView: View {
                     } label: { Label("Add meter", systemImage: "plus") }
                     .disabled(store.settings.columns.count >= 8)
                 }
-                Text("Drag a meter before another to reorder it. Select a meter to edit its colour and thresholds.")
+                Text("Drag either side of a meter to place it before or after. The blue line marks the drop position. Click to edit.")
                     .font(.caption).foregroundColor(.secondary)
                 ScrollView(.horizontal, showsIndicators: true) {
                     HStack(spacing: 8) {
                         ForEach(Array(store.settings.columns.enumerated()), id: \.element.id) { index, column in
-                            Button { selectedColumnID = column.id } label: {
+                            OrganizationTile(payload: .column(column.id), kind: .column, isSelected: selectedID == column.id, label: "Meter \(index + 1), \(column.displayTitle)", select: { selectedColumnID = column.id }, drop: { payload, edge in
+                                completeDrop(payload, target: .column(column.id), edge: edge)
+                            }) {
                                 VStack(spacing: 7) {
                                     Image(systemName: "line.3.horizontal").font(.caption).foregroundColor(.secondary)
                                     if column.isCombinedNetwork {
@@ -87,15 +87,14 @@ struct SettingsView: View {
                                 .cornerRadius(8)
                                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(selectedID == column.id ? Color.accentColor : Color.clear, lineWidth: 1.5))
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Meter \(index + 1), \(column.displayTitle)")
-                            .accessibilityAddTraits(selectedID == column.id ? .isSelected : [])
-                            .onDrag { OrganizationDragPayload.column(column.id).provider }
-                            .onDrop(of: [UTType.text], delegate: columnDrop(store: store, before: column.id))
+                            .frame(width: 94, height: 84)
                         }
-                        Text("Drop at end").font(.caption).foregroundColor(.secondary)
-                            .frame(width: 70, height: 84).background(Color.primary.opacity(0.025)).cornerRadius(8)
-                            .onDrop(of: [UTType.text], delegate: columnDrop(store: store, before: nil))
+                        OrganizationTile(payload: nil, kind: .column, label: "Drop meter at end", select: {}, drop: { payload, edge in
+                            completeDrop(payload, target: nil, edge: edge)
+                        }) {
+                            Text("Drop at end").font(.caption).foregroundColor(.secondary)
+                                .frame(width: 70, height: 84).background(Color.primary.opacity(0.025)).cornerRadius(8)
+                        }.frame(width: 70, height: 84)
                     }.padding(2)
                 }
                 HStack {
@@ -112,6 +111,14 @@ struct SettingsView: View {
                     .font(.caption).foregroundColor(.secondary)
             }.padding(16)
         }
+    }
+
+    private func completeDrop(_ payload: OrganizationDragPayload, target: OrganizationDragPayload?, edge: OrganizationDropEdge) -> Bool {
+        var changed = false
+        store.change { settings in
+            changed = OrganizationDrop.apply(payload, target: target, edge: edge, settings: &settings)
+        }
+        return changed
     }
 
     private func addColumn(metric: MetricID, combined: Bool = false) {
@@ -138,7 +145,7 @@ struct SettingsView: View {
                     Text("\(Int(store.settings.panelCardWidth)) pt").monospacedDigit().frame(width: 50, alignment: .trailing)
                 }
                 Text("Visible panels").font(.headline)
-                Text("Drag cards into order. Select a card to edit its size and graph. The dropdown uses this arrangement.")
+                Text("Drag either side of a card to place it before or after. The blue line marks the drop position. Click to edit.")
                     .font(.caption).foregroundColor(.secondary)
                 if store.settings.panelMetrics.isEmpty {
                     Text("All dropdown panels are hidden. Restore one below.")
@@ -148,7 +155,9 @@ struct SettingsView: View {
                         VStack(spacing: 8) {
                             LazyVGrid(columns: Array(repeating: GridItem(.fixed(112), spacing: 8), count: organizerColumns), spacing: 8) {
                                 ForEach(Array(store.settings.panelMetrics.enumerated()), id: \.element) { index, metric in
-                                    Button { selectedPanelID = metric } label: {
+                                    OrganizationTile(payload: .panel(metric), kind: .panel, isSelected: selectedPanel == metric, label: "Panel \(index + 1), \(metric.title)", select: { selectedPanelID = metric }, drop: { payload, edge in
+                                        completeDrop(payload, target: .panel(metric), edge: edge)
+                                    }) {
                                         VStack(spacing: 6) {
                                             Image(systemName: "line.3.horizontal").font(.caption).foregroundColor(.secondary)
                                             Text("\(index + 1) · \(metric.title)").font(.caption)
@@ -157,16 +166,16 @@ struct SettingsView: View {
                                             .background(selectedPanel == metric ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.04))
                                             .cornerRadius(8)
                                             .overlay(RoundedRectangle(cornerRadius: 8).stroke(selectedPanel == metric ? Color.accentColor : Color.clear, lineWidth: 1.5))
-                                    }.buttonStyle(.plain)
-                                        .accessibilityLabel("Panel \(index + 1), \(metric.title)")
-                                        .accessibilityAddTraits(selectedPanel == metric ? .isSelected : [])
-                                        .onDrag { OrganizationDragPayload.panel(metric).provider }
-                                        .onDrop(of: [UTType.text], delegate: panelDrop(store: store, before: metric))
+                                    }.frame(width: 112, height: 76)
                                 }
                             }
-                            Text("Drop at end").font(.caption).foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity).padding(10).background(Color.primary.opacity(0.025)).cornerRadius(8)
-                                .onDrop(of: [UTType.text], delegate: panelDrop(store: store, before: nil))
+                            OrganizationTile(payload: nil, kind: .panel, label: "Drop panel at end", select: {}, drop: { payload, edge in
+                                completeDrop(payload, target: nil, edge: edge)
+                            }) {
+                                Text("Drop at end").font(.caption).foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .background(Color.primary.opacity(0.025)).cornerRadius(8)
+                            }.frame(height: 36)
                         }.frame(width: CGFloat(organizerColumns) * 112 + CGFloat(organizerColumns - 1) * 8).padding(2)
                     }
                 }
@@ -226,10 +235,13 @@ struct SettingsView: View {
             Toggle("Use monochrome meter columns", isOn: setting(\.monochrome))
             Divider()
             HStack {
+                let bits = store.settings.bandwidthInBits
+                let unit = BandwidthCeilingInput.unit(bits: bits)
                 Text("Network column full at")
-                TextField("MB/s", value: Binding(get: { store.settings.networkCeiling / 1_000_000 }, set: { value in store.change { $0.networkCeiling = value * 1_000_000 } }), formatter: Self.numberFormatter)
+                TextField(unit, value: Binding(get: { BandwidthCeilingInput.displayValue(bytesPerSecond: store.settings.networkCeiling, bits: bits) }, set: { value in store.change { $0.networkCeiling = BandwidthCeilingInput.bytesPerSecond(displayValue: value, bits: bits) } }), formatter: Self.numberFormatter)
+                    .id(bits)
                     .frame(width: 80)
-                Text("MB/s (bytes)").foregroundColor(.secondary)
+                Text("\(unit) (\(bits ? "bits" : "bytes"))").foregroundColor(.secondary)
             }
             Picker("Measure traffic on", selection: Binding(get: { store.settings.networkInterface ?? "" }, set: { value in store.change { $0.networkInterface = value.isEmpty ? nil : value } })) {
                 Text("Automatic · physical interface").tag("")
@@ -274,7 +286,23 @@ struct SettingsView: View {
                 .font(.callout).foregroundColor(.secondary)
             Text("To remove Glimpse, turn off Start at login, quit, and move the app to the Trash.")
                 .font(.caption).foregroundColor(.secondary)
-            Link("Source code & issue tracker", destination: URL(string: "https://github.com/nairdaleo/Glimpse")!)
+            HStack {
+                Text("License: MIT").font(.caption).foregroundColor(.secondary)
+                Spacer()
+                Link(destination: URL(string: "https://github.com/nairdaleo/Glimpse")!) {
+                    Image("GitHubMark", bundle: .module)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(.primary)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Source code and issue tracker on GitHub")
+                .accessibilityLabel("Glimpse on GitHub")
+            }
             Spacer()
         }
         }

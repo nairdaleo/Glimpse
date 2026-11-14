@@ -16,7 +16,7 @@ let package = Package(
     targets: [
         .target(name: "GlimpseCore"),
         .target(name: "GlimpseMonitor", dependencies: ["GlimpseCore"]),
-        .executableTarget(name: "GlimpseApp", dependencies: ["GlimpseCore", "GlimpseMonitor", .product(name: "Sparkle", package: "Sparkle")], linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]),
+        .executableTarget(name: "GlimpseApp", dependencies: ["GlimpseCore", "GlimpseMonitor", .product(name: "Sparkle", package: "Sparkle")], resources: [.process("Resources")], linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]),
         .executableTarget(name: "GlimpseLoginHelper"),
         .testTarget(name: "GlimpseCoreTests", dependencies: ["GlimpseCore"]),
         .testTarget(name: "GlimpseMonitorTests", dependencies: ["GlimpseMonitor", "GlimpseCore"]),

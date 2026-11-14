@@ -20,6 +20,12 @@ fi
 bundle="build/Glimpse.app"
 mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources" "$bundle/Contents/Frameworks"
 cp "$binary_dir/Glimpse" "$bundle/Contents/MacOS/Glimpse"
+resource_bundle="Glimpse_GlimpseApp.bundle"
+if [[ ! -d "$binary_dir/$resource_bundle" ]]; then
+    echo "Missing SwiftPM resource bundle: $binary_dir/$resource_bundle" >&2
+    exit 1
+fi
+ditto "$binary_dir/$resource_bundle" "$bundle/Contents/Resources/$resource_bundle"
 cat > "$bundle/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
