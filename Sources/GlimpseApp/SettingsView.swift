@@ -534,11 +534,22 @@ private struct ColumnEditor: View {
             })) {
                 ForEach(1...3, id: \.self) { Text("\($0)").tag($0) }
             }.pickerStyle(.segmented).frame(width: 220)
-            PaletteColourPicker(title: stops.isEmpty ? "Colour" : "Colour 1", selection: column(\.colour), showsTitle: false)
+            HStack(alignment: .top, spacing: 12) {
+                if let first = stops.first {
+                    // Colour 1 covers everything below the first threshold.
+                    HStack {
+                        Text("Below").font(.caption).frame(width: 70, alignment: .leading)
+                        Text(String(format: "%g", locale: Locale(identifier: "en_US_POSIX"), first.threshold))
+                            .foregroundColor(.secondary).padding(.leading, 4).frame(width: 50, alignment: .leading)
+                        Text("%").font(.caption)
+                    }
+                }
+                PaletteColourPicker(title: stops.isEmpty ? "Colour" : "Colour 1", selection: column(\.colour), showsTitle: false)
+            }
             ForEach(stops.indices, id: \.self) { index in
                 HStack(alignment: .top, spacing: 12) {
                     HStack {
-                        Text("At or above").font(.caption)
+                        Text("At or above").font(.caption).frame(width: 70, alignment: .leading)
                         DecimalField(placeholder: "%", value: Binding(get: { stops[index].threshold }, set: { value in
                             edit { $0.colourBands?.stops[index].threshold = value }
                         })).frame(width: 50)
