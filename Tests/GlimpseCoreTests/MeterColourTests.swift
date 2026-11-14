@@ -45,4 +45,10 @@ final class MeterColourTests: XCTestCase {
         XCTAssertEqual(settings.columns[0].warningThreshold, 20)
         XCTAssertEqual(settings.panelAppearance(for: .cpu).colour, .custom(red: 0.25, green: 0.5, blue: 0.75))
     }
+
+    func testGreenIsASuggestedPresetThatRoundTrips() throws {
+        XCTAssertTrue(MeterColour.allCases.contains(.green))
+        XCTAssertEqual(MeterColour(rawValue: "green"), .green)
+        XCTAssertEqual(try JSONDecoder().decode(MeterColour.self, from: JSONEncoder().encode(MeterColour.green)), .green)
+    }
 }

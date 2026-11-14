@@ -67,7 +67,7 @@ public struct Snapshot: Sendable {
 }
 
 public enum MeterColour: RawRepresentable, Hashable, Codable, CaseIterable, Identifiable, Sendable {
-    case mint, blue, purple, orange, pink
+    case mint, green, blue, purple, orange, pink
     case custom(RGB)
 
     public struct RGB: Hashable, Codable, Sendable {
@@ -95,7 +95,7 @@ public enum MeterColour: RawRepresentable, Hashable, Codable, CaseIterable, Iden
     }
 
     // Custom colours remain available through the native picker; these are suggestions.
-    public static let allCases: [MeterColour] = [.mint, .blue, .purple, .orange, .pink]
+    public static let allCases: [MeterColour] = [.mint, .green, .blue, .purple, .orange, .pink]
     public static func custom(red: Double, green: Double, blue: Double) -> MeterColour {
         .custom(RGB(red: red, green: green, blue: blue))
     }
@@ -103,6 +103,7 @@ public enum MeterColour: RawRepresentable, Hashable, Codable, CaseIterable, Iden
     public var rawValue: String {
         switch self {
         case .mint: return "mint"
+        case .green: return "green"
         case .blue: return "blue"
         case .purple: return "purple"
         case .orange: return "orange"
@@ -113,6 +114,7 @@ public enum MeterColour: RawRepresentable, Hashable, Codable, CaseIterable, Iden
     public init?(rawValue: String) {
         switch rawValue {
         case "mint": self = .mint
+        case "green": self = .green
         case "blue": self = .blue
         case "purple": self = .purple
         case "orange": self = .orange
@@ -179,7 +181,6 @@ public struct ColourBands: Codable, Equatable, Sendable {
     public var stops: [Stop]
     public var gradient: Bool
 
-    public static let green = MeterColour.custom(red: 0.20, green: 0.78, blue: 0.35)
     public static let yellow = MeterColour.custom(red: 1.00, green: 0.80, blue: 0.00)
 
     public init(stops: [Stop] = [], gradient: Bool = false) {
@@ -189,7 +190,7 @@ public struct ColourBands: Codable, Equatable, Sendable {
 
     /// Default stops for a total of `count` colours (2 or 3).
     public static func defaults(count: Int) -> [Stop] {
-        count >= 3 ? [Stop(threshold: 20, colour: yellow), Stop(threshold: 50, colour: green)] : [Stop(threshold: 20, colour: green)]
+        count >= 3 ? [Stop(threshold: 20, colour: yellow), Stop(threshold: 50, colour: .green)] : [Stop(threshold: 20, colour: .green)]
     }
 
     /// At most two stops, thresholds clamped to 0...100 and ascending.

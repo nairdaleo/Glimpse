@@ -5,6 +5,7 @@ extension MeterColour {
     var nsColor: NSColor {
         switch self {
         case .mint: return .systemTeal
+        case .green: return .systemGreen
         case .blue: return .systemBlue
         case .purple: return .systemPurple
         case .orange: return .systemOrange
