@@ -20,6 +20,17 @@ struct StatusPanelLayout {
     let showsNetwork: Bool
     /// Top-left-origin card frames, shared by the Settings preview and live view.
     let placements: [UUID: CGRect]
+    /// Compact pairs combined into one card: leading panel id → partner id.
+    /// The partner has its own placement in the bottom half of the same slot.
+    let embeds: [UUID: UUID]
+
+    /// Shared card surfaces behind combined pairs, keyed by the leading panel id.
+    var mergedSurfaces: [UUID: CGRect] {
+        embeds.reduce(into: [:]) { result, pair in
+            guard let top = placements[pair.key], let bottom = placements[pair.value] else { return }
+            result[pair.key] = CGRect(x: top.minX, y: top.minY, width: top.width, height: bottom.maxY - top.minY)
+        }
+    }
 
     init(settings: AppSettings, maximumSize: CGSize) {
         let settings = settings.validated()
@@ -34,8 +45,15 @@ struct StatusPanelLayout {
         var usedColumns = 0
         var usedRows = 0
         var frames: [UUID: CGRect] = [:]
-        for panel in settings.panels {
+        var embeds: [UUID: UUID] = [:]
+        for (index, panel) in settings.panels.enumerated() {
+            if embeds.values.contains(panel.id) { continue }
             let span = Self.span(for: panel.appearance)
+            // A compact card flagged combinesNext shares its regular slot with
+            // the next compact card: two 75pt halves inside one 150pt slot.
+            let partner = settings.panels.indices.contains(index + 1) ? settings.panels[index + 1] : nil
+            let combines = panel.appearance.size == .compact && panel.appearance.combinesNext
+                && partner?.appearance.size == .compact
             var start = cursor
             while true {
                 // Visit the top and bottom compact halves of one regular
@@ -56,21 +74,37 @@ struct StatusPanelLayout {
                 }
                 if cells.allSatisfy({ !occupied.contains($0) }) {
                     occupied.formUnion(cells)
+                    var height = CGFloat(span.rows) * Self.halfRowHeight + CGFloat(span.rows - 1) * Self.spacing
+                    if combines && half == 0 && !occupied.contains(start + 1) {
+                        // The pair fills the slot without the row gap: each
+                        // half renders 75pt inside one shared card surface.
+                        height = Self.halfRowHeight + Self.spacing / 2
+                        if let partner {
+                            embeds[panel.id] = partner.id
+                            frames[partner.id] = CGRect(x: CGFloat(column) * (cardWidth + Self.spacing),
+                                                        y: CGFloat(row) * (Self.halfRowHeight + Self.spacing) + height,
+                                                        width: cardWidth, height: height)
+                            occupied.insert(start + 1)
+                            usedColumns = max(usedColumns, column + 1)
+                            usedRows = max(usedRows, row + 2)
+                        }
+                    }
                     frames[panel.id] = CGRect(x: CGFloat(column) * (cardWidth + Self.spacing),
                                               y: CGFloat(row) * (Self.halfRowHeight + Self.spacing),
                                               width: CGFloat(span.columns) * cardWidth + CGFloat(span.columns - 1) * Self.spacing,
-                                              height: CGFloat(span.rows) * Self.halfRowHeight + CGFloat(span.rows - 1) * Self.spacing)
+                                              height: height)
                     usedColumns = max(usedColumns, column + span.columns)
                     usedRows = max(usedRows, row + span.rows)
                     // Do not backfill earlier regular slots after advancing:
                     // compact pairs retain the organizer's reading order.
-                    cursor = start + 1
+                    cursor = start + (combines && half == 0 ? 2 : 1)
                     break
                 }
                 start += 1
             }
         }
         placements = frames
+        self.embeds = embeds
         columns = max(1, usedColumns)
         gridWidth = settings.panels.isEmpty ? 182 : CGFloat(columns) * cardWidth + CGFloat(columns - 1) * Self.spacing
         panelHeights = frames.mapValues(\.height)

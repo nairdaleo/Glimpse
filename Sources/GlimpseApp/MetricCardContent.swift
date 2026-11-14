@@ -11,6 +11,8 @@ struct MetricCardContent: View {
     let settings: AppSettings
     let width: CGFloat
     let height: CGFloat
+    /// Draw this card's own surface. Combined pairs draw one shared surface instead.
+    var surface: Bool = true
 
     private var appearance: PanelAppearance { panel.appearance }
     private var compact: Bool { appearance.size == .compact }
@@ -28,7 +30,8 @@ struct MetricCardContent: View {
         }
         .padding(compact ? 8 : 11)
         .frame(width: width, height: height, alignment: .topLeading)
-        .background(Color.primary.opacity(0.045)).cornerRadius(9)
+        .background(surface ? Color.primary.opacity(0.045) : Color.clear)
+        .cornerRadius(surface ? 9 : 0)
         .contentShape(RoundedRectangle(cornerRadius: 9))
         .accessibilityElement(children: .combine)
     }
@@ -42,7 +45,7 @@ struct MetricCardContent: View {
             }
             if panel.isNetwork { interfaceIdentifier }
             if showsDetails {
-                connectionDetails(availableWidth: width - 16)
+                connectionDetails()
             } else if showsHistory {
                 graph.frame(maxWidth: .infinity, maxHeight: .infinity).frame(minHeight: 8)
             } else if !panel.isNetwork {
@@ -58,7 +61,7 @@ struct MetricCardContent: View {
             values(size: panel.isCombinedNetwork ? (large ? 23 : 15) : (large ? 28 : 21))
             if showsHistory { graph.frame(height: large ? 70 : (showsDetails ? 20 : 28)) }
             if showsDetails {
-                connectionDetails(availableWidth: width - 22)
+                connectionDetails()
             } else if !panel.isCombinedNetwork || large {
                 readingDetail(lines: large ? 5 : 2, size: 10)
             }
@@ -76,7 +79,7 @@ struct MetricCardContent: View {
             VStack(alignment: .leading, spacing: 6) {
                 if showsHistory { graph.frame(height: showsDetails ? 38 : 62) }
                 if showsDetails {
-                    connectionDetails(availableWidth: max(100, (width - 34) * 0.62))
+                    connectionDetails()
                 } else {
                     readingDetail(lines: 4, size: 10)
                     Spacer(minLength: 0)
@@ -115,15 +118,15 @@ struct MetricCardContent: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
-    private func connectionDetails(availableWidth: CGFloat) -> some View {
-        ScrollView([.horizontal, .vertical]) {
+    private func connectionDetails() -> some View {
+        ScrollView([.vertical]) {
             Group {
                 if let info = snapshot.networkInfo(for: panel.networkInterface) {
                     NetworkInterfaceDetails(info: info)
                 } else {
                     Text("Connection details are unavailable.").font(.caption).foregroundColor(.secondary)
                 }
-            }.frame(width: max(280, availableWidth), alignment: .topLeading)
+            }.frame(maxWidth: .infinity, alignment: .topLeading)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityLabel("Connection details for " + snapshot.interfaceLabel(panel.networkInterface))
     }
@@ -147,6 +150,17 @@ struct MetricCardContent: View {
     }
 
     private var ceiling: Double { panel.isNetwork ? settings.networkCeiling : 100 }
+}
+
+/// Shared card surface behind a combined compact pair, with a hairline seam.
+struct CombinedSlotSurface: View {
+    let rect: CGRect
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 9).fill(Color.primary.opacity(0.045))
+            .overlay(Rectangle().fill(Color.primary.opacity(0.09)).frame(height: 0.5))
+            .frame(width: rect.width, height: rect.height)
+    }
 }
 
 private struct CardHistoryGraph: View {

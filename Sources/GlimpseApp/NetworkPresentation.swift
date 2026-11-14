@@ -48,10 +48,10 @@ struct NetworkInterfaceDetails: View {
         }.textSelection(.enabled)
     }
     private func details(_ title: String, _ values: [String]) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text(title).foregroundColor(.secondary).frame(width: 94, alignment: .leading)
+        VStack(alignment: .leading, spacing: 1) {
+            Text(title).foregroundColor(.secondary)
             Text(values.isEmpty ? "Not reported" : values.joined(separator: ", "))
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
         }.font(.caption)
     }
 }
