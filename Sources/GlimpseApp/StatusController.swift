@@ -14,6 +14,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
     private var downloadThresholds: [UUID: ThresholdLatch] = [:]
     private let showSettings: (UUID?) -> Void
     private var maximumPanelSize = CGSize(width: 1400, height: 850)
+    private var renderedAppearance: NSAppearance.Name?
 
     init(store: MonitoringStore, showSettings: @escaping (UUID?) -> Void) {
         self.store = store
@@ -33,7 +34,11 @@ final class StatusController: NSObject, NSPopoverDelegate {
             DispatchQueue.main.async { self?.render() }
         }.store(in: &subscriptions)
         appearanceObserver = statusItem.button?.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
-            DispatchQueue.main.async { self?.render() }
+            // Setting the image re-announces effectiveAppearance; only a real light/dark change needs a redraw.
+            DispatchQueue.main.async {
+                guard let self, self.statusItem.button?.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) != self.renderedAppearance else { return }
+                self.render()
+            }
         }
         render()
     }
@@ -91,6 +96,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
             downloadThresholds[column.id] = latch
             return result
         }
+        renderedAppearance = button.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua])
         button.image = MeterImage.make(settings: settings, snapshot: store.snapshot, levels: levels, secondaryLevels: secondaryLevels, appearance: button.effectiveAppearance)
         button.title = ""
         statusItem.length = max(NSStatusItem.squareLength, (button.image?.size.width ?? 0) + 8)
