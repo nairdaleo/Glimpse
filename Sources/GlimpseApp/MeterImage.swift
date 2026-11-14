@@ -16,12 +16,12 @@ extension MeterColour {
 
 enum MeterImage {
     static func layout(settings: AppSettings, snapshot: Snapshot) -> StatusWidgetLayout {
-        let labels = BandwidthReadout(upload: snapshot.readings[.upload]?.value, download: snapshot.readings[.download]?.value, bits: settings.bandwidthInBits)
+        let labels = BandwidthReadout(upload: snapshot.readings[.upload]?.value, download: snapshot.readings[.download]?.value, bits: settings.bandwidthInBits, units: settings.bandwidthUnits)
         return StatusWidgetLayout(columnCount: settings.columns.count, scale: settings.columnScale, showBandwidth: settings.showBandwidth, bandwidthWidth: labels.width)
     }
 
     static func make(settings: AppSettings, snapshot: Snapshot, levels: [ThresholdLevel?], secondaryLevels: [ThresholdLevel?] = [], appearance: NSAppearance) -> NSImage {
-        let labels = BandwidthReadout(upload: snapshot.readings[.upload]?.value, download: snapshot.readings[.download]?.value, bits: settings.bandwidthInBits)
+        let labels = BandwidthReadout(upload: snapshot.readings[.upload]?.value, download: snapshot.readings[.download]?.value, bits: settings.bandwidthInBits, units: settings.bandwidthUnits)
         let layout = StatusWidgetLayout(columnCount: settings.columns.count, scale: settings.columnScale, showBandwidth: settings.showBandwidth, bandwidthWidth: labels.width)
         var result = NSImage(size: layout.size)
         appearance.performAsCurrentDrawingAppearance {

@@ -10,9 +10,9 @@ struct BandwidthReadout {
     let download: NSAttributedString
     let width: CGFloat
 
-    init(upload: Double?, download: Double?, bits: Bool) {
-        let up = MetricPresentation.formatted(value: upload, metric: .upload, bits: bits)
-        let down = MetricPresentation.formatted(value: download, metric: .download, bits: bits)
+    init(upload: Double?, download: Double?, bits: Bool, units: CapacityUnits = .si) {
+        let up = MetricPresentation.formatted(value: upload, metric: .upload, bits: bits, units: units)
+        let down = MetricPresentation.formatted(value: download, metric: .download, bits: bits, units: units)
         self.upload = NSAttributedString(string: "↑ \(up)", attributes: Self.attributes)
         self.download = NSAttributedString(string: "↓ \(down)", attributes: Self.attributes)
         func budget(_ value: String, arrow: String) -> CGFloat {

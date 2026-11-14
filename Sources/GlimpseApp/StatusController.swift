@@ -100,11 +100,11 @@ final class StatusController: NSObject, NSPopoverDelegate {
         }
         let summary = settings.columns.map { column in
             if column.isCombinedNetwork {
-                let up = MetricPresentation.formatted(value: store.snapshot.displayReading(for: .upload, interface: column.networkInterface)?.value, metric: .upload, bits: settings.bandwidthInBits)
-                let down = MetricPresentation.formatted(value: store.snapshot.displayReading(for: .download, interface: column.networkInterface)?.value, metric: .download, bits: settings.bandwidthInBits)
+                let up = MetricPresentation.formatted(value: store.snapshot.displayReading(for: .upload, interface: column.networkInterface)?.value, metric: .upload, bits: settings.bandwidthInBits, units: settings.bandwidthUnits)
+                let down = MetricPresentation.formatted(value: store.snapshot.displayReading(for: .download, interface: column.networkInterface)?.value, metric: .download, bits: settings.bandwidthInBits, units: settings.bandwidthUnits)
                 return "\(column.networkInterface ?? "Auto"): Upload \(up), Download \(down)"
             }
-            return "\(column.displayTitle)\(column.isNetwork ? " (" + (column.networkInterface ?? "Auto") + ")" : ""): \(MetricPresentation.formatted(value: store.snapshot.displayReading(for: column.metric, interface: column.networkInterface)?.value, metric: column.metric, bits: settings.bandwidthInBits))"
+            return "\(column.displayTitle)\(column.isNetwork ? " (" + (column.networkInterface ?? "Auto") + ")" : ""): \(MetricPresentation.formatted(value: store.snapshot.displayReading(for: column.metric, interface: column.networkInterface)?.value, metric: column.metric, bits: settings.bandwidthInBits, units: settings.bandwidthUnits))"
         }.joined(separator: ", ")
         button.toolTip = summary
         button.setAccessibilityLabel("Glimpse. \(summary). Show detailed status.")

@@ -199,6 +199,8 @@ public struct AppSettings: Codable, Sendable {
     public var monochrome: Bool
     /// Byte-count presentation for memory and disk readings.
     public var capacityUnits: CapacityUnits
+    /// Prefix base for upload/download rates and the network ceiling.
+    public var bandwidthUnits: CapacityUnits
 
     public init() {
         columns = [ColumnConfiguration(metric: .cpu, colour: .mint), ColumnConfiguration(metric: .memory, colour: .purple), ColumnConfiguration(metric: .download, colour: .blue)]
@@ -214,6 +216,7 @@ public struct AppSettings: Codable, Sendable {
         refreshInterval = 1
         monochrome = false
         capacityUnits = .si
+        bandwidthUnits = .si
     }
 
     /// Compatibility projections for callers that still organize one card per metric.
@@ -253,7 +256,7 @@ public struct AppSettings: Codable, Sendable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, refreshInterval, monochrome, capacityUnits }
+    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, refreshInterval, monochrome, capacityUnits, bandwidthUnits }
     public init(from decoder: Decoder) throws {
         self.init()
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -282,6 +285,7 @@ public struct AppSettings: Codable, Sendable {
         refreshInterval = (try? values.decode(Double.self, forKey: .refreshInterval)) ?? refreshInterval
         monochrome = (try? values.decode(Bool.self, forKey: .monochrome)) ?? monochrome
         capacityUnits = (try? values.decode(CapacityUnits.self, forKey: .capacityUnits)) ?? capacityUnits
+        bandwidthUnits = (try? values.decode(CapacityUnits.self, forKey: .bandwidthUnits)) ?? bandwidthUnits
         self = validated()
     }
 
@@ -301,6 +305,7 @@ public struct AppSettings: Codable, Sendable {
         try values.encode(refreshInterval, forKey: .refreshInterval)
         try values.encode(monochrome, forKey: .monochrome)
         try values.encode(capacityUnits, forKey: .capacityUnits)
+        try values.encode(bandwidthUnits, forKey: .bandwidthUnits)
     }
 
     public func panelAppearance(for metric: MetricID) -> PanelAppearance {
