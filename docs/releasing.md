@@ -19,7 +19,7 @@ scripts/release.sh --env <private env file> --version 0.3.0          # final rel
 
 The env file provides `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_PRIVATE_KEY_PATH` (notarization and upload) and `PROVISIONING_PROFILE` (App Store). The build number is the commit count, so it always increases, and every uploaded build is tagged at the commit it was built from. Users install with `brew install --cask nairdaleo/tastyjam/glimpse`.
 
-One-time setup (owner): the Developer ID Application certificate in the login keychain (#12), and the public tap repository `nairdaleo/homebrew-tastyjam` (#15).
+One-time setup (owner): the Developer ID Application certificate in the login keychain (#12), and the public tap repository `nairdaleo/homebrew-tastyjam` (#15). If the script fails partway, every step can be run by hand: see [CONTRIBUTING.md](../CONTRIBUTING.md#release-maintainer-only).
 
 ## Mac App Store
 

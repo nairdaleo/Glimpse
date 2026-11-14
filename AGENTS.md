@@ -1,6 +1,6 @@
 # Glimpse
 
-Compact native macOS menu-bar system monitor. Read README.md, docs/design.md, docs/development.md, and docs/updates.md before related work. The native app uses SwiftPM with pinned Sparkle for direct-download updates.
+Compact native macOS menu-bar system monitor. Read docs/architecture.md first, then README.md, CONTRIBUTING.md, docs/design.md, docs/development.md and docs/updates.md before related work. The native app uses SwiftPM with pinned Sparkle for direct-download updates.
 
 ## Constraints
 
@@ -10,6 +10,7 @@ Compact native macOS menu-bar system monitor. Read README.md, docs/design.md, do
 - Shared background sampling; native counters, measured elapsed time, no subprocess polling. Missing data is not zero.
 - Performance budgets and compatibility in the design are targets, not verified claims.
 - Keep documentation synchronized with implementation. Add concrete build/test instructions when a runnable target exists.
+- **Keep docs/architecture.md current**: any change to modules, file responsibilities, data flow, threading, persistence, editions (`APP_STORE`), scripts, CI or the release pipeline updates it in the same commit or pull request. Manual build/CI/release steps live in CONTRIBUTING.md; update them when a script or workflow changes.
 
 ## Build and verify
 
@@ -26,7 +27,7 @@ Compact native macOS menu-bar system monitor. Read README.md, docs/design.md, do
 - Meters support one to eight stable identities and width scale 0.75...1.5. Dropdown panels are independently ordered/removed; missing new settings must preserve legacy layouts.
 - Combined network is a column display mode requiring separate upload/download readings, never a net scalar. Its upper half is upload and lower half download, with independent colours/threshold state.
 - Detailed View arrangement/removal is settings-only. Cards open their editor when clicked. Panel columns1...8, width120...240 and per-card size/colour/history drive StatusPanelLayout and screen-bounded popover sizing.
-- Update public metadata is in Configuration/Updates.plist; private signing key remains in the login Keychain account com.tastyjam.glimpse. Never export/commit it. No signed downloadable release has been published.
+- Update public metadata is in Configuration/Updates.plist; private signing key remains in the login Keychain account com.tastyjam.glimpse. Never export/commit it. Signed, notarized releases are published from the owner's Mac with scripts/release.sh.
 - Login/updates are opt-in. A separate Mac App Store build must exclude Sparkle, validate the sandbox, and keep features free; tips/reviews remain release work.
 
 ## Project Tracking
