@@ -458,10 +458,7 @@ private struct ColumnEditor: View {
                     .font(.caption).foregroundColor(.secondary)
             }
             if configuration.metric == .battery && !configuration.isCombinedNetwork {
-                Toggle("Colour by battery level", isOn: Binding(get: { configuration.colourBands != nil }, set: { enabled in
-                    edit { $0.colourBands = enabled ? ColourBands() : nil }
-                })).font(.caption)
-                if configuration.colourBands != nil { colourBandsEditor }
+                colourBandsEditor
             }
             if configuration.colourBands == nil {
             HStack(spacing: 12) {
@@ -522,41 +519,37 @@ private struct ColumnEditor: View {
     }
 
     private var colourBandsEditor: some View {
-        let bands = configuration.colourBands ?? ColourBands()
-        func band(_ keyPath: WritableKeyPath<ColourBands, MeterColour?>, fallback: MeterColour) -> (on: Binding<Bool>, colour: Binding<MeterColour>) {
-            (Binding(get: { bands[keyPath: keyPath] != nil }, set: { on in edit { $0.colourBands?[keyPath: keyPath] = on ? fallback : nil } }),
-             Binding(get: { bands[keyPath: keyPath] ?? fallback }, set: { colour in edit { $0.colourBands?[keyPath: keyPath] = colour } }))
-        }
-        func level(_ keyPath: WritableKeyPath<ColourBands, Double>) -> some View {
-            DecimalField(placeholder: "%", value: Binding(get: { bands[keyPath: keyPath] }, set: { value in edit { $0.colourBands?[keyPath: keyPath] = value } }))
-                .frame(width: 50)
-        }
-        let high = band(\.high, fallback: ColourBands.green)
-        let middle = band(\.middle, fallback: ColourBands.yellow)
-        let low = band(\.low, fallback: ColourBands.red)
+        let bands = configuration.colourBands
+        let stops = bands?.stops ?? []
         return VStack(alignment: .leading, spacing: 8) {
-            Picker("Change", selection: Binding(get: { bands.style }, set: { style in edit { $0.colourBands?.style = style } })) {
-                Text("Hard change").tag(ColourBands.Style.hard)
-                Text("Gradient").tag(ColourBands.Style.gradient)
+            Picker("Colours", selection: Binding(get: { stops.count + 1 }, set: { count in
+                edit { column in
+                    guard count > 1 else { column.colourBands = nil; return }
+                    var next = column.colourBands ?? ColourBands()
+                    let kept = Array(next.stops.prefix(count - 1))
+                    next.stops = kept + ColourBands.defaults(count: count).dropFirst(kept.count)
+                    column.colourBands = next
+                }
+            })) {
+                ForEach(1...3, id: \.self) { Text("\($0)").tag($0) }
             }.pickerStyle(.segmented).frame(width: 220)
-            HStack(alignment: .top) {
-                Toggle("At or above", isOn: high.on).font(.caption)
-                level(\.highThreshold)
-                Text("%").font(.caption)
-                if high.on.wrappedValue { PaletteColourPicker(title: "Colour", selection: high.colour) }
+            ForEach(stops.indices, id: \.self) { index in
+                HStack {
+                    Text("At or above").font(.caption)
+                    DecimalField(placeholder: "%", value: Binding(get: { stops[index].threshold }, set: { value in
+                        edit { $0.colourBands?.stops[index].threshold = value }
+                    })).frame(width: 50)
+                    Text("%").font(.caption)
+                    ColorPicker("Colour \(index + 2)", selection: Binding(get: { Color(stops[index].colour.nsColor) }, set: { colour in
+                        guard let rgb = NSColor(colour).usingColorSpace(.sRGB) else { return }
+                        edit { $0.colourBands?.stops[index].colour = .custom(red: Double(rgb.redComponent), green: Double(rgb.greenComponent), blue: Double(rgb.blueComponent)) }
+                    }), supportsOpacity: false).labelsHidden()
+                }
             }
-            HStack(alignment: .top) {
-                Toggle("Between", isOn: middle.on).font(.caption)
-                if middle.on.wrappedValue { PaletteColourPicker(title: "Colour", selection: middle.colour) }
+            if let bands {
+                Toggle("Gradient", isOn: Binding(get: { bands.gradient }, set: { on in edit { $0.colourBands?.gradient = on } })).font(.caption)
+                ColourBandsPreview(bands: bands, base: configuration.colour).frame(width: 220, height: 10)
             }
-            HStack(alignment: .top) {
-                Toggle("At or below", isOn: low.on).font(.caption)
-                level(\.lowThreshold)
-                Text("%").font(.caption)
-                if low.on.wrappedValue { PaletteColourPicker(title: "Colour", selection: low.colour) }
-            }
-            Text("Unchecked bands use the meter colour. Gradient blends between the levels; level colours replace warning/critical colours.")
-                .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -637,5 +630,23 @@ private struct PanelEditor: View {
             guard let index = settings.panels.firstIndex(where: { $0.id == id }) else { return }
             change(&settings.panels[index])
         }
+    }
+}
+
+/// 0–100% strip showing the colour each level renders with.
+private struct ColourBandsPreview: View {
+    let bands: ColourBands
+    let base: MeterColour
+
+    var body: some View {
+        // ponytail: sampled at 1% steps; exact enough for a 220pt preview.
+        HStack(spacing: 0) {
+            ForEach(0..<101, id: \.self) { level in
+                let band = bands.colour(for: Double(level), base: base)
+                let from = band.from.nsColor.usingColorSpace(.sRGB) ?? band.from.nsColor
+                Rectangle().fill(Color(from.blended(withFraction: CGFloat(band.fraction), of: band.to.nsColor) ?? from))
+            }
+        }.cornerRadius(3)
+            .accessibilityLabel("Colour preview from 0 to 100 percent")
     }
 }

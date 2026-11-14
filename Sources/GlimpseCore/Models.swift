@@ -165,63 +165,54 @@ public struct HistoryPoint: Sendable {
     }
 }
 
-/// Level-based colouring: value >= highThreshold uses `high`, value <=
-/// lowThreshold uses `low`, anything between uses `middle`. A nil band uses
-/// the meter's own colour, so one, two or three colours can be chosen.
+/// Level-based colouring with one to three colours. The meter's own colour
+/// is colour 1 (lowest); each stop switches to its colour at or above its
+/// threshold (0...100). With `gradient`, colours blend between anchors at 0%
+/// and each threshold instead of changing hard.
 public struct ColourBands: Codable, Equatable, Sendable {
-    public enum Style: String, Codable, CaseIterable, Sendable { case hard, gradient }
+    public struct Stop: Codable, Equatable, Sendable {
+        public var threshold: Double
+        public var colour: MeterColour
+        public init(threshold: Double, colour: MeterColour) { self.threshold = threshold; self.colour = colour }
+    }
 
-    public var style: Style
-    public var high: MeterColour?
-    public var middle: MeterColour?
-    public var low: MeterColour?
-    public var highThreshold: Double
-    public var lowThreshold: Double
+    public var stops: [Stop]
+    public var gradient: Bool
 
     public static let green = MeterColour.custom(red: 0.20, green: 0.78, blue: 0.35)
     public static let yellow = MeterColour.custom(red: 1.00, green: 0.80, blue: 0.00)
-    public static let red = MeterColour.custom(red: 1.00, green: 0.23, blue: 0.19)
 
-    public init(style: Style = .hard, high: MeterColour? = ColourBands.green, middle: MeterColour? = ColourBands.yellow,
-                low: MeterColour? = ColourBands.red, highThreshold: Double = 50, lowThreshold: Double = 20) {
-        self.style = style
-        self.high = high
-        self.middle = middle
-        self.low = low
-        self.highThreshold = highThreshold
-        self.lowThreshold = lowThreshold
+    public init(stops: [Stop] = [], gradient: Bool = false) {
+        self.stops = stops
+        self.gradient = gradient
     }
 
-    /// Thresholds clamped to 0...100 with low <= high.
+    /// Default stops for a total of `count` colours (2 or 3).
+    public static func defaults(count: Int) -> [Stop] {
+        count >= 3 ? [Stop(threshold: 20, colour: yellow), Stop(threshold: 50, colour: green)] : [Stop(threshold: 20, colour: green)]
+    }
+
+    /// At most two stops, thresholds clamped to 0...100 and ascending.
     public func validated() -> ColourBands {
         var result = self
-        func clamp(_ value: Double, _ fallback: Double) -> Double { value.isFinite ? min(100, max(0, value)) : fallback }
-        let high = clamp(highThreshold, 50), low = clamp(lowThreshold, 20)
-        result.highThreshold = max(high, low)
-        result.lowThreshold = min(high, low)
+        result.stops = Array(stops.prefix(2)).map {
+            Stop(threshold: $0.threshold.isFinite ? min(100, max(0, $0.threshold)) : 50, colour: $0.colour)
+        }.sorted { $0.threshold < $1.threshold }
         return result
     }
 
-    /// The colour for `value`: blend `from` towards `to` by `fraction`
-    /// (0 for a hard change). Missing bands resolve to `base`.
+    /// The colour for `value`: blend `from` towards `to` by `fraction`.
     public func colour(for value: Double, base: MeterColour) -> (from: MeterColour, to: MeterColour, fraction: Double) {
-        let high = self.high ?? base, middle = self.middle ?? base, low = self.low ?? base
-        switch style {
-        case .hard:
-            if value >= highThreshold { return (high, high, 0) }
-            if value <= lowThreshold { return (low, low, 0) }
-            return (middle, middle, 0)
-        case .gradient:
-            // Anchors: low at lowThreshold, middle (if chosen) halfway, high at highThreshold.
-            var anchors = [(lowThreshold, low)]
-            if self.middle != nil { anchors.append(((lowThreshold + highThreshold) / 2, middle)) }
-            anchors.append((highThreshold, high))
-            if value <= anchors[0].0 { return (low, low, 0) }
-            for (a, b) in zip(anchors, anchors.dropFirst()) where value <= b.0 {
-                let span = b.0 - a.0
-                return (a.1, b.1, span > 0 ? (value - a.0) / span : 1)
-            }
-            return (high, high, 0)
+        let anchors = [(0.0, base)] + stops.map { ($0.threshold, $0.colour) }
+        guard gradient else {
+            let colour = anchors.last { value >= $0.0 }?.1 ?? base
+            return (colour, colour, 0)
         }
+        for (a, b) in zip(anchors, anchors.dropFirst()) where value < b.0 {
+            let span = b.0 - a.0
+            return (a.1, b.1, span > 0 ? max(0, (value - a.0) / span) : 1)
+        }
+        let last = anchors[anchors.count - 1].1
+        return (last, last, 0)
     }
 }

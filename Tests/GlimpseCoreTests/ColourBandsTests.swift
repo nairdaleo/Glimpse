@@ -2,37 +2,34 @@ import XCTest
 @testable import GlimpseCore
 
 final class ColourBandsTests: XCTestCase {
-    func testHardChangePicksTheBandAndFallsBackToTheMeterColour() {
-        let bands = ColourBands(high: .blue, middle: nil, low: .pink, highThreshold: 60, lowThreshold: 20)
-        XCTAssertEqual(bands.colour(for: 80, base: .mint).from, .blue)
-        XCTAssertEqual(bands.colour(for: 60, base: .mint).from, .blue)
-        XCTAssertEqual(bands.colour(for: 40, base: .mint).from, .mint)
-        XCTAssertEqual(bands.colour(for: 20, base: .mint).from, .pink)
-        XCTAssertEqual(bands.colour(for: 40, base: .mint).fraction, 0)
+    func testHardChangeSwitchesAtEachThreshold() {
+        let bands = ColourBands(stops: [.init(threshold: 20, colour: .orange), .init(threshold: 60, colour: .blue)])
+        XCTAssertEqual(bands.colour(for: 10, base: .pink).from, .pink)
+        XCTAssertEqual(bands.colour(for: 20, base: .pink).from, .orange)
+        XCTAssertEqual(bands.colour(for: 59, base: .pink).from, .orange)
+        XCTAssertEqual(bands.colour(for: 60, base: .pink).from, .blue)
+        XCTAssertEqual(bands.colour(for: 40, base: .pink).fraction, 0)
     }
 
-    func testGradientBlendsBetweenAnchors() {
-        var bands = ColourBands(style: .gradient, high: .blue, middle: nil, low: .pink, highThreshold: 60, lowThreshold: 20)
-        let mid = bands.colour(for: 40, base: .mint)
-        XCTAssertEqual(mid.from, .pink); XCTAssertEqual(mid.to, .blue); XCTAssertEqual(mid.fraction, 0.5, accuracy: 1e-9)
-        XCTAssertEqual(bands.colour(for: 10, base: .mint).from, .pink)
-        XCTAssertEqual(bands.colour(for: 90, base: .mint).from, .blue)
-        bands.middle = .orange
-        let lower = bands.colour(for: 30, base: .mint)
-        XCTAssertEqual(lower.from, .pink); XCTAssertEqual(lower.to, .orange); XCTAssertEqual(lower.fraction, 0.5, accuracy: 1e-9)
+    func testGradientBlendsFromZeroThroughEachThreshold() {
+        let two = ColourBands(stops: [.init(threshold: 50, colour: .blue)], gradient: true)
+        let half = two.colour(for: 25, base: .pink)
+        XCTAssertEqual(half.from, .pink); XCTAssertEqual(half.to, .blue); XCTAssertEqual(half.fraction, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(two.colour(for: 80, base: .pink).from, .blue)
+        let three = ColourBands(stops: [.init(threshold: 20, colour: .orange), .init(threshold: 60, colour: .blue)], gradient: true)
+        let upper = three.colour(for: 40, base: .pink)
+        XCTAssertEqual(upper.from, .orange); XCTAssertEqual(upper.to, .blue); XCTAssertEqual(upper.fraction, 0.5, accuracy: 1e-9)
     }
 
-    func testBandsRoundTripAndOnlyBatteryKeepsThem() throws {
+    func testBandsRoundTripValidateAndOnlyBatteryKeepsThem() throws {
         var settings = AppSettings()
         settings.columns = [ColumnConfiguration(metric: .battery, colour: .mint), ColumnConfiguration(metric: .cpu, colour: .mint)]
-        settings.columns[0].colourBands = ColourBands(style: .gradient, middle: nil, highThreshold: 10, lowThreshold: 150)
-        settings.columns[1].colourBands = ColourBands()
+        settings.columns[0].colourBands = ColourBands(stops: [.init(threshold: 150, colour: .blue), .init(threshold: 10, colour: .orange), .init(threshold: 5, colour: .pink)], gradient: true)
+        settings.columns[1].colourBands = ColourBands(stops: ColourBands.defaults(count: 2))
         let restored = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
         let bands = try XCTUnwrap(restored.columns[0].colourBands)
-        XCTAssertEqual(bands.style, .gradient)
-        XCTAssertNil(bands.middle)
-        XCTAssertEqual(bands.lowThreshold, 10)
-        XCTAssertEqual(bands.highThreshold, 100)
+        XCTAssertTrue(bands.gradient)
+        XCTAssertEqual(bands.stops.map(\.threshold), [10, 100])
         XCTAssertNil(restored.columns[1].colourBands)
     }
 
