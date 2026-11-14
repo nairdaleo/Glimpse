@@ -56,7 +56,7 @@ The default icon collects CPU, memory and download. The optional bandwidth block
 - Battery: IOKit internal battery current/max capacity, with charging/power-source status. A desktop without a battery is unavailable, not 0%.
 - Thermal: the supported system thermal-state ordinal, displayed as Nominal/Fair/Serious/Critical. No estimated Celsius temperature or fan RPM is shown.
 
-Bandwidth units are decimal B/s, KB/s, MB/s, etc., or decimal bits/s when selected. The default full-height network ceiling is 12.5 MB/s (100 Mb/s). That is a display scale, not measured link capacity. Percentage fill and threshold colours do not diagnose hardware health.
+Bandwidth units are decimal B/s, KB/s, MB/s, etc., or decimal bits/s when selected. The **Network column full at** field follows the selected units: its default is 12.5 MB/s in byte mode or 100 Mb/s in bit mode. Switching units converts the displayed number and label without changing the stored bytes/second ceiling; edits in either mode convert back to bytes/second. That is a display scale, not measured link capacity. Percentage fill and threshold colours do not diagnose hardware health.
 
 History is bounded to five minutes and at most 600 points per metric. Cached readings keep their collection timestamps and are not appended repeatedly. Unavailable samples and periods where a previously collected metric is no longer demanded break the graph. Closing the panel does not keep panel-only collectors running.
 
