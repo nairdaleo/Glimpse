@@ -265,15 +265,18 @@ struct SettingsView: View {
             Text("Capacity units apply to memory and disk sizes; bandwidth units to upload/download rates and the network ceiling. SI uses powers of 1000, IEC powers of 1024.")
                 .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
             Divider()
-            HStack {
-                let bits = store.settings.bandwidthInBits
-                let units = store.settings.bandwidthUnits
-                let unit = BandwidthCeilingInput.unit(bits: bits, units: units)
-                Text("Network column full at")
-                DecimalField(placeholder: unit, value: Binding(get: { BandwidthCeilingInput.displayValue(bytesPerSecond: store.settings.networkCeiling, bits: bits, units: units) }, set: { value in store.change { $0.networkCeiling = BandwidthCeilingInput.bytesPerSecond(displayValue: value, bits: bits, units: units) } }))
-                    .id("\(bits)\(units.rawValue)")
-                    .frame(width: 80)
-                Text("\(unit) (\(bits ? "bits" : "bytes"))").foregroundColor(.secondary)
+            Text("Network columns full at").font(.headline)
+            ForEach([(\AppSettings.networkCeiling, "Download"), (\AppSettings.uploadCeiling, "Upload")], id: \.1) { keyPath, title in
+                HStack {
+                    let bits = store.settings.bandwidthInBits
+                    let units = store.settings.bandwidthUnits
+                    let unit = BandwidthCeilingInput.unit(bits: bits, units: units)
+                    Text(title).frame(width: 70, alignment: .leading)
+                    DecimalField(placeholder: unit, value: Binding(get: { BandwidthCeilingInput.displayValue(bytesPerSecond: store.settings[keyPath: keyPath], bits: bits, units: units) }, set: { value in store.change { $0[keyPath: keyPath] = BandwidthCeilingInput.bytesPerSecond(displayValue: value, bits: bits, units: units) } }))
+                        .id("\(title)\(bits)\(units.rawValue)")
+                        .frame(width: 80)
+                    Text("\(unit) (\(bits ? "bits" : "bytes"))").foregroundColor(.secondary)
+                }
             }
             NetworkInterfacePicker(title: "Bandwidth readout interface", selection: setting(\.networkInterface), snapshot: store.snapshot)
             Text("Each network meter and detail panel has its own interface choice. Auto follows one active physical interface; counters from different interfaces are never added together.")
@@ -484,8 +487,8 @@ private struct ColumnEditor: View {
     }
     private var isNetwork: Bool { configuration.isCombinedNetwork || configuration.metric == .download || configuration.metric == .upload }
     private var unit: String { isNetwork ? "B/s" : configuration.metric == .thermal ? "level 0–3" : "%" }
-    private var defaultWarning: Double { isNetwork ? store.settings.networkCeiling * 0.7 : configuration.metric == .thermal ? 2 : configuration.thresholdDirection == .below ? 30 : 70 }
-    private var defaultCritical: Double { isNetwork ? store.settings.networkCeiling * 0.9 : configuration.metric == .thermal ? 3 : configuration.thresholdDirection == .below ? 10 : 90 }
+    private var defaultWarning: Double { isNetwork ? store.settings.networkCeiling(for: configuration.metric) * 0.7 : configuration.metric == .thermal ? 2 : configuration.thresholdDirection == .below ? 30 : 70 }
+    private var defaultCritical: Double { isNetwork ? store.settings.networkCeiling(for: configuration.metric) * 0.9 : configuration.metric == .thermal ? 3 : configuration.thresholdDirection == .below ? 10 : 90 }
 
     private func column<Value>(_ keyPath: WritableKeyPath<ColumnConfiguration, Value>) -> Binding<Value> {
         Binding(get: { configuration[keyPath: keyPath] }, set: { value in edit { $0[keyPath: keyPath] = value } })

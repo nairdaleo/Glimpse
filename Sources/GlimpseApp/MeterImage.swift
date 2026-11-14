@@ -39,7 +39,7 @@ enum MeterImage {
                     }
                     if column.isCombinedNetwork {
                         let halves = DuplexGaugeLayout(track: track, upload: snapshot.displayReading(for: .upload, interface: column.networkInterface)?.value,
-                                                       download: snapshot.displayReading(for: .download, interface: column.networkInterface)?.value, ceiling: settings.networkCeiling)
+                                                       download: snapshot.displayReading(for: .download, interface: column.networkInterface)?.value, ceiling: settings.networkCeiling, uploadCeiling: settings.uploadCeiling)
                         let upColour = colour(column.colour, level: index < levels.count ? levels[index] : nil)
                         let downColour = colour(column.secondaryColour, level: index < secondaryLevels.count ? secondaryLevels[index] : nil)
                         for (rect, fill, upper) in [(halves.upload, upColour, true), (halves.download, downColour, false)] {
@@ -65,7 +65,7 @@ enum MeterImage {
                         continue
                     }
                     let raw = snapshot.displayReading(for: column.metric, interface: column.networkInterface)?.value
-                    guard let amount = MetricPresentation.normalized(value: raw, metric: column.metric, networkCeiling: settings.networkCeiling) else {
+                    guard let amount = MetricPresentation.normalized(value: raw, metric: column.metric, networkCeiling: settings.networkCeiling(for: column.metric)) else {
                         NSColor.secondaryLabelColor.setStroke()
                         let slash = NSBezierPath()
                         slash.move(to: NSPoint(x: track.minX + 0.5, y: track.midY - 1.5))

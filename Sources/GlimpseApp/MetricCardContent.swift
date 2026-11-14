@@ -184,13 +184,13 @@ struct MetricCardContent: View {
                 // Same reading order as the menu-bar duplex meter: upload on
                 // the upper half, download on the lower half.
                 VStack(spacing: 1) {
-                    CardHistoryGraph(points: points(.upload), ceiling: ceiling, colour: colour,
+                    CardHistoryGraph(points: points(.upload), ceiling: ceiling(.upload), colour: colour,
                                      warning: networkThreshold(.upload)?.warning, critical: networkThreshold(.upload)?.critical)
-                    CardHistoryGraph(points: points(.download), ceiling: ceiling, colour: colour.opacity(0.5),
+                    CardHistoryGraph(points: points(.download), ceiling: ceiling(.download), colour: colour.opacity(0.5),
                                      warning: networkThreshold(.download)?.warning, critical: networkThreshold(.download)?.critical)
                 }
             } else {
-                CardHistoryGraph(points: points(panel.metric), ceiling: ceiling, colour: colour,
+                CardHistoryGraph(points: points(panel.metric), ceiling: ceiling(panel.metric), colour: colour,
                                  warning: networkThreshold(panel.metric)?.warning, critical: networkThreshold(panel.metric)?.critical)
             }
         }.accessibilityLabel("Recent \(panel.displayTitle) history")
@@ -217,7 +217,7 @@ struct MetricCardContent: View {
         panel.isNetwork ? networkHistory.points(for: metric, interface: panel.networkInterface, snapshot: snapshot) : history.samples[metric] ?? []
     }
 
-    private var ceiling: Double { panel.isNetwork ? settings.networkCeiling : 100 }
+    private func ceiling(_ metric: MetricID) -> Double { panel.isNetwork ? settings.networkCeiling(for: metric) : 100 }
 }
 
 private struct CardHistoryGraph: View {

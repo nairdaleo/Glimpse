@@ -34,11 +34,11 @@ struct DuplexGaugeLayout {
     let upload: CGRect?
     let download: CGRect?
 
-    init(track: CGRect, upload: Double?, download: Double?, ceiling: Double) {
+    init(track: CGRect, upload: Double?, download: Double?, ceiling: Double, uploadCeiling: Double? = nil) {
         let half = max(0, (track.height - 1) / 2)
         func amount(_ value: Double?, metric: MetricID) -> CGFloat? {
             guard let value = value, value >= 0,
-                  let normalized = MetricPresentation.normalized(value: value, metric: metric, networkCeiling: ceiling) else { return nil }
+                  let normalized = MetricPresentation.normalized(value: value, metric: metric, networkCeiling: metric == .upload ? (uploadCeiling ?? ceiling) : ceiling) else { return nil }
             return CGFloat(normalized) * half
         }
         self.upload = amount(upload, metric: .upload).map { CGRect(x: track.minX, y: track.midY + 0.5, width: track.width, height: $0) }
