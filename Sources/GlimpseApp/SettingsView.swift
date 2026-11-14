@@ -443,7 +443,7 @@ private struct ColumnEditor: View {
                 }
                 // Battery shows its colour inside the Colours section instead.
                 if !configuration.isCombinedNetwork && configuration.metric != .battery {
-                    colourPicker("Colour", keyPath: \.colour).frame(width: 155)
+                    colourPicker("Colour", keyPath: \.colour).fixedSize()
                 }
             }
             if configuration.isNetwork {
@@ -451,7 +451,7 @@ private struct ColumnEditor: View {
                 SelectedInterfaceDetails(selection: configuration.networkInterface, snapshot: store.snapshot)
             }
             if configuration.isCombinedNetwork {
-                HStack {
+                VStack(alignment: .leading) {
                     colourPicker("Upload", keyPath: \.colour)
                     colourPicker("Download", keyPath: \.secondaryColour)
                 }

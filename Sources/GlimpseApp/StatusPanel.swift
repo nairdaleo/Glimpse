@@ -43,12 +43,6 @@ struct StatusPanel: View {
                             }
                         }.frame(width: layout.gridWidth, height: layout.gridHeight, alignment: .topLeading)
                     }
-                    if layout.showsNetwork {
-                        Text("Auto: " + store.snapshot.interfaceLabel(nil))
-                            .font(.system(size: 10)).foregroundColor(.secondary).lineLimit(1)
-                            .frame(width: layout.gridWidth, height: StatusPanelLayout.networkHeight, alignment: .leading)
-                            .help("Each network panel measures its selected interface. History stays on this Mac and clears when you quit.")
-                    }
                 }.padding(StatusPanelLayout.padding)
             }
             Divider()

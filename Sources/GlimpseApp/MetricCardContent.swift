@@ -67,10 +67,10 @@ struct MetricCardContent: View {
                 perCoreActivity.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             } else if panel.metric == .disk {
                 capacityBar.frame(height: 6).padding(.top, 2)
-                readingDetail(lines: large ? 5 : 2, size: 10)
+                readingDetail(lines: large ? 5 : 3, size: 10)
                 Spacer(minLength: 0)
             } else if !panel.isCombinedNetwork || large {
-                readingDetail(lines: large ? 5 : 2, size: 10)
+                readingDetail(lines: large ? 5 : 3, size: 10)
             }
             if !showsDetails { Spacer(minLength: 0) }
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
