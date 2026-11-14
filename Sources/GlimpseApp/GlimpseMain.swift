@@ -46,7 +46,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
 
-    func windowWillClose(_ notification: Notification) { store.setSettingsVisible(false) }
+    func windowWillClose(_ notification: Notification) {
+        store.setSettingsVisible(false)
+        // A closed window's hosting view keeps re-rendering every sample; showSettings rebuilds it.
+        DispatchQueue.main.async { self.settingsWindow = nil }
+    }
     func windowDidBecomeKey(_ notification: Notification) { services?.refreshLoginStatus() }
 }
 
