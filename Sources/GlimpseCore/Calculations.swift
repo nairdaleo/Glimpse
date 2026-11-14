@@ -78,3 +78,21 @@ public enum MetricPresentation: Sendable {
         }
     }
 }
+
+/// Human-readable byte counts for capacity readings, using SI (1000-based,
+/// GB) or IEC (1024-based, GiB) prefixes.
+public enum DataSizePresentation: Sendable {
+    public static func string(bytes: Double, units: CapacityUnits) -> String {
+        guard bytes.isFinite else { return "—" }
+        let step = units == .si ? 1000.0 : 1024.0
+        let suffixes = units == .si ? ["B", "KB", "MB", "GB", "TB", "PB"] : ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]
+        var scaled = max(0, bytes)
+        var unit = 0
+        while scaled >= step && unit < suffixes.count - 1 {
+            scaled /= step
+            unit += 1
+        }
+        let decimals = scaled >= 100 ? 0 : (scaled >= 10 ? 1 : 2)
+        return String(format: "%.*f %@", locale: Locale(identifier: "en_US_POSIX"), decimals, scaled, suffixes[unit])
+    }
+}

@@ -76,34 +76,15 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(pairOnly.gridHeight, 150)
     }
 
-    func testCombinedCompactPairFillsOneRegularSlotAsOneCard() throws {
+    func testCompactCardsStackAsSeparateHalfSlotsWithoutMerging() throws {
         var settings = AppSettings()
         settings.panelColumns = 1
-        settings.panels = [.init(metric: .disk, appearance: .init(size: .compact, combinesNext: true)),
+        settings.panels = [.init(metric: .disk, appearance: .init(size: .compact)),
                            .init(metric: .battery, appearance: .init(size: .compact))]
         let layout = StatusPanelLayout(settings: settings, maximumSize: CGSize(width: 4000, height: 4000))
-        XCTAssertEqual(layout.embeds[settings.panels[0].id], settings.panels[1].id)
-        XCTAssertEqual(layout.placements[settings.panels[0].id], CGRect(x: 0, y: 0, width: 156, height: 75))
-        XCTAssertEqual(layout.placements[settings.panels[1].id], CGRect(x: 0, y: 75, width: 156, height: 75))
-        XCTAssertEqual(layout.mergedSurfaces[settings.panels[0].id], CGRect(x: 0, y: 0, width: 156, height: 150))
+        XCTAssertEqual(layout.placements[settings.panels[0].id], CGRect(x: 0, y: 0, width: 156, height: 70))
+        XCTAssertEqual(layout.placements[settings.panels[1].id], CGRect(x: 0, y: 80, width: 156, height: 70))
         XCTAssertEqual(layout.gridHeight, 150)
-    }
-
-    func testCombineFlagIsIgnoredWithoutACompactFollowerOrAFreeCellBelow() throws {
-        var settings = AppSettings()
-        settings.panelColumns = 1
-        settings.panels = [.init(metric: .disk, appearance: .init(size: .compact, combinesNext: true)),
-                           .init(metric: .memory, appearance: .init(size: .regular)),
-                           .init(metric: .battery, appearance: .init(size: .compact))]
-        var layout = StatusPanelLayout(settings: settings, maximumSize: CGSize(width: 4000, height: 4000))
-        XCTAssertTrue(layout.embeds.isEmpty)
-        XCTAssertNotEqual(layout.placements[settings.panels[0].id]?.height, 75)
-
-        // A flagged compact card that lands in a bottom half cannot merge down.
-        settings.panels = [.init(metric: .cpu, appearance: .init(size: .compact)),
-                           .init(metric: .disk, appearance: .init(size: .compact, combinesNext: true))]
-        layout = StatusPanelLayout(settings: settings, maximumSize: CGSize(width: 4000, height: 4000))
-        XCTAssertTrue(layout.embeds.isEmpty)
     }
 
     func testLargeOrientationsUseTwoRegularSlotsWithoutChangingTheChosenOrientation() {

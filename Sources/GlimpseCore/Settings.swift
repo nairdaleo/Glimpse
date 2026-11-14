@@ -94,6 +94,14 @@ public enum PanelCardSize: String, Codable, CaseIterable, Identifiable, Sendable
     public var title: String { rawValue.capitalized }
 }
 
+/// Byte-count presentation for capacity readings: SI powers of 1000 (GB) or
+/// IEC powers of 1024 (GiB).
+public enum CapacityUnits: String, Codable, CaseIterable, Identifiable, Sendable {
+    case si, iec
+    public var id: String { rawValue }
+    public var title: String { self == .si ? "SI (GB)" : "IEC (GiB)" }
+}
+
 public enum PanelLargeOrientation: String, Codable, CaseIterable, Identifiable, Sendable {
     case vertical, horizontal
     public var id: String { rawValue }
@@ -111,19 +119,16 @@ public struct PanelAppearance: Codable, Equatable, Sendable {
     public var showsHistory: Bool
     public var largeOrientation: PanelLargeOrientation
     public var showsConnectionDetails: Bool
-    /// Combine this compact card with the next compact card into one slot.
-    public var combinesNext: Bool
 
-    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true, largeOrientation: PanelLargeOrientation = .vertical, showsConnectionDetails: Bool = false, combinesNext: Bool = false) {
+    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true, largeOrientation: PanelLargeOrientation = .vertical, showsConnectionDetails: Bool = false) {
         self.size = size
         self.colour = colour
         self.showsHistory = showsHistory
         self.largeOrientation = largeOrientation
         self.showsConnectionDetails = showsConnectionDetails
-        self.combinesNext = combinesNext
     }
 
-    private enum CodingKeys: String, CodingKey { case size, colour, showsHistory, largeOrientation, showsConnectionDetails, combinesNext }
+    private enum CodingKeys: String, CodingKey { case size, colour, showsHistory, largeOrientation, showsConnectionDetails }
     public init(from decoder: Decoder) throws {
         self.init()
         guard let values = try? decoder.container(keyedBy: CodingKeys.self) else { return }
@@ -132,7 +137,6 @@ public struct PanelAppearance: Codable, Equatable, Sendable {
         showsHistory = (try? values.decode(Bool.self, forKey: .showsHistory)) ?? showsHistory
         largeOrientation = (try? values.decode(PanelLargeOrientation.self, forKey: .largeOrientation)) ?? largeOrientation
         showsConnectionDetails = (try? values.decode(Bool.self, forKey: .showsConnectionDetails)) ?? showsConnectionDetails
-        combinesNext = (try? values.decode(Bool.self, forKey: .combinesNext)) ?? false
     }
 }
 
@@ -193,6 +197,8 @@ public struct AppSettings: Codable, Sendable {
     public var networkCeiling: Double
     public var refreshInterval: Double
     public var monochrome: Bool
+    /// Byte-count presentation for memory and disk readings.
+    public var capacityUnits: CapacityUnits
 
     public init() {
         columns = [ColumnConfiguration(metric: .cpu, colour: .mint), ColumnConfiguration(metric: .memory, colour: .purple), ColumnConfiguration(metric: .download, colour: .blue)]
@@ -207,6 +213,7 @@ public struct AppSettings: Codable, Sendable {
         networkCeiling = 12_500_000
         refreshInterval = 1
         monochrome = false
+        capacityUnits = .si
     }
 
     /// Compatibility projections for callers that still organize one card per metric.
@@ -246,7 +253,7 @@ public struct AppSettings: Codable, Sendable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, refreshInterval, monochrome }
+    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, refreshInterval, monochrome, capacityUnits }
     public init(from decoder: Decoder) throws {
         self.init()
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -274,6 +281,7 @@ public struct AppSettings: Codable, Sendable {
         networkCeiling = (try? values.decode(Double.self, forKey: .networkCeiling)) ?? networkCeiling
         refreshInterval = (try? values.decode(Double.self, forKey: .refreshInterval)) ?? refreshInterval
         monochrome = (try? values.decode(Bool.self, forKey: .monochrome)) ?? monochrome
+        capacityUnits = (try? values.decode(CapacityUnits.self, forKey: .capacityUnits)) ?? capacityUnits
         self = validated()
     }
 
@@ -292,6 +300,7 @@ public struct AppSettings: Codable, Sendable {
         try values.encode(networkCeiling, forKey: .networkCeiling)
         try values.encode(refreshInterval, forKey: .refreshInterval)
         try values.encode(monochrome, forKey: .monochrome)
+        try values.encode(capacityUnits, forKey: .capacityUnits)
     }
 
     public func panelAppearance(for metric: MetricID) -> PanelAppearance {

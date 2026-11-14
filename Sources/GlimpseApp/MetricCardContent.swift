@@ -11,8 +11,6 @@ struct MetricCardContent: View {
     let settings: AppSettings
     let width: CGFloat
     let height: CGFloat
-    /// Draw this card's own surface. Combined pairs draw one shared surface instead.
-    var surface: Bool = true
 
     private var appearance: PanelAppearance { panel.appearance }
     private var compact: Bool { appearance.size == .compact }
@@ -30,8 +28,8 @@ struct MetricCardContent: View {
         }
         .padding(compact ? 8 : 11)
         .frame(width: width, height: height, alignment: .topLeading)
-        .background(surface ? Color.primary.opacity(0.045) : Color.clear)
-        .cornerRadius(surface ? 9 : 0)
+        .background(Color.primary.opacity(0.045))
+        .cornerRadius(9)
         .contentShape(RoundedRectangle(cornerRadius: 9))
         .accessibilityElement(children: .combine)
     }
@@ -50,6 +48,7 @@ struct MetricCardContent: View {
                 graph.frame(maxWidth: .infinity, maxHeight: .infinity).frame(minHeight: 8)
             } else if panel.metric == .disk {
                 capacityBar.frame(height: 5).padding(.top, 4)
+                readingDetail(lines: 1, size: 9)
             } else if !panel.isNetwork {
                 readingDetail(lines: panel.metric == .battery ? 2 : 1, size: 9)
             }
@@ -219,17 +218,6 @@ struct MetricCardContent: View {
     }
 
     private var ceiling: Double { panel.isNetwork ? settings.networkCeiling : 100 }
-}
-
-/// Shared card surface behind a combined compact pair, with a hairline seam.
-struct CombinedSlotSurface: View {
-    let rect: CGRect
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 9).fill(Color.primary.opacity(0.045))
-            .overlay(Rectangle().fill(Color.primary.opacity(0.09)).frame(height: 0.5))
-            .frame(width: rect.width, height: rect.height)
-    }
 }
 
 private struct CardHistoryGraph: View {

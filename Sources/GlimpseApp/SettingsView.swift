@@ -168,18 +168,14 @@ struct SettingsView: View {
                     Text("\(Int(store.settings.panelCardWidth)) pt").monospacedDigit().frame(width: 50, alignment: .trailing)
                 }
                 Text("Detailed View preview").font(.headline)
-                Text("Drag either side of a card to place it before or after. Click to edit. Compact cards share a regular slot; large cards use two slots. A compact card can combine with the next compact card into one card.")
+                Text("Drag either side of a card to place it before or after. Click to edit. Compact cards share a regular slot; large cards use two slots.")
                     .font(.caption).foregroundColor(.secondary)
                 if store.settings.panels.isEmpty {
                     Text("No panels yet. Use + Add panel to choose what to show.")
                         .font(.callout).foregroundColor(.secondary).padding(.vertical, 8)
                 } else {
-                    let partnerIDs = Set(layout.embeds.values)
                     ScrollView([.horizontal, .vertical], showsIndicators: true) {
                         ZStack(alignment: .topLeading) {
-                            ForEach(layout.mergedSurfaces.sorted(by: { $0.key.uuidString < $1.key.uuidString }), id: \.key) { _, rect in
-                                CombinedSlotSurface(rect: rect)
-                            }
                             ForEach(Array(store.settings.panels.enumerated()), id: \.element.id) { index, panel in
                                 if let rect = layout.placements[panel.id] {
                                     OrganizationTile(payload: .panel(panel.id), kind: .panel, isSelected: selectedPanel?.id == panel.id,
@@ -191,8 +187,7 @@ struct SettingsView: View {
                                     }) {
                                         MetricCardContent(panel: panel, snapshot: store.snapshot, history: store.history,
                                                           networkHistory: store.networkHistory, settings: store.settings,
-                                                          width: rect.width, height: rect.height,
-                                                          surface: !partnerIDs.contains(panel.id) && layout.embeds[panel.id] == nil)
+                                                          width: rect.width, height: rect.height)
                                             .overlay(RoundedRectangle(cornerRadius: 9).stroke(selectedPanel?.id == panel.id ? Color.accentColor : Color.clear, lineWidth: 2))
                                     }.frame(width: rect.width, height: rect.height)
                                         .offset(x: rect.minX, y: rect.minY)
@@ -260,6 +255,12 @@ struct SettingsView: View {
             Toggle("Show upload and download speeds beside the icon", isOn: setting(\.showBandwidth))
             Toggle("Use bits per second for bandwidth", isOn: setting(\.bandwidthInBits))
             Toggle("Use monochrome meter columns", isOn: setting(\.monochrome))
+            Divider()
+            Picker("Capacity units", selection: setting(\.capacityUnits)) {
+                ForEach(CapacityUnits.allCases) { Text($0.title).tag($0) }
+            }
+            Text("Byte sizes on memory and disk cards use SI powers of 1000 (GB) or IEC powers of 1024 (GiB).")
+                .font(.caption).foregroundColor(.secondary)
             Divider()
             HStack {
                 let bits = store.settings.bandwidthInBits
@@ -520,12 +521,6 @@ private struct PanelEditor: View {
         store.settings.panels.first { $0.id == id } ?? PanelConfiguration(metric: .cpu, id: id)
     }
 
-    private var canCombineWithNext: Bool {
-        guard let index = store.settings.panels.firstIndex(where: { $0.id == id }),
-              store.settings.panels.indices.contains(index + 1) else { return false }
-        return store.settings.panels[index + 1].appearance.size == .compact
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Picker("Metric", selection: Binding(get: { panel.isCombinedNetwork ? "combined" : panel.metric.rawValue }, set: { value in
@@ -543,13 +538,6 @@ private struct PanelEditor: View {
             if panel.appearance.size == .large {
                 Picker("Large card layout", selection: configuration(\.appearance.largeOrientation)) {
                     ForEach(PanelLargeOrientation.allCases) { Text($0.title).tag($0) }
-                }
-            }
-            if panel.appearance.size == .compact {
-                Toggle("Combine with next compact card", isOn: configuration(\.appearance.combinesNext))
-                if panel.appearance.combinesNext && !canCombineWithNext {
-                    Text("No compact card follows this card in reading order.")
-                        .font(.caption).foregroundColor(.secondary)
                 }
             }
             if panel.isNetwork {
