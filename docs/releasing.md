@@ -1,0 +1,30 @@
+# Releasing
+
+Releases are built in GitHub Actions from tags. Nothing unsigned is ever published: the workflows stop with an error until the secrets below exist.
+
+| Step | How | Result |
+| --- | --- | --- |
+| Release candidate | `git tag v0.3.0-rc.1 && git push origin v0.3.0-rc.1` | `release-candidate.yml` runs the tests, builds the universal DMG, signs it with Developer ID, notarizes and staples it, and attaches `Glimpse-0.3.0-rc.1.dmg` + `.sha256` to a **pre-release**. |
+| Test it | Download the pre-release DMG on Apple silicon and Intel Macs | Gatekeeper should open it without warnings. |
+| Promote | Actions → **Promote release candidate** → Run workflow with `rc_tag` | `promote-release.yml` re-attaches the identical notarized DMG as `Glimpse-0.3.0.dmg` under release `v0.3.0` at the rc's commit, marks it latest, and commits an updated `appcast.xml` to `main` so Sparkle offers the update. |
+
+`VERSION` comes from the tag (`v0.3.0-rc.1` → `0.3.0`); the build number is the commit count, so it always increases. Every uploaded build is tagged at the commit it was built from by construction. The Homebrew cask bump is tracked in #15.
+
+## One-time setup (owner)
+
+Add these as repository secrets (Settings → Secrets and variables → Actions → New repository secret). They never leave GitHub's encrypted store; the workflows delete the temporary keychain and key file after each run.
+
+| Secret | What to put in it |
+| --- | --- |
+| `DEVELOPER_ID_P12_BASE64` | Keychain Access → My Certificates → right-click **Developer ID Application: …** → Export… as `.p12` with a password, then `base64 -i DeveloperID.p12 \| pbcopy` and paste. Delete the `.p12` file afterwards. Requires the certificate from #12. |
+| `DEVELOPER_ID_P12_PASSWORD` | The password chosen for that export. |
+| `ASC_KEY_ID` | App Store Connect API key ID used for notarization (the Admin key). |
+| `ASC_ISSUER_ID` | The App Store Connect issuer ID. |
+| `ASC_PRIVATE_KEY` | Contents of the key's `AuthKey_<ID>.p8` file (`pbcopy < AuthKey_<ID>.p8`). |
+| `SPARKLE_ED_PRIVATE_KEY` | Promotion only. `.build/artifacts/sparkle/Sparkle/bin/generate_keys --account com.tastyjam.glimpse -x sparkle.key`, paste the file's contents, then delete the file. Its public half is already in `Configuration/Updates.plist`. |
+
+Locally, `scripts/make-dmg.sh` does the same build with the login keychain and the `ASC_*` variables from your own environment; see [updates.md](updates.md).
+
+## CI
+
+`ci.yml` runs on every push and pull request: `swift test`, the universal app build and the native-reader diagnostic on Apple silicon (`macos-15`) and Intel (`macos-15-intel`) runners, card renders uploaded as artifacts for visual review, and a full-history gitleaks secret scan. GitHub secret scanning with push protection, Dependabot alerts and security updates are enabled for the repository; `dependabot.yml` checks SwiftPM (Sparkle) and the pinned GitHub Actions weekly. Third-party actions are pinned to commit SHAs with the version in a comment, so Dependabot updates them explicitly. Hardware-specific behaviour (battery, Wi-Fi changes, sleep/wake, start at login) still needs a real Mac.
