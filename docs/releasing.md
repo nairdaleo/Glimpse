@@ -33,10 +33,10 @@ The store edition is a separate build of the same sources: sandboxed (`Configura
 | Step | How | Result |
 | --- | --- | --- |
 | Local check | `scripts/make-pkg.sh` | `build/AppStore/Glimpse.app` and `build/Glimpse-<version>-AppStore.pkg`. Without distribution certificates the app is ad-hoc signed, which is enough to run it in the sandbox. |
-| Upload | `git checkout v0.3.0 && KEYS_ENV=<your env file> VERSION=0.3.0 UPLOAD=1 scripts/make-pkg.sh` | Signs with the distribution certificates and provisioning profile from the login keychain, uploads the package to App Store Connect and pushes the tag `v<version>-build<N>`. Run it right after promoting the GitHub release. |
+| Upload | `git checkout v0.3.0 && scripts/make-pkg.sh --env <your env file> --version 0.3.0 --upload` | Signs with the distribution certificates and provisioning profile from the login keychain, uploads the package to App Store Connect and pushes the tag `v<version>-build<N>`. Run it right after promoting the GitHub release. |
 | Release | App Store Connect | Test through TestFlight, attach the build to a version and submit for review by hand. |
 
-The upload runs **locally only**. App Store Connect credentials for the store edition are not stored in GitHub, and there is no upload workflow. The script reads `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_PATH` and `PROVISIONING_PROFILE` (path to the profile) from the environment, or from a private env file whose path is given in `KEYS_ENV`, and refuses to upload from a tree with uncommitted changes.
+The upload runs **locally only**. App Store Connect credentials for the store edition are not stored in GitHub, and there is no upload workflow. The script reads `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_PATH` and `PROVISIONING_PROFILE` (path to the profile) from the environment or from the private env file given with `--env`, and refuses to upload from a tree with uncommitted changes. The older `KEYS_ENV=`, `VERSION=` and `UPLOAD=1` variables still work; a flag wins over its variable.
 
 One-time setup (owner):
 
