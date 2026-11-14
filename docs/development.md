@@ -37,6 +37,15 @@ build/Glimpse.app/Contents/MacOS/Glimpse --diagnose
 
 This terminal mode reads all metrics twice, separated by 1.1 seconds to establish rate baselines. It prints current values and the measured interface without launching the menu-bar UI. It does not change settings, export private diagnostics, launch shell polling, or upload anything.
 
+## Card render audit
+
+```bash
+build/Glimpse.app/Contents/MacOS/Glimpse --render-cards /path/to/folder
+GLIMPSE_RENDER_ARTIFACTS=/path/to/folder swift test --filter MetricCardRenderingTests
+```
+
+`--render-cards` samples live readings for about five seconds, then writes PNGs of every saved panel at every card size (compact, regular, large vertical, large horizontal) in light and dark appearance. Use it to check readability with real data before shipping layout changes; the images contain local addresses, so keep them local. The test variant renders every metric and size with fixed sample data. SwiftUI squeezes or truncates content inside a card rather than drawing outside it, so these renders need a visual review; a pixel-margin check cannot detect cut-off text.
+
 ## Architecture
 
 - `GlimpseCore` contains Sendable value snapshots/settings, normalization and explicit-unit formatting, CPU/rate arithmetic, threshold handling, and bounded history. Invalid settings are repaired to safe defaults.
