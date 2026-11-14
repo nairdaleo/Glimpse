@@ -48,7 +48,7 @@ ARCH=universal ./scripts/build-app.sh
 build/Glimpse.app/Contents/MacOS/Glimpse --diagnose
 ```
 
-Sparkle 2.9.6 is the sole external dependency, pinned by SwiftPM for signed direct-download updates. The build script defaults to an ad-hoc signature; set `CODESIGN_IDENTITY` to a certificate identity for development signing. Distribution requires Developer ID signing and notarization. The configured update feed has no downloadable public release yet. Do not disable Gatekeeper to run a downloaded build.
+Sparkle 2.10.1 is the sole external dependency, pinned by SwiftPM for signed direct-download updates. The build script defaults to an ad-hoc signature; set `CODESIGN_IDENTITY` to a certificate identity for development signing. Distribution requires Developer ID signing and notarization. The configured update feed has no downloadable public release yet. Do not disable Gatekeeper to run a downloaded build.
 
 Glimpse's monitoring features will remain fully free. Optional developer tips and review requests are planned for a separate Mac App Store edition; they do not unlock features. See the distribution roadmap before preparing a store submission.
 

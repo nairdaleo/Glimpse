@@ -2,7 +2,7 @@
 
 ## Build and run
 
-The current verified development toolchain is Xcode 27.2. Select it with `xcode-select` as appropriate for your installation. SwiftPM resolves the pinned Sparkle 2.9.6 framework; no other package manager is required. The package manifest uses Swift tools 5.9; older developer toolchains have not been tested. The app deployment target is macOS 12, which is separate from the macOS version needed to run Xcode.
+The current verified development toolchain is Xcode 27.2. Select it with `xcode-select` as appropriate for your installation. SwiftPM resolves the pinned Sparkle 2.10.1 framework; no other package manager is required. The package manifest uses Swift tools 5.9; older developer toolchains have not been tested. The app deployment target is macOS 12, which is separate from the macOS version needed to run Xcode.
 
 ```bash
 swift test
