@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-version="${VERSION:-0.2.0}"
+version="${VERSION:-0.3.0}"
 build_number="${BUILD_NUMBER:-$(git rev-list --count HEAD)}"
 identity="${CODESIGN_IDENTITY:-$(security find-identity -v -p codesigning | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)}"
 identity="${identity:--}"

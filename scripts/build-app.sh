@@ -5,8 +5,8 @@ cd "$(dirname "$0")/.."
 configuration="${CONFIGURATION:-release}"
 architecture="${ARCH:-$(uname -m)}"
 signing_identity="${CODESIGN_IDENTITY:--}"
-version="${VERSION:-0.2.0}"
-build_number="${BUILD_NUMBER:-2}"
+version="${VERSION:-0.3.0}"
+build_number="${BUILD_NUMBER:-$(git rev-list --count HEAD 2>/dev/null || echo 1)}"
 # Distribution identities need the hardened runtime and a secure timestamp
 # for notarization; ad-hoc development builds keep plain signatures.
 sign_flags=(--force --sign "$signing_identity")
