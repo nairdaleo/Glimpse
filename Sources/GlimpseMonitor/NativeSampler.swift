@@ -99,7 +99,7 @@ public final class NativeSampler {
             do {
                 let counters = try readNetworkCounters()
                 available = Array(Set(counters.map(\.name))).sorted()
-                if configurationVisible || detailVisible {
+                if configurationVisible || (detailVisible && settings.panels.contains { $0.isNetwork && $0.appearance.showsConnectionDetails }) {
                     let names = Set(counters.map(\.name))
                     if now - interfaceMetadataTimestamp >= 10 || names != metadataCounterNames {
                         interfaceMetadata = readMetadata(counters)

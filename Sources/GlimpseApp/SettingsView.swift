@@ -37,7 +37,12 @@ struct SettingsView: View {
                 Button("Reset settings") { store.resetSettings() }
             }
         }.padding(22).frame(minWidth: 560, idealWidth: 590, minHeight: 570)
-            .onAppear { services.refreshLoginStatus() }
+            .onAppear {
+                services.refreshLoginStatus()
+                store.setSettingsPreviewVisible(selectedTab == .panels)
+            }
+            .onChange(of: selectedTab) { tab in store.setSettingsPreviewVisible(tab == .panels) }
+            .onDisappear { store.setSettingsPreviewVisible(false) }
     }
 
     private var selectedID: UUID? {
@@ -129,12 +134,13 @@ struct SettingsView: View {
     }
 
     private var panelSettings: some View {
-        ScrollView {
+        let layout = StatusPanelLayout(settings: store.settings, maximumSize: CGSize(width: 10000, height: 10000))
+        return ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Picker("Cards per row", selection: setting(\.panelColumns)) {
+                    Picker("Regular slots per row", selection: setting(\.panelColumns)) {
                         ForEach(1...8, id: \.self) { Text("\($0)").tag($0) }
-                    }.frame(width: 210)
+                    }.frame(width: 260)
                     Spacer()
                     Menu {
                         Button("Upload / Download") { addPanel(metric: .download, combined: true) }
@@ -145,40 +151,35 @@ struct SettingsView: View {
                     .disabled(store.settings.panels.count >= 32)
                 }
                 HStack {
-                    Text("Card width")
+                    Text("Regular card width")
                     Slider(value: setting(\.panelCardWidth), in: 120...240, step: 4).accessibilityLabel("Card width")
                     Text("\(Int(store.settings.panelCardWidth)) pt").monospacedDigit().frame(width: 50, alignment: .trailing)
                 }
-                Text("Panels").font(.headline)
-                Text("Drag either side of a card to place it before or after. The blue line marks the drop position. Click to edit.")
+                Text("Detailed View preview").font(.headline)
+                Text("Drag either side of a card to place it before or after. Click to edit. Compact cards share a regular slot; large cards use two slots.")
                     .font(.caption).foregroundColor(.secondary)
                 if store.settings.panels.isEmpty {
                     Text("No panels yet. Use + Add panel to choose what to show.")
                         .font(.callout).foregroundColor(.secondary).padding(.vertical, 8)
                 } else {
-                    ScrollView(.horizontal, showsIndicators: true) {
-                        VStack(spacing: 8) {
-                            LazyVGrid(columns: Array(repeating: GridItem(.fixed(112), spacing: 8), count: organizerColumns), spacing: 8) {
-                                ForEach(Array(store.settings.panels.enumerated()), id: \.element.id) { index, panel in
+                    ScrollView([.horizontal, .vertical], showsIndicators: true) {
+                        ZStack(alignment: .topLeading) {
+                            ForEach(Array(store.settings.panels.enumerated()), id: \.element.id) { index, panel in
+                                if let rect = layout.placements[panel.id] {
                                     OrganizationTile(payload: .panel(panel.id), kind: .panel, isSelected: selectedPanel?.id == panel.id,
-                                                     label: "Panel \(index + 1), \(panel.displayTitle)", select: { selectedPanelID = panel.id }, drop: { payload, edge in
+                                                     label: "Panel \(index + 1), \(panel.displayTitle), \(panel.appearance.size.title)", select: { selectedPanelID = panel.id }, drop: { payload, edge in
                                         completeDrop(payload, target: .panel(panel.id), edge: edge)
                                     }) {
-                                        VStack(spacing: 4) {
-                                            Image(systemName: "line.3.horizontal").font(.caption).foregroundColor(.secondary)
-                                            Text("\(index + 1) · \(panel.displayTitle)").font(.caption)
-                                                .multilineTextAlignment(.center).lineLimit(2).frame(height: 30, alignment: .top)
-                                            Text(panel.isNetwork ? (panel.networkInterface ?? "Auto") : panel.appearance.size.title)
-                                                .font(.caption2).foregroundColor(.secondary)
-                                        }.frame(width: 112, height: 84)
-                                            .background(selectedPanel?.id == panel.id ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.04))
-                                            .cornerRadius(8)
-                                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(selectedPanel?.id == panel.id ? Color.accentColor : Color.clear, lineWidth: 1.5))
-                                    }.frame(width: 112, height: 84)
+                                        MetricCardContent(panel: panel, snapshot: store.snapshot, history: store.history,
+                                                          networkHistory: store.networkHistory, settings: store.settings,
+                                                          width: rect.width, height: rect.height)
+                                            .overlay(RoundedRectangle(cornerRadius: 9).stroke(selectedPanel?.id == panel.id ? Color.accentColor : Color.clear, lineWidth: 2))
+                                    }.frame(width: rect.width, height: rect.height)
+                                        .offset(x: rect.minX, y: rect.minY)
                                 }
                             }
-                        }.frame(width: CGFloat(organizerColumns) * 112 + CGFloat(organizerColumns - 1) * 8).padding(2)
-                    }
+                        }.frame(width: layout.gridWidth, height: layout.gridHeight, alignment: .topLeading).padding(2)
+                    }.frame(height: min(360, layout.gridHeight + 4))
                 }
                 if let panel = selectedPanel {
                     VStack(alignment: .leading, spacing: 12) {
@@ -205,7 +206,6 @@ struct SettingsView: View {
     private var selectedPanel: PanelConfiguration? {
         store.settings.panels.first { $0.id == selectedPanelID } ?? store.settings.panels.first
     }
-    private var organizerColumns: Int { min(store.settings.panelColumns, max(1, store.settings.panels.count)) }
 
     private func addPanel(metric: MetricID, combined: Bool = false) {
         store.change { settings in
@@ -473,7 +473,13 @@ private struct PanelEditor: View {
             Picker("Card size", selection: configuration(\.appearance.size)) {
                 ForEach(PanelCardSize.allCases) { Text($0.title).tag($0) }
             }
+            if panel.appearance.size == .large {
+                Picker("Large card layout", selection: configuration(\.appearance.largeOrientation)) {
+                    ForEach(PanelLargeOrientation.allCases) { Text($0.title).tag($0) }
+                }
+            }
             if panel.isNetwork {
+                Toggle("Show connection details", isOn: configuration(\.appearance.showsConnectionDetails))
                 NetworkInterfacePicker(selection: configuration(\.networkInterface), snapshot: store.snapshot)
                 SelectedInterfaceDetails(selection: panel.networkInterface, snapshot: store.snapshot)
             }
