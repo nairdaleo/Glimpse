@@ -4,6 +4,32 @@ import GlimpseCore
 @testable import GlimpseMonitor
 
 final class NativeSamplerTests: XCTestCase {
+    func testConnectionMetadataIsCollectedOnlyForOptedInCardsOrSettings() {
+        var now: TimeInterval = 1
+        var metadataReads = 0
+        let info = NetworkInterfaceInfo(name: "en0", displayName: "Wi-Fi", kind: "Wi-Fi", isUp: true, isRunning: true)
+        let sampler = NativeSampler(networkReader: {
+            [InterfaceCounter(name: "en0", index: 1, flags: Int32(IFF_UP | IFF_RUNNING), received: 100, sent: 10)]
+        }, clock: { now }, physicalReader: { ["en0"] }, primaryReader: { "en0" }, metadataReader: { _ in
+            metadataReads += 1
+            return [info]
+        })
+        var settings = AppSettings()
+        settings.panels = [PanelConfiguration(metric: .download)]
+        XCTAssertTrue(sampler.sample(settings: settings, detailVisible: true).interfaceDetails.isEmpty)
+        XCTAssertEqual(metadataReads, 0)
+        settings.panels[0].appearance.showsConnectionDetails = true
+        now = 2
+        XCTAssertEqual(sampler.sample(settings: settings, detailVisible: true).interfaceDetails, [info])
+        XCTAssertEqual(metadataReads, 1)
+        settings.panels[0].appearance.showsConnectionDetails = false
+        now = 3
+        XCTAssertTrue(sampler.sample(settings: settings, detailVisible: true).interfaceDetails.isEmpty)
+        XCTAssertEqual(metadataReads, 1)
+        XCTAssertEqual(sampler.sample(settings: settings, detailVisible: false, configurationVisible: true).interfaceDetails, [info])
+        XCTAssertEqual(metadataReads, 1)
+    }
+
     func testRateUsesMeasuredTimeAndResetsOnIdentityChangeOrReadFailure() {
         var tracker = InterfaceRateTracker()
         XCTAssertNil(tracker.update(identity: "en0:1", received: 100, sent: 20, timestamp: 10))
@@ -246,7 +272,13 @@ final class NativeSamplerTests: XCTestCase {
 
     func testLiveNativeReadersAreAvailableWithoutPrivilegesAndFirstRatesAreMissing() throws {
         let sampler = NativeSampler()
-        let first = sampler.sample(settings: AppSettings(), detailVisible: true)
+        // Connection metadata is opt-in; enable it so this live test still covers
+        // privilege-free interface metadata collection.
+        var settings = AppSettings()
+        if let index = settings.panels.firstIndex(where: { $0.isNetwork }) {
+            settings.panels[index].appearance.showsConnectionDetails = true
+        }
+        let first = sampler.sample(settings: settings, detailVisible: true)
         XCTAssertEqual(Set(first.readings.keys), Set(MetricID.allCases))
         XCTAssertNil(first.readings[.cpu]?.value)
         XCTAssertNil(first.readings[.download]?.value)

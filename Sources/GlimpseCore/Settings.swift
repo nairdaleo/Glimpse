@@ -94,24 +94,41 @@ public enum PanelCardSize: String, Codable, CaseIterable, Identifiable, Sendable
     public var title: String { rawValue.capitalized }
 }
 
+public enum PanelLargeOrientation: String, Codable, CaseIterable, Identifiable, Sendable {
+    case vertical, horizontal
+    public var id: String { rawValue }
+    public var title: String {
+        switch self {
+        case .vertical: return "1 × 2 · Vertical"
+        case .horizontal: return "2 × 1 · Horizontal"
+        }
+    }
+}
+
 public struct PanelAppearance: Codable, Equatable, Sendable {
     public var size: PanelCardSize
     public var colour: MeterColour
     public var showsHistory: Bool
+    public var largeOrientation: PanelLargeOrientation
+    public var showsConnectionDetails: Bool
 
-    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true) {
+    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true, largeOrientation: PanelLargeOrientation = .vertical, showsConnectionDetails: Bool = false) {
         self.size = size
         self.colour = colour
         self.showsHistory = showsHistory
+        self.largeOrientation = largeOrientation
+        self.showsConnectionDetails = showsConnectionDetails
     }
 
-    private enum CodingKeys: String, CodingKey { case size, colour, showsHistory }
+    private enum CodingKeys: String, CodingKey { case size, colour, showsHistory, largeOrientation, showsConnectionDetails }
     public init(from decoder: Decoder) throws {
         self.init()
         guard let values = try? decoder.container(keyedBy: CodingKeys.self) else { return }
         size = (try? values.decode(PanelCardSize.self, forKey: .size)) ?? size
         colour = (try? values.decode(MeterColour.self, forKey: .colour)) ?? colour
         showsHistory = (try? values.decode(Bool.self, forKey: .showsHistory)) ?? showsHistory
+        largeOrientation = (try? values.decode(PanelLargeOrientation.self, forKey: .largeOrientation)) ?? largeOrientation
+        showsConnectionDetails = (try? values.decode(Bool.self, forKey: .showsConnectionDetails)) ?? showsConnectionDetails
     }
 }
 

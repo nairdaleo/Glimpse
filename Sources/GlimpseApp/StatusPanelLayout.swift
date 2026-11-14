@@ -7,6 +7,7 @@ struct StatusPanelLayout {
     static let headerHeight: CGFloat = 52
     static let footerHeight: CGFloat = 44
     static let networkHeight: CGFloat = 24
+    static let halfRowHeight: CGFloat = 70
 
     let size: CGSize
     let columns: Int
@@ -17,21 +18,65 @@ struct StatusPanelLayout {
     let rowHeights: [CGFloat]
     let gridHeight: CGFloat
     let showsNetwork: Bool
+    /// Top-left-origin card frames, shared by the Settings preview and live view.
+    let placements: [UUID: CGRect]
 
     init(settings: AppSettings, maximumSize: CGSize) {
         let settings = settings.validated()
-        columns = min(settings.panelColumns, max(1, settings.panels.count))
         cardWidth = CGFloat(settings.panelCardWidth)
-        gridWidth = settings.panels.isEmpty ? 182 : CGFloat(columns) * cardWidth + CGFloat(columns - 1) * Self.spacing
-        cardHeights = settings.panels.reduce(into: [:]) { $0[$1.metric] = Self.height(for: $1.appearance.size) }
-        panelHeights = Dictionary(uniqueKeysWithValues: settings.panels.map { ($0.id, Self.height(for: $0.appearance.size)) })
-        var heights: [CGFloat] = []
-        for start in stride(from: 0, to: settings.panels.count, by: columns) {
-            let row = settings.panels[start..<min(start + columns, settings.panels.count)]
-            heights.append(row.map { Self.height(for: $0.appearance.size) }.max() ?? 0)
+        // A horizontal large card keeps its chosen orientation even when the
+        // configured grid has one slot. Unused rightmost slots are trimmed later.
+        let slotCount = max(settings.panelColumns, settings.panels.contains {
+            $0.appearance.size == .large && $0.appearance.largeOrientation == .horizontal
+        } ? 2 : 1)
+        var occupied: Set<Int> = []
+        var cursor = 0
+        var usedColumns = 0
+        var usedRows = 0
+        var frames: [UUID: CGRect] = [:]
+        for panel in settings.panels {
+            let span = Self.span(for: panel.appearance)
+            var start = cursor
+            while true {
+                // Visit the top and bottom compact halves of one regular
+                // slot before moving right to the next slot.
+                let half = start % 2
+                let row = (start / (slotCount * 2)) * 2 + half
+                let column = (start / 2) % slotCount
+                if span.rows > 1 && half != 0 {
+                    start += 1
+                    continue
+                }
+                if column + span.columns > slotCount {
+                    start += (slotCount - column) * 2
+                    continue
+                }
+                let cells = (0..<span.rows).flatMap { dy in
+                    (0..<span.columns).map { dx in (row + dy) * slotCount + column + dx }
+                }
+                if cells.allSatisfy({ !occupied.contains($0) }) {
+                    occupied.formUnion(cells)
+                    frames[panel.id] = CGRect(x: CGFloat(column) * (cardWidth + Self.spacing),
+                                              y: CGFloat(row) * (Self.halfRowHeight + Self.spacing),
+                                              width: CGFloat(span.columns) * cardWidth + CGFloat(span.columns - 1) * Self.spacing,
+                                              height: CGFloat(span.rows) * Self.halfRowHeight + CGFloat(span.rows - 1) * Self.spacing)
+                    usedColumns = max(usedColumns, column + span.columns)
+                    usedRows = max(usedRows, row + span.rows)
+                    // Do not backfill earlier regular slots after advancing:
+                    // compact pairs retain the organizer's reading order.
+                    cursor = start + 1
+                    break
+                }
+                start += 1
+            }
         }
-        rowHeights = heights
-        gridHeight = heights.isEmpty ? 100 : heights.reduce(0, +) + CGFloat(heights.count - 1) * Self.spacing
+        placements = frames
+        columns = max(1, usedColumns)
+        gridWidth = settings.panels.isEmpty ? 182 : CGFloat(columns) * cardWidth + CGFloat(columns - 1) * Self.spacing
+        panelHeights = frames.mapValues(\.height)
+        cardHeights = settings.panels.reduce(into: [:]) { $0[$1.metric] = frames[$1.id]?.height }
+        rowHeights = Array(repeating: Self.halfRowHeight, count: usedRows)
+        gridHeight = usedRows == 0 ? 100 : CGFloat(usedRows) * Self.halfRowHeight + CGFloat(usedRows - 1) * Self.spacing
         showsNetwork = settings.panels.contains { $0.isNetwork }
         let desired = CGSize(width: max(210, gridWidth + Self.padding * 2),
                              height: Self.headerHeight + Self.footerHeight + gridHeight + Self.padding * 2 + (showsNetwork ? Self.networkHeight : 0) + 2)
@@ -42,9 +87,22 @@ struct StatusPanelLayout {
 
     static func height(for size: PanelCardSize) -> CGFloat {
         switch size {
-        case .compact: return 100
+        case .compact: return 70
         case .regular: return 150
-        case .large: return 190
+        case .large: return 310
+        }
+    }
+
+    static func height(for appearance: PanelAppearance) -> CGFloat {
+        let rows = span(for: appearance).rows
+        return CGFloat(rows) * halfRowHeight + CGFloat(rows - 1) * spacing
+    }
+
+    private static func span(for appearance: PanelAppearance) -> (columns: Int, rows: Int) {
+        switch appearance.size {
+        case .compact: return (1, 1)
+        case .regular: return (1, 2)
+        case .large: return appearance.largeOrientation == .horizontal ? (2, 2) : (1, 4)
         }
     }
 

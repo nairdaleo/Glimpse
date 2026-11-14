@@ -17,6 +17,7 @@ final class MonitoringStore: ObservableObject {
     private var generation = 0
     private var sleeping = false
     private var settingsVisible = false
+    private var settingsPreviewVisible = false
     private var observers: [NSObjectProtocol] = []
     private var workspaceObservers: [NSObjectProtocol] = []
     private static let settingsKey = "glimpse.settings.v1"
@@ -68,6 +69,12 @@ final class MonitoringStore: ObservableObject {
         schedule()
     }
 
+    func setSettingsPreviewVisible(_ visible: Bool) {
+        guard settingsPreviewVisible != visible else { return }
+        settingsPreviewVisible = visible
+        schedule()
+    }
+
     func stop() {
         generation += 1
         timer?.cancel()
@@ -98,7 +105,7 @@ final class MonitoringStore: ObservableObject {
         guard !sleeping else { return }
         let version = generation
         let configuration = settings
-        let visible = detailVisible
+        let visible = detailVisible || (settingsVisible && settingsPreviewVisible)
         let configuring = settingsVisible
         let interval = max(configuration.refreshInterval, ProcessInfo.processInfo.isLowPowerModeEnabled ? 5 : 1)
         let source = DispatchSource.makeTimerSource(queue: .main)
