@@ -35,8 +35,12 @@ public struct Snapshot: Sendable {
     public var networkReadings: [String: NetworkInterfaceReading]
     public var interfaceDetails: [NetworkInterfaceInfo]
     public var automaticNetworkInterface: String?
+    /// Utilization percentage per logical CPU core, in core order.
+    /// Empty until the first per-core baseline exists.
+    public var cpuCores: [Double]
     public init(timestamp: TimeInterval, readings: [MetricID: MetricReading] = [:], networkInterface: String = "", availableInterfaces: [String] = [],
-                networkReadings: [String: NetworkInterfaceReading] = [:], interfaceDetails: [NetworkInterfaceInfo] = [], automaticNetworkInterface: String? = nil) {
+                networkReadings: [String: NetworkInterfaceReading] = [:], interfaceDetails: [NetworkInterfaceInfo] = [], automaticNetworkInterface: String? = nil,
+                cpuCores: [Double] = []) {
         self.timestamp = timestamp
         self.readings = readings
         self.networkInterface = networkInterface
@@ -44,6 +48,7 @@ public struct Snapshot: Sendable {
         self.networkReadings = networkReadings
         self.interfaceDetails = interfaceDetails
         self.automaticNetworkInterface = automaticNetworkInterface
+        self.cpuCores = cpuCores
     }
 
     public func networkReading(for metric: MetricID, interface: String?) -> MetricReading? {

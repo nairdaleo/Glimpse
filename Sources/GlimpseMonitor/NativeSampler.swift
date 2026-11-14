@@ -7,6 +7,7 @@ import GlimpseCore
 /// This class intentionally has no internal timer and must not be called concurrently.
 public final class NativeSampler {
     private var cpuBaseline: CPUTicks?
+    private var coreBaselines: [CPUTicks] = []
     private var networkRates: [String: InterfaceRateTracker] = [:]
     private var cache: [MetricID: MetricReading] = [:]
     private var physical: Set<String> = []
@@ -37,6 +38,7 @@ public final class NativeSampler {
 
     public func resetBaselines() {
         cpuBaseline = nil
+        coreBaselines = []
         networkRates.removeAll()
         cache.removeAll()
         networkMetadataTimestamp = -.infinity
@@ -50,17 +52,24 @@ public final class NativeSampler {
         if detailVisible { demanded.formUnion(settings.panels.flatMap(\.requiredMetrics)) }
         if settings.showBandwidth { demanded.formUnion([.download, .upload]) }
         var readings: [MetricID: MetricReading] = [:]
+        var cpuCores: [Double] = []
         if demanded.contains(.cpu) {
             do {
                 let ticks = try NativeSystemReader.cpuTicks()
                 let value = CPUUsage.percentage(previous: cpuBaseline, current: ticks)
                 cpuBaseline = ticks
                 readings[.cpu] = MetricReading(value: value, detail: value == nil ? "Collecting CPU baseline" : "CPU activity across all cores", timestamp: now)
+                let coreTicks = try NativeSystemReader.perCoreTicks()
+                if coreBaselines.count == coreTicks.count {
+                    cpuCores = zip(coreBaselines, coreTicks).compactMap { CPUUsage.percentage(previous: $0, current: $1) }
+                }
+                coreBaselines = coreTicks
             } catch {
                 cpuBaseline = nil
+                coreBaselines = []
                 readings[.cpu] = unavailable(error, timestamp: now)
             }
-        } else { cpuBaseline = nil }
+        } else { cpuBaseline = nil; coreBaselines = [] }
 
         for (metric, interval) in [(MetricID.memory, 2.0), (.battery, 10), (.disk, 30), (.thermal, 5)] where demanded.contains(metric) {
             if let previous = cache[metric], now - previous.timestamp < interval {
@@ -168,7 +177,7 @@ public final class NativeSampler {
             }
         } else { networkRates.removeAll() }
         return Snapshot(timestamp: now, readings: readings, networkInterface: interface, availableInterfaces: available,
-                        networkReadings: networkReadings, interfaceDetails: details, automaticNetworkInterface: automatic)
+                        networkReadings: networkReadings, interfaceDetails: details, automaticNetworkInterface: automatic, cpuCores: cpuCores)
     }
 
     private func unavailable(_ error: Error, timestamp: TimeInterval) -> MetricReading {
@@ -199,6 +208,34 @@ enum NativeSystemReader {
         guard result == KERN_SUCCESS else { throw NativeReadError.system("CPU counters", result) }
         return CPUTicks(user: UInt64(info.cpu_ticks.0), system: UInt64(info.cpu_ticks.1),
                         idle: UInt64(info.cpu_ticks.2), nice: UInt64(info.cpu_ticks.3))
+    }
+
+    /// Per-logical-core tick buckets in the same user/system/idle/nice order
+    /// as `host_cpu_load_info`. Callers own the returned baseline state.
+    static func perCoreTicks() throws -> [CPUTicks] {
+        var processorCount: natural_t = 0
+        var loads: processor_info_array_t?
+        var loadsCount: mach_msg_type_number_t = 0
+        let host = mach_host_self()
+        defer { mach_port_deallocate(mach_task_self_, host) }
+        let result = host_processor_info(host, PROCESSOR_CPU_LOAD_INFO, &processorCount, &loads, &loadsCount)
+        guard result == KERN_SUCCESS else { throw NativeReadError.system("Per-core CPU counters", result) }
+        defer {
+            if let base = loads {
+                let size = vm_size_t(MemoryLayout<integer_t>.stride) * vm_size_t(loadsCount)
+                vm_deallocate(mach_task_self_, vm_address_t(bitPattern: base), size)
+            }
+        }
+        guard let base = loads else { return [] }
+        // processor_cpu_load_info is a four-integer cpu_ticks array per core:
+        // user, system, idle, nice — the same order as host_cpu_load_info.
+        let ticksPerCore = MemoryLayout<processor_cpu_load_info>.stride / MemoryLayout<integer_t>.stride
+        let buffer = UnsafeBufferPointer(start: base, count: Int(loadsCount))
+        return (0..<Int(processorCount)).map { core in
+            let offset = core * ticksPerCore
+            return CPUTicks(user: UInt64(buffer[offset]), system: UInt64(buffer[offset + 1]),
+                            idle: UInt64(buffer[offset + 2]), nice: UInt64(buffer[offset + 3]))
+        }
     }
 
     static func memory(timestamp: TimeInterval) throws -> MetricReading {
@@ -238,11 +275,48 @@ enum NativeSystemReader {
                 return MetricReading(value: nil, detail: "Battery capacity unavailable", timestamp: timestamp)
             }
             let charging = (description[kIOPSIsChargingKey] as? NSNumber)?.boolValue == true
+            let charged = (description[kIOPSIsChargedKey] as? NSNumber)?.boolValue == true
             let state = description[kIOPSPowerSourceStateKey] as? String
-            let detail = charging ? "Charging" : (state == kIOPSACPowerValue ? "Connected to power" : "On battery")
-            return MetricReading(value: min(100, max(0, current.doubleValue / maximum.doubleValue * 100)), detail: detail, timestamp: timestamp)
+            var parts: [String] = [batteryState(charging: charging, charged: charged, state: state)]
+            // kIOPSTimeToFullChargeKey / kIOPSTimeToEmptyKey are #defines, so
+            // they stay raw strings here. -1 means the estimate is calculating.
+            if charging {
+                if let minutes = (description["Time to Full Charge"] as? NSNumber)?.doubleValue, minutes > 0 {
+                    parts.append("full in " + duration(minutes: minutes))
+                }
+            } else if !charged,
+                      let minutes = (description["Time to Empty"] as? NSNumber)?.doubleValue, minutes > 0 {
+                parts.append(duration(minutes: minutes) + " left")
+            }
+            if let watts = externalAdapterWatts() {
+                parts.append("\(Int(watts.rounded())) W adapter")
+            }
+            return MetricReading(value: min(100, max(0, current.doubleValue / maximum.doubleValue * 100)),
+                                 detail: parts.joined(separator: " · "), timestamp: timestamp)
         }
         return MetricReading(value: nil, detail: "No internal battery", timestamp: timestamp)
+    }
+
+    private static func batteryState(charging: Bool, charged: Bool, state: String?) -> String {
+        if charging { return "Charging" }
+        if charged { return "Charged" }
+        return state == kIOPSACPowerValue ? "Connected to power" : "On battery"
+    }
+
+    /// Charger wattage via the public external-adapter dictionary; absent on
+    /// desktop Macs or unsupported chargers, and simply omitted then.
+    private static func externalAdapterWatts() -> Double? {
+        guard let details = IOPSCopyExternalPowerAdapterDetails()?.takeRetainedValue() as? [String: Any],
+              let number = details["Watts"] as? NSNumber, number.doubleValue > 0 else { return nil }
+        return number.doubleValue
+    }
+
+    private static func duration(minutes: Double) -> String {
+        let total = max(1, Int(minutes.rounded()))
+        let hours = total / 60
+        let minutesPart = total % 60
+        if hours > 0 { return minutesPart == 0 ? "\(hours) hr" : "\(hours) hr \(minutesPart) min" }
+        return "\(minutesPart) min"
     }
 
     static func disk(timestamp: TimeInterval) throws -> MetricReading {
@@ -255,8 +329,9 @@ enum NativeSystemReader {
         let used = total - min(total, max(0, available))
         let usedText = ByteCountFormatter.string(fromByteCount: Int64(clamping: used), countStyle: .file)
         let totalText = ByteCountFormatter.string(fromByteCount: Int64(clamping: total), countStyle: .file)
+        let freeText = ByteCountFormatter.string(fromByteCount: Int64(clamping: max(0, available)), countStyle: .file)
         return MetricReading(value: min(100, max(0, (1 - Double(available) / Double(total)) * 100)),
-                             detail: "/ · \(usedText) used of \(totalText)", timestamp: timestamp)
+                             detail: "\(usedText) used of \(totalText) · \(freeText) free", timestamp: timestamp)
     }
 
     static func thermal(timestamp: TimeInterval) -> MetricReading {
