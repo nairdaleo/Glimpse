@@ -55,6 +55,6 @@ To uninstall, use **Remove Glimpse…** in General settings: after confirmation 
 
 ## Mac App Store roadmap
 
-The owner wants a free Mac App Store edition with optional support and reviews. That requires a separate sandboxed distribution build that excludes Sparkle and receives updates through the store. Native metric access, login behavior, entitlements and app review still require validation in that build; the direct-download package is not a submission-ready store archive.
+The owner wants a free Mac App Store edition with optional support and reviews. `scripts/make-pkg.sh` builds that edition: sandboxed, compiled with `GLIMPSE_APP_STORE=1` so Sparkle is excluded, with updates left to the store (see [releasing.md](releasing.md)). Native metric access, login behavior, entitlements and app review still require validation in that build; the direct-download package is not a submission-ready store archive.
 
 Optional support should use StoreKit in-app purchases for developer tips, without locking monitoring features. Apple permits in-app purchase currencies for tipping developers in its [review guidelines](https://developer.apple.com/app-store/review/guidelines/). Review requests should use Apple's [native StoreKit review API](https://developer.apple.com/documentation/StoreKit/requesting-app-store-reviews); the system decides whether a prompt appears. Neither tip products nor review prompts are implemented in the current direct-download build.

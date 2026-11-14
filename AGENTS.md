@@ -16,6 +16,7 @@ Compact native macOS menu-bar system monitor. Read README.md, docs/design.md, do
 - `swift test` runs core and native-reader tests.
 - `./scripts/build-app.sh` builds and ad-hoc signs `build/Glimpse.app` for the host architecture.
 - `ARCH=universal ./scripts/build-app.sh` builds arm64 and x86_64 together.
+- `scripts/make-pkg.sh` builds the sandboxed, Sparkle-free Mac App Store edition (`APP_STORE=1`, Swift flag `APP_STORE`) into `build/AppStore/` and a `.pkg`; Actions → App Store upload sends it to App Store Connect.
 - `build/Glimpse.app/Contents/MacOS/Glimpse --diagnose` samples native readers without opening UI.
 - `build/Glimpse.app/Contents/MacOS/Glimpse --render-cards <dir>` renders saved panels at every card size with live data (light/dark) for visual audits; relaunch the app after each feature so the user can verify.
 - CI (`.github/workflows/ci.yml`) runs tests, universal build and diagnostics on Apple silicon and Intel runners plus a gitleaks scan. Releases: `vX.Y.Z-rc.N` tags → signed, notarized pre-release; promote via the Promote workflow (docs/releasing.md). Owner-only steps carry the `needs-owner` issue label.

@@ -1,7 +1,9 @@
 import AppKit
 import Combine
 import ServiceManagement
+#if !APP_STORE
 import Sparkle
+#endif
 
 /// Owns the operating-system login item and Sparkle's persistent update preferences.
 @MainActor
@@ -16,7 +18,9 @@ final class LifecycleServices: ObservableObject {
 
     private static let helperIdentifier = "com.tastyjam.glimpse.loginhelper"
     private static let legacyLoginRequestKey = "GlimpseLegacyLoginRequested"
+#if !APP_STORE
     private var updaterController: SPUStandardUpdaterController?
+#endif
     private var observations = Set<AnyCancellable>()
 
     init() {
@@ -105,6 +109,13 @@ final class LifecycleServices: ObservableObject {
         }
     }
 
+#if APP_STORE
+    // Mac App Store edition: the store delivers updates and Sparkle is not linked.
+    func setAutomaticChecks(_ enabled: Bool) {}
+    func setAutomaticDownloads(_ enabled: Bool) {}
+    func checkForUpdates() {}
+    private func configureUpdater() { updateStatus = "Updates are delivered by the App Store." }
+#else
     func setAutomaticChecks(_ enabled: Bool) {
         guard updateConfigured, let updater = updaterController?.updater else { return }
         updater.automaticallyChecksForUpdates = enabled
@@ -170,4 +181,5 @@ final class LifecycleServices: ObservableObject {
         canCheckForUpdates = updater.canCheckForUpdates
         updateStatus = automaticChecks ? "Automatic update checks are on." : "Check manually or enable automatic update checks."
     }
+#endif
 }

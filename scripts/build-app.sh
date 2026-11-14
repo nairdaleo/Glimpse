@@ -7,6 +7,24 @@ architecture="${ARCH:-$(uname -m)}"
 signing_identity="${CODESIGN_IDENTITY:--}"
 version="${VERSION:-0.3.0}"
 build_number="${BUILD_NUMBER:-$(git rev-list --count HEAD 2>/dev/null || echo 1)}"
+# APP_STORE=1 builds the Mac App Store edition: sandboxed, without Sparkle or
+# the update feed, into build/AppStore/Glimpse.app. PROVISIONING_PROFILE (a Mac
+# App Store profile) is embedded when set; scripts/make-pkg.sh drives this.
+app_store="${APP_STORE:-}"
+[[ "$app_store" == "1" ]] || app_store=""
+if [[ -n "$app_store" ]]; then
+    export GLIMPSE_APP_STORE=1
+    # Separate scratch directory so switching editions does not rebuild everything.
+    swift_build=(swift build --scratch-path .build/appstore)
+    bundle="build/AppStore/Glimpse.app"
+    rm -rf "$bundle"
+    extra_info="<key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
+<key>ITSAppUsesNonExemptEncryption</key><false/>"
+else
+    swift_build=(swift build)
+    bundle="build/Glimpse.app"
+    extra_info=""
+fi
 # Distribution identities need the hardened runtime and a secure timestamp
 # for notarization; ad-hoc development builds keep plain signatures.
 sign_flags=(--force --sign "$signing_identity")
@@ -19,13 +37,12 @@ if [[ "$architecture" != "arm64" && "$architecture" != "x86_64" && "$architectur
 fi
 mkdir -p build
 if [[ "$architecture" == "universal" ]]; then
-    swift build -c "$configuration" --arch arm64 --arch x86_64
-    binary_dir="$(swift build -c "$configuration" --arch arm64 --arch x86_64 --show-bin-path)"
+    "${swift_build[@]}" -c "$configuration" --arch arm64 --arch x86_64
+    binary_dir="$("${swift_build[@]}" -c "$configuration" --arch arm64 --arch x86_64 --show-bin-path)"
 else
-    swift build -c "$configuration" --arch "$architecture"
-    binary_dir="$(swift build -c "$configuration" --arch "$architecture" --show-bin-path)"
+    "${swift_build[@]}" -c "$configuration" --arch "$architecture"
+    binary_dir="$("${swift_build[@]}" -c "$configuration" --arch "$architecture" --show-bin-path)"
 fi
-bundle="build/Glimpse.app"
 mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources" "$bundle/Contents/Frameworks"
 cp "$binary_dir/Glimpse" "$bundle/Contents/MacOS/Glimpse"
 resource_bundle="Glimpse_GlimpseApp.bundle"
@@ -47,6 +64,7 @@ cat > "$bundle/Contents/Info.plist" <<PLIST
 <key>LSMinimumSystemVersion</key><string>12.0</string>
 <key>LSUIElement</key><true/>
 <key>NSHighResolutionCapable</key><true/>
+$extra_info
 <key>GlimpseCommit</key><string>$(git rev-parse --short HEAD 2>/dev/null || echo unknown)$(git diff --quiet HEAD 2>/dev/null || echo -dirty)</string>
 <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Tasty Jam App Development. MIT licensed.</string>
 </dict></plist>
@@ -55,6 +73,9 @@ if [[ -f "$bundle/Contents/LICENSE" ]]; then
     mv "$bundle/Contents/LICENSE" "$bundle/Contents/Resources/LICENSE"
 fi
 cp LICENSE "$bundle/Contents/Resources/LICENSE"
+app_sign_flags=("${sign_flags[@]}")
+helper_sign_flags=("${sign_flags[@]}")
+if [[ -z "$app_store" ]]; then
 python3 - <<'PY'
 from pathlib import Path
 import plistlib
@@ -79,6 +100,33 @@ codesign "${sign_flags[@]}" --preserve-metadata=entitlements "$sparkle/Versions/
 codesign "${sign_flags[@]}" "$sparkle/Versions/B/Autoupdate"
 codesign "${sign_flags[@]}" "$sparkle/Versions/B/Updater.app"
 codesign "${sign_flags[@]}" "$sparkle"
+else
+    # The app's entitlements are the sandbox plus the identifiers from the
+    # provisioning profile, which App Store Connect requires to match.
+    rmdir "$bundle/Contents/Frameworks"
+    entitlements="build/AppStore/Glimpse.entitlements"
+    cp Configuration/AppStore.entitlements "$entitlements"
+    if [[ -n "${PROVISIONING_PROFILE:-}" ]]; then
+        cp "$PROVISIONING_PROFILE" "$bundle/Contents/embedded.provisionprofile"
+        security cms -D -i "$PROVISIONING_PROFILE" -o build/AppStore/profile.plist
+        python3 - "$entitlements" <<'PY'
+import plistlib, sys
+with open('build/AppStore/profile.plist', 'rb') as file:
+    profile = plistlib.load(file)['Entitlements']
+with open(sys.argv[1], 'rb') as file:
+    values = plistlib.load(file)
+for key in ('com.apple.application-identifier', 'com.apple.developer.team-identifier'):
+    values[key] = profile[key]
+if values['com.apple.application-identifier'].split('.', 1)[1] != 'com.tastyjam.glimpse':
+    sys.exit('The provisioning profile is not for com.tastyjam.glimpse.')
+with open(sys.argv[1], 'wb') as file:
+    plistlib.dump(values, file)
+PY
+        rm build/AppStore/profile.plist
+    fi
+    app_sign_flags+=(--entitlements "$entitlements")
+    helper_sign_flags+=(--entitlements Configuration/AppStore.entitlements)
+fi
 
 helper="$bundle/Contents/Library/LoginItems/GlimpseLoginHelper.app"
 mkdir -p "$helper/Contents/MacOS"
@@ -97,8 +145,8 @@ cat > "$helper/Contents/Info.plist" <<PLIST
 <key>LSUIElement</key><true/>
 </dict></plist>
 PLIST
-codesign "${sign_flags[@]}" "$helper"
-codesign "${sign_flags[@]}" "$bundle"
+codesign "${helper_sign_flags[@]}" "$helper"
+codesign "${app_sign_flags[@]}" "$bundle"
 codesign --verify --deep --strict "$bundle"
 if [[ "$signing_identity" == "-" ]]; then
     echo "Built $bundle $version ($build_number, $architecture), ad-hoc signed for local use."

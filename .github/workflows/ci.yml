@@ -37,6 +37,10 @@ jobs:
         # Exercises the real CPU/memory/disk/network/battery readers; virtual
         # runners have no battery, which the reader reports as unavailable.
         run: build/Glimpse.app/Contents/MacOS/Glimpse --diagnose
+      - name: App Store edition builds and reads metrics inside the sandbox
+        run: |
+          APP_STORE=1 ARCH=universal ./scripts/build-app.sh
+          build/AppStore/Glimpse.app/Contents/MacOS/Glimpse --diagnose
       - name: Card renders for visual review
         run: GLIMPSE_RENDER_ARTIFACTS="$RUNNER_TEMP/cards" swift test --filter MetricCardRenderingTests
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
