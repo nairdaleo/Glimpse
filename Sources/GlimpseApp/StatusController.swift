@@ -80,7 +80,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
         let levels = settings.columns.map { column in
             var latch = thresholds[column.id] ?? ThresholdLatch()
             let result = latch.evaluate(value: store.snapshot.displayReading(for: column.isCombinedNetwork ? .upload : column.metric, interface: column.networkInterface)?.value, column: column,
-                                       deadband: column.metric == .thermal ? 0 : (column.metric == .download || column.metric == .upload ? settings.networkCeiling * 0.01 : 1))
+                                       deadband: column.metric == .thermal ? 0 : (column.metric == .download || column.metric == .upload ? settings.networkCeiling(for: column.isCombinedNetwork ? .upload : column.metric) * 0.01 : 1))
             thresholds[column.id] = latch
             return result
         }

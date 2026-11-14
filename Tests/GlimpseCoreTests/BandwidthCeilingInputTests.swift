@@ -25,4 +25,18 @@ final class BandwidthCeilingInputTests: XCTestCase {
             XCTAssertEqual(restored, original, accuracy: 0.000001)
         }
     }
+
+    func testUploadCeilingIsIndependentAndLegacySettingsInheritTheSharedCeiling() throws {
+        let legacy = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"networkCeiling":9375000}"#.utf8))
+        XCTAssertEqual(legacy.uploadCeiling, 9_375_000)
+        var settings = AppSettings()
+        settings.networkCeiling = BandwidthCeilingInput.bytesPerSecond(displayValue: 75, bits: true)
+        settings.uploadCeiling = BandwidthCeilingInput.bytesPerSecond(displayValue: 7.5, bits: true)
+        let restored = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(restored.networkCeiling(for: .download), 9_375_000)
+        XCTAssertEqual(restored.networkCeiling(for: .upload), 937_500)
+        XCTAssertEqual(MetricPresentation.normalized(value: 468_750, metric: .upload, networkCeiling: restored.networkCeiling(for: .upload)), 0.5)
+        settings.uploadCeiling = .nan
+        XCTAssertEqual(settings.validated().uploadCeiling, settings.networkCeiling)
+    }
 }

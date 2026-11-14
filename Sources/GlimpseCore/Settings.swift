@@ -194,7 +194,10 @@ public struct AppSettings: Codable, Sendable {
     public var showBandwidth: Bool
     public var bandwidthInBits: Bool
     public var networkInterface: String?
+    /// Download full-scale rate in bytes/second (the legacy single ceiling).
     public var networkCeiling: Double
+    /// Upload full-scale rate in bytes/second; plans are often asymmetric.
+    public var uploadCeiling: Double
     public var refreshInterval: Double
     public var monochrome: Bool
     /// Byte-count presentation for memory and disk readings.
@@ -213,6 +216,7 @@ public struct AppSettings: Codable, Sendable {
         bandwidthInBits = false
         networkInterface = nil
         networkCeiling = 12_500_000
+        uploadCeiling = 12_500_000
         refreshInterval = 1
         monochrome = false
         capacityUnits = .si
@@ -256,7 +260,7 @@ public struct AppSettings: Codable, Sendable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, refreshInterval, monochrome, capacityUnits, bandwidthUnits }
+    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, uploadCeiling, refreshInterval, monochrome, capacityUnits, bandwidthUnits }
     public init(from decoder: Decoder) throws {
         self.init()
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -282,6 +286,8 @@ public struct AppSettings: Codable, Sendable {
         showBandwidth = (try? values.decode(Bool.self, forKey: .showBandwidth)) ?? showBandwidth
         bandwidthInBits = (try? values.decode(Bool.self, forKey: .bandwidthInBits)) ?? bandwidthInBits
         networkCeiling = (try? values.decode(Double.self, forKey: .networkCeiling)) ?? networkCeiling
+        // Legacy settings had one shared ceiling; upload starts from it.
+        uploadCeiling = (try? values.decode(Double.self, forKey: .uploadCeiling)) ?? networkCeiling
         refreshInterval = (try? values.decode(Double.self, forKey: .refreshInterval)) ?? refreshInterval
         monochrome = (try? values.decode(Bool.self, forKey: .monochrome)) ?? monochrome
         capacityUnits = (try? values.decode(CapacityUnits.self, forKey: .capacityUnits)) ?? capacityUnits
@@ -302,10 +308,16 @@ public struct AppSettings: Codable, Sendable {
         try values.encode(bandwidthInBits, forKey: .bandwidthInBits)
         try values.encode(networkInterface, forKey: .networkInterface)
         try values.encode(networkCeiling, forKey: .networkCeiling)
+        try values.encode(uploadCeiling, forKey: .uploadCeiling)
         try values.encode(refreshInterval, forKey: .refreshInterval)
         try values.encode(monochrome, forKey: .monochrome)
         try values.encode(capacityUnits, forKey: .capacityUnits)
         try values.encode(bandwidthUnits, forKey: .bandwidthUnits)
+    }
+
+    /// Full-scale rate for a network direction; download for anything else.
+    public func networkCeiling(for metric: MetricID) -> Double {
+        metric == .upload ? uploadCeiling : networkCeiling
     }
 
     public func panelAppearance(for metric: MetricID) -> PanelAppearance {
@@ -333,6 +345,7 @@ public struct AppSettings: Codable, Sendable {
         result.panelCardWidth = panelCardWidth.isFinite ? min(240, max(120, panelCardWidth)) : 156
         result.legacyPanelAppearances = legacyPanelAppearances.filter { MetricID(rawValue: $0.key) != nil }
         if !networkCeiling.isFinite || networkCeiling <= 0 { result.networkCeiling = defaults.networkCeiling }
+        if !uploadCeiling.isFinite || uploadCeiling <= 0 { result.uploadCeiling = result.networkCeiling }
         result.refreshInterval = refreshInterval.isFinite ? min(60, max(1, refreshInterval)) : defaults.refreshInterval
         result.networkInterface = cleanedInterface(networkInterface)
         return result
