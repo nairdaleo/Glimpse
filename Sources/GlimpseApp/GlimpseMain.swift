@@ -14,6 +14,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         store = MonitoringStore()
         services = LifecycleServices()
         statusController = StatusController(store: store, showSettings: { [weak self] metric in self?.showSettings(panel: metric) })
+        #if APP_STORE
+        _ = TipJar.shared // starts the StoreKit transaction listener
+        #endif
         if CommandLine.arguments.contains("--settings") { showSettings() }
     }
 
@@ -44,6 +47,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
         store.setSettingsVisible(true)
         settingsWindow?.makeKeyAndOrderFront(nil)
+        #if APP_STORE
+        ReviewPrompt.requestIfDue()
+        #endif
     }
 
     func windowWillClose(_ notification: Notification) {

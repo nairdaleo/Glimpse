@@ -88,7 +88,7 @@ One-time setup (owner):
 3. Profiles: create a **Mac App Store Connect** provisioning profile for that App ID and certificate; download it and point `PROVISIONING_PROFILE` at it.
 4. App Store Connect → Apps → + → New App (macOS, bundle ID `com.tastyjam.glimpse`).
 
-The first upload also needs an app icon (#16); App Store Connect rejects packages without one. Remaining store work (tips, review prompts) is tracked in #7.
+The store edition includes optional tips: three consumable in-app purchases, `com.tastyjam.glimpse.tip.small`, `.medium` and `.large`, created in App Store Connect and submitted together with the first version. It also asks for a review at most once per version, after two weeks of use, when Settings is opened. Both are in `Sources/GlimpseApp/TipJar.swift`. Tips are tested through TestFlight, where purchases are free.
 
 ## CI
 
