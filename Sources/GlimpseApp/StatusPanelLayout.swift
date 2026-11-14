@@ -6,7 +6,6 @@ struct StatusPanelLayout {
     static let padding: CGFloat = 14
     static let headerHeight: CGFloat = 52
     static let footerHeight: CGFloat = 44
-    static let networkHeight: CGFloat = 24
     static let halfRowHeight: CGFloat = 70
 
     let size: CGSize
@@ -17,7 +16,6 @@ struct StatusPanelLayout {
     let panelHeights: [UUID: CGFloat]
     let rowHeights: [CGFloat]
     let gridHeight: CGFloat
-    let showsNetwork: Bool
     /// Top-left-origin card frames, shared by the Settings preview and live view.
     let placements: [UUID: CGRect]
 
@@ -78,9 +76,8 @@ struct StatusPanelLayout {
         cardHeights = settings.panels.reduce(into: [:]) { $0[$1.metric] = frames[$1.id]?.height }
         rowHeights = Array(repeating: Self.halfRowHeight, count: usedRows)
         gridHeight = usedRows == 0 ? 100 : CGFloat(usedRows) * Self.halfRowHeight + CGFloat(usedRows - 1) * Self.spacing
-        showsNetwork = settings.panels.contains { $0.isNetwork }
         let desired = CGSize(width: max(210, gridWidth + Self.padding * 2),
-                             height: Self.headerHeight + Self.footerHeight + gridHeight + Self.padding * 2 + (showsNetwork ? Self.networkHeight : 0) + 2)
+                             height: Self.headerHeight + Self.footerHeight + gridHeight + Self.padding * 2 + 2)
         let maximumWidth = maximumSize.width.isFinite && maximumSize.width > 0 ? maximumSize.width : desired.width
         let maximumHeight = maximumSize.height.isFinite && maximumSize.height > 0 ? maximumSize.height : desired.height
         size = CGSize(width: min(desired.width, maximumWidth), height: min(desired.height, maximumHeight))

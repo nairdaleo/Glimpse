@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+import IOKit
 import IOKit.ps
 import GlimpseCore
 
@@ -286,22 +287,44 @@ enum NativeSystemReader {
             let charging = (description[kIOPSIsChargingKey] as? NSNumber)?.boolValue == true
             let charged = (description[kIOPSIsChargedKey] as? NSNumber)?.boolValue == true
             let state = description[kIOPSPowerSourceStateKey] as? String
-            var parts: [String] = [batteryState(charging: charging, charged: charged, state: state)]
+            // Line 1: state. Line 2: time and power. Line 3: health.
+            var lines = [batteryState(charging: charging, charged: charged, state: state)]
+            let smart = smartBatteryProperties()
+            var power: [String] = []
             // kIOPSTimeToFullChargeKey / kIOPSTimeToEmptyKey are #defines, so
             // they stay raw strings here. -1 means the estimate is calculating.
             if charging {
                 if let minutes = (description["Time to Full Charge"] as? NSNumber)?.doubleValue, minutes > 0 {
-                    parts.append("full in " + duration(minutes: minutes))
+                    power.append("full in " + duration(minutes: minutes))
                 }
-            } else if !charged,
-                      let minutes = (description["Time to Empty"] as? NSNumber)?.doubleValue, minutes > 0 {
-                parts.append(duration(minutes: minutes) + " left")
+            } else if !charged, state != kIOPSACPowerValue {
+                // The per-source estimate is often absent; the system-wide one is not.
+                let seconds = IOPSGetTimeRemainingEstimate()
+                if let minutes = (description["Time to Empty"] as? NSNumber)?.doubleValue, minutes > 0 {
+                    power.append(duration(minutes: minutes) + " left")
+                } else if seconds > 0 {
+                    power.append(duration(minutes: seconds / 60) + " left")
+                } else {
+                    power.append("estimating time left")
+                }
+                if let watts = smart.flatMap(drawWatts) { power.append(String(format: "%.1f W draw", locale: Locale(identifier: "en_US_POSIX"), watts)) }
             }
-            if let watts = externalAdapterWatts() {
-                parts.append("\(Int(watts.rounded())) W adapter")
+            if let watts = externalAdapterWatts(), state == kIOPSACPowerValue {
+                power.append("\(Int(watts.rounded())) W adapter")
             }
+            if !power.isEmpty { lines.append(power.joined(separator: " · ")) }
+            var health: [String] = []
+            // Some models nest the capacities in BatteryData.
+            func capacity(_ key: String) -> Double? {
+                ((smart?[key] ?? (smart?["BatteryData"] as? [String: Any])?[key]) as? NSNumber)?.doubleValue
+            }
+            if let raw = capacity("AppleRawMaxCapacity"), let design = capacity("DesignCapacity"), raw > 0, design > 0 {
+                health.append("Health \(Int((min(1, raw / design) * 100).rounded()))%")
+            }
+            if let cycles = (smart?["CycleCount"] as? NSNumber)?.intValue { health.append("\(cycles) cycles") }
+            if !health.isEmpty { lines.append(health.joined(separator: " · ")) }
             return MetricReading(value: min(100, max(0, current.doubleValue / maximum.doubleValue * 100)),
-                                 detail: parts.joined(separator: " · "), timestamp: timestamp)
+                                 detail: lines.joined(separator: "\n"), timestamp: timestamp)
         }
         return MetricReading(value: nil, detail: "No internal battery", timestamp: timestamp)
     }
@@ -314,6 +337,26 @@ enum NativeSystemReader {
 
     /// Charger wattage via the public external-adapter dictionary; absent on
     /// desktop Macs or unsupported chargers, and simply omitted then.
+    /// AppleSmartBattery registry properties (cycles, capacities, current);
+    /// read in-process via IOKit, nil where the service does not exist.
+    private static func smartBatteryProperties() -> [String: Any]? {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"))
+        guard service != 0 else { return nil }
+        defer { IOObjectRelease(service) }
+        var properties: Unmanaged<CFMutableDictionary>?
+        guard IORegistryEntryCreateCFProperties(service, &properties, kCFAllocatorDefault, 0) == KERN_SUCCESS else { return nil }
+        return properties?.takeRetainedValue() as? [String: Any]
+    }
+
+    /// Discharge power from signed current (mA, stored as unsigned 64-bit) and voltage (mV).
+    private static func drawWatts(_ smart: [String: Any]) -> Double? {
+        guard let amperage = smart["InstantAmperage"] as? NSNumber ?? smart["Amperage"] as? NSNumber,
+              let voltage = (smart["Voltage"] as? NSNumber)?.doubleValue, voltage > 0 else { return nil }
+        let milliamps = Double(Int64(bitPattern: amperage.uint64Value))
+        guard milliamps < 0 else { return nil }
+        return -milliamps * voltage / 1_000_000
+    }
+
     private static func externalAdapterWatts() -> Double? {
         guard let details = IOPSCopyExternalPowerAdapterDetails()?.takeRetainedValue() as? [String: Any],
               let number = details["Watts"] as? NSNumber, number.doubleValue > 0 else { return nil }
@@ -340,7 +383,7 @@ enum NativeSystemReader {
         let totalText = DataSizePresentation.string(bytes: Double(total), units: units)
         let freeText = DataSizePresentation.string(bytes: Double(max(0, available)), units: units)
         return MetricReading(value: min(100, max(0, (1 - Double(available) / Double(total)) * 100)),
-                             detail: "Free: \(freeText) · \(usedText) used of \(totalText)", timestamp: timestamp)
+                             detail: "Free: \(freeText)\n\(usedText) used of \(totalText)", timestamp: timestamp)
     }
 
     static func thermal(timestamp: TimeInterval) -> MetricReading {

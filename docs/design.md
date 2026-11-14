@@ -74,6 +74,8 @@ Use native macOS counters, with small testable readers separated from display fo
 | Battery | IOKit power-source information | Distinguish absent battery, charging, unavailable data, and actual 0% |
 | Disk capacity | Foundation volume capacity information | Identify selected volume and exact free/available definition; do not add APFS volumes together |
 
+Battery detail is up to three lines: state; time left (per-source estimate, else the system-wide IOPSGetTimeRemainingEstimate) with discharge draw in watts, or time to full / adapter wattage; then health (raw max ÷ design capacity) and cycle count from the AppleSmartBattery registry entry, read in-process. Disk detail puts "Free: …" on its own first line so compact cards show it whole. Colour pickers are one row: label, well, suggested swatches. The Detailed View no longer shows an "Auto: interface" footer; each network card names its own interface.
+
 Units are individually selectable in Display & Network: *Capacity units* for memory and disk sizes, *Bandwidth units* for upload/download rates and the network ceiling. Each is SI (powers of 1000, GB / MB/s, default) or IEC (powers of 1024, GiB / MiB/s). Disk detail leads with free space ("Free: 61.0 GB · …"), shown on compact cards too. The earlier "combine compact pair" toggle was removed; compact cards always stack as separate half-slots.
 | Thermal state | ProcessInfo thermalState | Label nominal/fair/serious/critical as system thermal state, not a Celsius estimate |
 
