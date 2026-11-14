@@ -85,7 +85,7 @@ final class OrganizationTests: XCTestCase {
         XCTAssertEqual(settings.columns, [original[0]])
     }
 
-    func testPanelOrganizationRestoresAtEndAndNeverChangesIconColumns() {
+    func testPanelOrganizationAddsAtEndAndNeverChangesIconColumns() {
         var settings = AppSettings()
         let columns = settings.columns
         settings.panelMetrics = [.cpu, .memory, .download]
