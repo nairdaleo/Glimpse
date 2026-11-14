@@ -151,16 +151,19 @@ public struct PanelAppearance: Codable, Equatable, Sendable {
     public var showsHistory: Bool
     public var largeOrientation: PanelLargeOrientation
     public var showsConnectionDetails: Bool
+    /// Rows shown in connection details; all by default.
+    public var connectionFields: Set<NetworkDetailField>
 
-    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true, largeOrientation: PanelLargeOrientation = .vertical, showsConnectionDetails: Bool = false) {
+    public init(size: PanelCardSize = .regular, colour: MeterColour = .blue, showsHistory: Bool = true, largeOrientation: PanelLargeOrientation = .vertical, showsConnectionDetails: Bool = false, connectionFields: Set<NetworkDetailField> = Set(NetworkDetailField.allCases)) {
         self.size = size
         self.colour = colour
         self.showsHistory = showsHistory
         self.largeOrientation = largeOrientation
         self.showsConnectionDetails = showsConnectionDetails
+        self.connectionFields = connectionFields
     }
 
-    private enum CodingKeys: String, CodingKey { case size, colour, showsHistory, largeOrientation, showsConnectionDetails }
+    private enum CodingKeys: String, CodingKey { case size, colour, showsHistory, largeOrientation, showsConnectionDetails, connectionFields }
     public init(from decoder: Decoder) throws {
         self.init()
         guard let values = try? decoder.container(keyedBy: CodingKeys.self) else { return }
@@ -169,6 +172,10 @@ public struct PanelAppearance: Codable, Equatable, Sendable {
         showsHistory = (try? values.decode(Bool.self, forKey: .showsHistory)) ?? showsHistory
         largeOrientation = (try? values.decode(PanelLargeOrientation.self, forKey: .largeOrientation)) ?? largeOrientation
         showsConnectionDetails = (try? values.decode(Bool.self, forKey: .showsConnectionDetails)) ?? showsConnectionDetails
+        // Unknown future field names are dropped rather than failing the set.
+        if let raw = try? values.decode([String].self, forKey: .connectionFields) {
+            connectionFields = Set(raw.compactMap(NetworkDetailField.init(rawValue:)))
+        }
     }
 }
 

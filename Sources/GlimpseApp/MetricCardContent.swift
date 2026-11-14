@@ -60,7 +60,13 @@ struct MetricCardContent: View {
             title(size: 11)
             if panel.isNetwork { interfaceIdentifier }
             values(size: panel.isCombinedNetwork ? (large ? 23 : 15) : (large ? 28 : 21))
-            if showsHistory { graph.frame(height: large ? 70 : (showsDetails ? 20 : 28)) }
+            if showsHistory {
+                if large && !showsDetails {
+                    graph.frame(minHeight: 70, maxHeight: .infinity)
+                } else {
+                    graph.frame(height: large ? 70 : (showsDetails ? 20 : 28))
+                }
+            }
             if showsDetails {
                 connectionDetails()
             } else if panel.metric == .cpu {
@@ -69,7 +75,7 @@ struct MetricCardContent: View {
                 capacityBar.frame(height: 6).padding(.top, 2)
                 readingDetail(lines: large ? 5 : 3, size: 10)
                 Spacer(minLength: 0)
-            } else if !panel.isCombinedNetwork || large {
+            } else if !panel.isNetwork {
                 readingDetail(lines: large ? 5 : 3, size: 10)
             }
             if !showsDetails { Spacer(minLength: 0) }
@@ -93,7 +99,7 @@ struct MetricCardContent: View {
                     capacityBar.frame(height: 6).padding(.top, 2)
                     readingDetail(lines: 4, size: 10)
                     Spacer(minLength: 0)
-                } else {
+                } else if !panel.isNetwork {
                     readingDetail(lines: 4, size: 10)
                     Spacer(minLength: 0)
                 }
@@ -153,7 +159,8 @@ struct MetricCardContent: View {
 
     private var interfaceIdentifier: some View {
         let name = panel.networkInterface ?? snapshot.automaticNetworkInterface
-        return Text((panel.networkInterface == nil ? "Auto · " : "") + (name ?? "unavailable"))
+        let kind = snapshot.interfaceDetails.first { $0.name == name }?.displayName
+        return Text((panel.networkInterface == nil ? "Auto · " : "") + (name ?? "unavailable") + (kind.map { " · " + $0 } ?? ""))
             .font(.system(size: compact ? 9 : 10)).foregroundColor(.secondary).lineLimit(1)
             .help(snapshot.interfaceLabel(panel.networkInterface))
     }
@@ -161,22 +168,33 @@ struct MetricCardContent: View {
     /// `shrinks` lets compact cards scale text down slightly to fit every
     /// line in the remaining height instead of truncating with an ellipsis.
     private func readingDetail(lines: Int, size: CGFloat, shrinks: Bool = false) -> some View {
-        Text(reading?.detail ?? "Waiting for a reading")
-            .font(.system(size: size)).foregroundColor(.secondary).lineLimit(lines)
-            .minimumScaleFactor(shrinks ? 0.75 : 1)
-            .frame(maxWidth: .infinity, maxHeight: shrinks ? .infinity : nil, alignment: .topLeading)
+        // Each reader line stays one line, shrinking a little before truncating,
+        // so a long line never pushes the next one out of the card.
+        let detailLines = (reading?.detail ?? "Waiting for a reading").components(separatedBy: "\n").prefix(lines)
+        return VStack(alignment: .leading, spacing: shrinks ? 0 : 1) {
+            ForEach(Array(detailLines.enumerated()), id: \.offset) { _, line in
+                Text(line).lineLimit(1).minimumScaleFactor(0.85).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .font(.system(size: size)).foregroundColor(.secondary)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private func connectionDetails() -> some View {
         ScrollView([.vertical]) {
             Group {
                 if let info = snapshot.networkInfo(for: panel.networkInterface) {
-                    NetworkInterfaceDetails(info: info)
+                    NetworkInterfaceDetails(info: info, fields: appearance.connectionFields, size: compact ? 9 : 10)
                 } else {
                     Text("Connection details are unavailable.").font(.caption).foregroundColor(.secondary)
                 }
             }.frame(maxWidth: .infinity, alignment: .topLeading)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Fade the bottom edge so overflowing rows read as scrollable, not clipped.
+            .mask(VStack(spacing: 0) {
+                Rectangle()
+                LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 10)
+            })
             .accessibilityLabel("Connection details for " + snapshot.interfaceLabel(panel.networkInterface))
     }
 

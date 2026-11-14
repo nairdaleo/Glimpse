@@ -626,6 +626,23 @@ private struct PanelEditor: View {
             }
             if panel.isNetwork {
                 Toggle("Show connection details", isOn: configuration(\.appearance.showsConnectionDetails))
+                if panel.appearance.showsConnectionDetails {
+                    // Two columns of checkboxes; rows scroll in the card when they overflow.
+                    let fields = NetworkDetailField.allCases
+                    HStack(alignment: .top, spacing: 24) {
+                        ForEach([Array(fields.prefix(5)), Array(fields.dropFirst(5))], id: \.self) { column in
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(column) { field in
+                                    Toggle(field.title, isOn: Binding(get: { panel.appearance.connectionFields.contains(field) }, set: { on in
+                                        edit {
+                                            if on { $0.appearance.connectionFields.insert(field) } else { $0.appearance.connectionFields.remove(field) }
+                                        }
+                                    })).font(.caption)
+                                }
+                            }
+                        }
+                    }.padding(.leading, 18)
+                }
                 NetworkInterfacePicker(selection: configuration(\.networkInterface), snapshot: store.snapshot)
                 SelectedInterfaceDetails(selection: panel.networkInterface, snapshot: store.snapshot)
             }
