@@ -16,6 +16,7 @@ public final class NativeSampler {
     private var interfaceMetadata: [NetworkInterfaceInfo] = []
     private var interfaceMetadataTimestamp: TimeInterval = -.infinity
     private var metadataCounterNames: Set<String> = []
+    private var lastCapacityUnits: CapacityUnits?
     private let readNetworkCounters: () throws -> [InterfaceCounter]
     private let clock: () -> TimeInterval
     private let readPhysicalInterfaces: () -> Set<String>
@@ -71,6 +72,14 @@ public final class NativeSampler {
             }
         } else { cpuBaseline = nil; coreBaselines = [] }
 
+        // A capacity-units change must reformat cached memory and disk readings
+        // immediately instead of waiting out their refresh intervals.
+        if lastCapacityUnits != settings.capacityUnits {
+            cache[.memory] = nil
+            cache[.disk] = nil
+            lastCapacityUnits = settings.capacityUnits
+        }
+
         for (metric, interval) in [(MetricID.memory, 2.0), (.battery, 10), (.disk, 30), (.thermal, 5)] where demanded.contains(metric) {
             if let previous = cache[metric], now - previous.timestamp < interval {
                 readings[metric] = previous
@@ -79,9 +88,9 @@ public final class NativeSampler {
             let reading: MetricReading
             do {
                 switch metric {
-                case .memory: reading = try NativeSystemReader.memory(timestamp: now)
+                case .memory: reading = try NativeSystemReader.memory(timestamp: now, units: settings.capacityUnits)
                 case .battery: reading = NativeSystemReader.battery(timestamp: now)
-                case .disk: reading = try NativeSystemReader.disk(timestamp: now)
+                case .disk: reading = try NativeSystemReader.disk(timestamp: now, units: settings.capacityUnits)
                 case .thermal: reading = NativeSystemReader.thermal(timestamp: now)
                 default: continue
                 }
@@ -238,7 +247,7 @@ enum NativeSystemReader {
         }
     }
 
-    static func memory(timestamp: TimeInterval) throws -> MetricReading {
+    static func memory(timestamp: TimeInterval, units: CapacityUnits) throws -> MetricReading {
         var info = vm_statistics64()
         var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
         let host = mach_host_self()
@@ -256,8 +265,8 @@ enum NativeSystemReader {
                                                wired: UInt64(info.wire_count), compressed: UInt64(info.compressor_page_count), pageSize: UInt64(pageSize))
         let total = ProcessInfo.processInfo.physicalMemory
         guard total > 0 else { throw NativeReadError.system("Physical memory", EINVAL) }
-        let usedText = ByteCountFormatter.string(fromByteCount: Int64(clamping: min(used, total)), countStyle: .memory)
-        let totalText = ByteCountFormatter.string(fromByteCount: Int64(clamping: total), countStyle: .memory)
+        let usedText = DataSizePresentation.string(bytes: Double(min(used, total)), units: units)
+        let totalText = DataSizePresentation.string(bytes: Double(total), units: units)
         return MetricReading(value: min(100, Double(used) / Double(total) * 100),
                              detail: "\(usedText) used of \(totalText) · Usage, not memory pressure", timestamp: timestamp)
     }
@@ -319,7 +328,7 @@ enum NativeSystemReader {
         return "\(minutesPart) min"
     }
 
-    static func disk(timestamp: TimeInterval) throws -> MetricReading {
+    static func disk(timestamp: TimeInterval, units: CapacityUnits) throws -> MetricReading {
         let values = try URL(fileURLWithPath: "/").resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey])
         guard let total = values.volumeTotalCapacity, total > 0, let available = values.volumeAvailableCapacity else {
             throw NativeReadError.system("Root volume capacity", EINVAL)
@@ -327,11 +336,11 @@ enum NativeSystemReader {
         // A single root-volume reading: total minus Foundation's available
         // capacity. APFS volumes share storage and must not be summed together.
         let used = total - min(total, max(0, available))
-        let usedText = ByteCountFormatter.string(fromByteCount: Int64(clamping: used), countStyle: .file)
-        let totalText = ByteCountFormatter.string(fromByteCount: Int64(clamping: total), countStyle: .file)
-        let freeText = ByteCountFormatter.string(fromByteCount: Int64(clamping: max(0, available)), countStyle: .file)
+        let usedText = DataSizePresentation.string(bytes: Double(used), units: units)
+        let totalText = DataSizePresentation.string(bytes: Double(total), units: units)
+        let freeText = DataSizePresentation.string(bytes: Double(max(0, available)), units: units)
         return MetricReading(value: min(100, max(0, (1 - Double(available) / Double(total)) * 100)),
-                             detail: "\(usedText) used of \(totalText) · \(freeText) free", timestamp: timestamp)
+                             detail: "Free: \(freeText) · \(usedText) used of \(totalText)", timestamp: timestamp)
     }
 
     static func thermal(timestamp: TimeInterval) -> MetricReading {

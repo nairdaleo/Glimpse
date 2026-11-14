@@ -23,14 +23,11 @@ final class PanelAppearanceMigrationTests: XCTestCase {
         XCTAssertTrue(restored.panels[0].appearance.showsConnectionDetails)
     }
 
-    func testCombineFlagDefaultsToOffAndSurvivesRoundTrip() throws {
-        XCTAssertFalse(PanelAppearance().combinesNext)
-        let legacy = try JSONDecoder().decode(PanelAppearance.self, from: Data(#"{"size":"compact","colour":"blue"}"#.utf8))
-        XCTAssertFalse(legacy.combinesNext)
-        var settings = AppSettings()
-        settings.panels = [.init(metric: .cpu, appearance: .init(size: .compact, combinesNext: true))]
-        let restored = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
-        XCTAssertTrue(restored.panels[0].appearance.combinesNext)
+    func testLegacyCombineFlagIsIgnored() throws {
+        // Settings written before the combine toggle was removed must still
+        // decode; the stale key is dropped.
+        let legacy = try JSONDecoder().decode(PanelAppearance.self, from: Data(#"{"size":"compact","colour":"blue","combinesNext":true}"#.utf8))
+        XCTAssertEqual(legacy, PanelAppearance(size: .compact, colour: .blue))
     }
 
     func testMalformedNewAppearanceFieldsFallBackIndependently() throws {

@@ -28,18 +28,13 @@ struct StatusPanel: View {
                             Button("Choose panels…", action: showSettings).font(.caption)
                         }.frame(width: layout.gridWidth, height: layout.gridHeight, alignment: .leading)
                     } else {
-                        let partnerIDs = Set(layout.embeds.values)
                         ZStack(alignment: .topLeading) {
-                            ForEach(layout.mergedSurfaces.sorted(by: { $0.key.uuidString < $1.key.uuidString }), id: \.key) { _, rect in
-                                CombinedSlotSurface(rect: rect)
-                            }
                             ForEach(store.settings.panels) { panel in
                                 if let placement = layout.placements[panel.id] {
                                     Button { editCard(panel.id) } label: {
                                         MetricCardContent(panel: panel, snapshot: store.snapshot, history: store.history,
                                                           networkHistory: store.networkHistory, settings: store.settings,
-                                                          width: placement.width, height: placement.height,
-                                                          surface: !partnerIDs.contains(panel.id) && layout.embeds[panel.id] == nil)
+                                                          width: placement.width, height: placement.height)
                                     }.buttonStyle(.plain)
                                         .accessibilityHint("Opens settings for this panel")
                                         .help("Edit \(panel.displayTitle) panel settings")
