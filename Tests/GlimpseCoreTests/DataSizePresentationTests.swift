@@ -16,4 +16,17 @@ final class DataSizePresentationTests: XCTestCase {
         let restored = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
         XCTAssertEqual(restored.capacityUnits, .iec)
     }
+
+    func testBandwidthUnitsAreIndependentAndFormatRates() throws {
+        var settings = AppSettings()
+        settings.bandwidthUnits = .iec
+        let restored = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(restored.bandwidthUnits, .iec)
+        XCTAssertEqual(restored.capacityUnits, .si)
+        XCTAssertEqual(MetricPresentation.formatted(value: 2_097_152, metric: .download, units: .iec), "2.0 MiB/s")
+        XCTAssertEqual(MetricPresentation.formatted(value: 2_000_000, metric: .download, units: .si), "2.0 MB/s")
+        XCTAssertEqual(MetricPresentation.formatted(value: 131_072, metric: .upload, bits: true, units: .iec), "1.0 Mib/s")
+        XCTAssertEqual(BandwidthCeilingInput.bytesPerSecond(displayValue: 1, bits: false, units: .iec), 1_048_576)
+        XCTAssertEqual(BandwidthCeilingInput.unit(bits: true, units: .iec), "Mib/s")
+    }
 }

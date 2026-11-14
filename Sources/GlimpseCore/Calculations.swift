@@ -49,22 +49,24 @@ public enum MetricPresentation: Sendable {
         return min(1, max(0, value / scale))
     }
 
-    public static func formatted(value: Double?, metric: MetricID, bits: Bool = false) -> String {
+    public static func formatted(value: Double?, metric: MetricID, bits: Bool = false, units: CapacityUnits = .si) -> String {
         guard let value, value.isFinite else { return "—" }
         switch metric {
         case .download, .upload:
             guard value >= 0 else { return "—" }
-            let units = bits ? ["b/s", "Kb/s", "Mb/s", "Gb/s", "Tb/s", "Pb/s", "Eb/s"] : ["B/s", "KB/s", "MB/s", "GB/s", "TB/s", "PB/s", "EB/s"]
+            let step = units == .si ? 1_000.0 : 1_024.0
+            let prefixes = units == .si ? ["", "K", "M", "G", "T", "P", "E"] : ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei"]
+            let units = prefixes.map { $0 + (bits ? "b/s" : "B/s") }
             // Divide before converting bytes to bits to avoid overflow for finite inputs.
             var scaled = value
             var unit = 0
-            while scaled >= 1_000 && unit < units.count - 1 {
-                scaled /= 1_000
+            while scaled >= step && unit < units.count - 1 {
+                scaled /= step
                 unit += 1
             }
             if bits { scaled *= 8 }
             while scaled >= 999.5 && unit < units.count - 1 {
-                scaled /= 1_000
+                scaled /= step
                 unit += 1
             }
             if scaled >= 999.5 { return ">999 \(units[unit])" }

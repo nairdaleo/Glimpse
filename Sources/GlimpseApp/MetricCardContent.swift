@@ -210,7 +210,7 @@ struct MetricCardContent: View {
 
     private func formatted(_ metric: MetricID) -> String {
         MetricPresentation.formatted(value: snapshot.displayReading(for: metric, interface: panel.networkInterface)?.value,
-                                     metric: metric, bits: settings.bandwidthInBits)
+                                     metric: metric, bits: settings.bandwidthInBits, units: settings.bandwidthUnits)
     }
 
     private func points(_ metric: MetricID) -> [HistoryPoint] {

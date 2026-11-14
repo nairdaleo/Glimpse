@@ -259,15 +259,19 @@ struct SettingsView: View {
             Picker("Capacity units", selection: setting(\.capacityUnits)) {
                 ForEach(CapacityUnits.allCases) { Text($0.title).tag($0) }
             }
-            Text("Byte sizes on memory and disk cards use SI powers of 1000 (GB) or IEC powers of 1024 (GiB).")
-                .font(.caption).foregroundColor(.secondary)
+            Picker("Bandwidth units", selection: setting(\.bandwidthUnits)) {
+                ForEach(CapacityUnits.allCases) { Text($0 == .si ? "SI (MB/s)" : "IEC (MiB/s)").tag($0) }
+            }
+            Text("Capacity units apply to memory and disk sizes; bandwidth units to upload/download rates and the network ceiling. SI uses powers of 1000, IEC powers of 1024.")
+                .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
             Divider()
             HStack {
                 let bits = store.settings.bandwidthInBits
-                let unit = BandwidthCeilingInput.unit(bits: bits)
+                let units = store.settings.bandwidthUnits
+                let unit = BandwidthCeilingInput.unit(bits: bits, units: units)
                 Text("Network column full at")
-                DecimalField(placeholder: unit, value: Binding(get: { BandwidthCeilingInput.displayValue(bytesPerSecond: store.settings.networkCeiling, bits: bits) }, set: { value in store.change { $0.networkCeiling = BandwidthCeilingInput.bytesPerSecond(displayValue: value, bits: bits) } }))
-                    .id(bits)
+                DecimalField(placeholder: unit, value: Binding(get: { BandwidthCeilingInput.displayValue(bytesPerSecond: store.settings.networkCeiling, bits: bits, units: units) }, set: { value in store.change { $0.networkCeiling = BandwidthCeilingInput.bytesPerSecond(displayValue: value, bits: bits, units: units) } }))
+                    .id("\(bits)\(units.rawValue)")
                     .frame(width: 80)
                 Text("\(unit) (\(bits ? "bits" : "bytes"))").foregroundColor(.secondary)
             }
