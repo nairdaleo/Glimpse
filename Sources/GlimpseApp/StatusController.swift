@@ -87,7 +87,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
         let secondaryLevels: [ThresholdLevel?] = settings.columns.map { column in
             guard column.isCombinedNetwork else { return nil }
             var latch = downloadThresholds[column.id] ?? ThresholdLatch()
-            let result = latch.evaluate(value: store.snapshot.displayReading(for: .download, interface: column.networkInterface)?.value, column: column, deadband: settings.networkCeiling * 0.01)
+            let result = latch.evaluate(value: store.snapshot.displayReading(for: .download, interface: column.networkInterface)?.value, column: column.downloadThresholdColumn, deadband: settings.networkCeiling * 0.01)
             downloadThresholds[column.id] = latch
             return result
         }

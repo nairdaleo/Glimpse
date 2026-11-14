@@ -432,7 +432,10 @@ private struct ColumnEditor: View {
                         column.isCombinedNetwork = combined
                         column.warningThreshold = nil
                         column.criticalThreshold = nil
+                        column.downloadWarningThreshold = nil
+                        column.downloadCriticalThreshold = nil
                         column.thresholdDirection = .above
+                        column.colourBands = nil
                     }
                 })) {
                     Text("Upload / Download").tag("combinedNetwork")
@@ -454,28 +457,51 @@ private struct ColumnEditor: View {
                 Text("Upload fills above the center; download fills below.")
                     .font(.caption).foregroundColor(.secondary)
             }
+            if configuration.metric == .battery && !configuration.isCombinedNetwork {
+                Toggle("Colour by battery level", isOn: Binding(get: { configuration.colourBands != nil }, set: { enabled in
+                    edit { $0.colourBands = enabled ? ColourBands() : nil }
+                })).font(.caption)
+                if configuration.colourBands != nil { colourBandsEditor }
+            }
+            if configuration.colourBands == nil {
             HStack(spacing: 12) {
-                Toggle("Threshold colours", isOn: Binding(get: { configuration.warningThreshold != nil || configuration.criticalThreshold != nil }, set: { enabled in
+                Toggle("Threshold colours", isOn: Binding(get: { hasThresholds }, set: { enabled in
                     edit {
                         $0.warningThreshold = enabled ? defaultWarning : nil
                         $0.criticalThreshold = enabled ? defaultCritical : nil
+                        if $0.isCombinedNetwork {
+                            $0.downloadWarningThreshold = enabled ? store.settings.networkCeiling * 0.7 : nil
+                            $0.downloadCriticalThreshold = enabled ? store.settings.networkCeiling * 0.9 : nil
+                        }
                     }
                 })).font(.caption)
-                if configuration.warningThreshold != nil || configuration.criticalThreshold != nil {
+                if hasThresholds {
                     Picker("Direction", selection: column(\.thresholdDirection)) {
                         Text("Above").tag(ThresholdDirection.above)
                         Text("Below").tag(ThresholdDirection.below)
                     }.labelsHidden().frame(width: 85)
                 }
             }
-            if configuration.warningThreshold != nil || configuration.criticalThreshold != nil {
+            if hasThresholds {
                 HStack {
+                    if configuration.isCombinedNetwork { Text("Upload").font(.caption).frame(width: 60, alignment: .leading) }
                     Text("Warning").font(.caption)
                     thresholdField(\.warningThreshold, fallback: defaultWarning)
                     Text("Critical").font(.caption)
                     thresholdField(\.criticalThreshold, fallback: defaultCritical)
                     Text(unit).font(.caption).foregroundColor(.secondary)
                 }
+                if configuration.isCombinedNetwork {
+                    HStack {
+                        Text("Download").font(.caption).frame(width: 60, alignment: .leading)
+                        Text("Warning").font(.caption)
+                        thresholdField(\.downloadWarningThreshold, fallback: store.settings.networkCeiling * 0.7)
+                        Text("Critical").font(.caption)
+                        thresholdField(\.downloadCriticalThreshold, fallback: store.settings.networkCeiling * 0.9)
+                        Text(unit).font(.caption).foregroundColor(.secondary)
+                    }
+                }
+            }
             }
         }.padding(12).background(Color.primary.opacity(0.04)).cornerRadius(8)
     }
@@ -489,6 +515,50 @@ private struct ColumnEditor: View {
     private var unit: String { isNetwork ? "B/s" : configuration.metric == .thermal ? "level 0–3" : "%" }
     private var defaultWarning: Double { isNetwork ? store.settings.networkCeiling(for: configuration.metric) * 0.7 : configuration.metric == .thermal ? 2 : configuration.thresholdDirection == .below ? 30 : 70 }
     private var defaultCritical: Double { isNetwork ? store.settings.networkCeiling(for: configuration.metric) * 0.9 : configuration.metric == .thermal ? 3 : configuration.thresholdDirection == .below ? 10 : 90 }
+
+    private var hasThresholds: Bool {
+        configuration.warningThreshold != nil || configuration.criticalThreshold != nil
+            || configuration.downloadWarningThreshold != nil || configuration.downloadCriticalThreshold != nil
+    }
+
+    private var colourBandsEditor: some View {
+        let bands = configuration.colourBands ?? ColourBands()
+        func band(_ keyPath: WritableKeyPath<ColourBands, MeterColour?>, fallback: MeterColour) -> (on: Binding<Bool>, colour: Binding<MeterColour>) {
+            (Binding(get: { bands[keyPath: keyPath] != nil }, set: { on in edit { $0.colourBands?[keyPath: keyPath] = on ? fallback : nil } }),
+             Binding(get: { bands[keyPath: keyPath] ?? fallback }, set: { colour in edit { $0.colourBands?[keyPath: keyPath] = colour } }))
+        }
+        func level(_ keyPath: WritableKeyPath<ColourBands, Double>) -> some View {
+            DecimalField(placeholder: "%", value: Binding(get: { bands[keyPath: keyPath] }, set: { value in edit { $0.colourBands?[keyPath: keyPath] = value } }))
+                .frame(width: 50)
+        }
+        let high = band(\.high, fallback: ColourBands.green)
+        let middle = band(\.middle, fallback: ColourBands.yellow)
+        let low = band(\.low, fallback: ColourBands.red)
+        return VStack(alignment: .leading, spacing: 8) {
+            Picker("Change", selection: Binding(get: { bands.style }, set: { style in edit { $0.colourBands?.style = style } })) {
+                Text("Hard change").tag(ColourBands.Style.hard)
+                Text("Gradient").tag(ColourBands.Style.gradient)
+            }.pickerStyle(.segmented).frame(width: 220)
+            HStack(alignment: .top) {
+                Toggle("At or above", isOn: high.on).font(.caption)
+                level(\.highThreshold)
+                Text("%").font(.caption)
+                if high.on.wrappedValue { PaletteColourPicker(title: "Colour", selection: high.colour) }
+            }
+            HStack(alignment: .top) {
+                Toggle("Between", isOn: middle.on).font(.caption)
+                if middle.on.wrappedValue { PaletteColourPicker(title: "Colour", selection: middle.colour) }
+            }
+            HStack(alignment: .top) {
+                Toggle("At or below", isOn: low.on).font(.caption)
+                level(\.lowThreshold)
+                Text("%").font(.caption)
+                if low.on.wrappedValue { PaletteColourPicker(title: "Colour", selection: low.colour) }
+            }
+            Text("Unchecked bands use the meter colour. Gradient blends between the levels; level colours replace warning/critical colours.")
+                .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+    }
 
     private func column<Value>(_ keyPath: WritableKeyPath<ColumnConfiguration, Value>) -> Binding<Value> {
         Binding(get: { configuration[keyPath: keyPath] }, set: { value in edit { $0[keyPath: keyPath] = value } })

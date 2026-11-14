@@ -10,6 +10,12 @@ public struct ColumnConfiguration: Codable, Equatable, Identifiable, Sendable {
     public var warningThreshold: Double?
     public var criticalThreshold: Double?
     public var thresholdDirection: ThresholdDirection
+    /// Combined network only: download thresholds in B/s. The warning/critical
+    /// pair above then governs upload, since plans are often asymmetric.
+    public var downloadWarningThreshold: Double?
+    public var downloadCriticalThreshold: Double?
+    /// Level-based colours (battery columns); nil keeps the meter colour.
+    public var colourBands: ColourBands?
 
     public init(metric: MetricID, colour: MeterColour, warningThreshold: Double? = nil, criticalThreshold: Double? = nil, thresholdDirection: ThresholdDirection = .above, id: UUID = UUID(), isCombinedNetwork: Bool = false, secondaryColour: MeterColour = .blue, networkInterface: String? = nil) {
         self.id = id
@@ -23,11 +29,19 @@ public struct ColumnConfiguration: Codable, Equatable, Identifiable, Sendable {
         self.thresholdDirection = thresholdDirection
     }
 
+    /// The download half of a combined meter, evaluated with its own thresholds.
+    public var downloadThresholdColumn: ColumnConfiguration {
+        var result = self
+        result.warningThreshold = downloadWarningThreshold
+        result.criticalThreshold = downloadCriticalThreshold
+        return result
+    }
+
     public var displayTitle: String { isCombinedNetwork ? "Upload / Download" : metric.title }
     public var requiredMetrics: [MetricID] { isCombinedNetwork ? [.upload, .download] : [metric] }
     public var isNetwork: Bool { isCombinedNetwork || metric == .upload || metric == .download }
 
-    private enum CodingKeys: String, CodingKey { case id, metric, colour, warningThreshold, criticalThreshold, thresholdDirection, isCombinedNetwork, secondaryColour, networkInterface }
+    private enum CodingKeys: String, CodingKey { case id, metric, colour, warningThreshold, criticalThreshold, thresholdDirection, isCombinedNetwork, secondaryColour, networkInterface, downloadWarningThreshold, downloadCriticalThreshold, colourBands }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         id = (try? values.decode(UUID.self, forKey: .id)) ?? UUID()
@@ -39,6 +53,11 @@ public struct ColumnConfiguration: Codable, Equatable, Identifiable, Sendable {
         warningThreshold = try? values.decode(Double.self, forKey: .warningThreshold)
         criticalThreshold = try? values.decode(Double.self, forKey: .criticalThreshold)
         thresholdDirection = (try? values.decode(ThresholdDirection.self, forKey: .thresholdDirection)) ?? .above
+        // Before the split one pair governed both halves; download inherits it.
+        let split = values.contains(.downloadWarningThreshold) || values.contains(.downloadCriticalThreshold)
+        downloadWarningThreshold = split ? try? values.decode(Double.self, forKey: .downloadWarningThreshold) : warningThreshold
+        downloadCriticalThreshold = split ? try? values.decode(Double.self, forKey: .downloadCriticalThreshold) : criticalThreshold
+        colourBands = try? values.decode(ColourBands.self, forKey: .colourBands)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -53,6 +72,12 @@ public struct ColumnConfiguration: Codable, Equatable, Identifiable, Sendable {
         try values.encodeIfPresent(warningThreshold, forKey: .warningThreshold)
         try values.encodeIfPresent(criticalThreshold, forKey: .criticalThreshold)
         try values.encode(thresholdDirection, forKey: .thresholdDirection)
+        if isCombinedNetwork {
+            // Explicit nulls mark settings written after the split.
+            try values.encode(downloadWarningThreshold, forKey: .downloadWarningThreshold)
+            try values.encode(downloadCriticalThreshold, forKey: .downloadCriticalThreshold)
+        }
+        try values.encodeIfPresent(colourBands, forKey: .colourBands)
     }
 
     fileprivate func validated() -> ColumnConfiguration {
@@ -64,13 +89,20 @@ public struct ColumnConfiguration: Codable, Equatable, Identifiable, Sendable {
             guard let value, value.isFinite, value >= 0 else { return nil }
             return min(value, maximum)
         }
-        result.warningThreshold = valid(warningThreshold)
-        result.criticalThreshold = valid(criticalThreshold)
-        if let warning = result.warningThreshold, let critical = result.criticalThreshold,
-           (thresholdDirection == .above && warning > critical) || (thresholdDirection == .below && warning < critical) {
-            result.warningThreshold = critical
-            result.criticalThreshold = warning
+        func ordered(_ warning: Double?, _ critical: Double?) -> (Double?, Double?) {
+            let warning = valid(warning), critical = valid(critical)
+            if let w = warning, let c = critical,
+               (thresholdDirection == .above && w > c) || (thresholdDirection == .below && w < c) { return (c, w) }
+            return (warning, critical)
         }
+        (result.warningThreshold, result.criticalThreshold) = ordered(warningThreshold, criticalThreshold)
+        if isCombinedNetwork {
+            (result.downloadWarningThreshold, result.downloadCriticalThreshold) = ordered(downloadWarningThreshold, downloadCriticalThreshold)
+        } else {
+            result.downloadWarningThreshold = nil
+            result.downloadCriticalThreshold = nil
+        }
+        result.colourBands = result.metric == .battery ? colourBands?.validated() : nil
         return result
     }
 }

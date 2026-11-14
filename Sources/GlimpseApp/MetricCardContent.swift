@@ -205,6 +205,9 @@ struct MetricCardContent: View {
             ?? settings.columns.first { $0.isCombinedNetwork }
             ?? settings.columns.first { $0.metric == metric }
         guard let column else { return nil }
+        if column.isCombinedNetwork && metric == .download {
+            return (column.downloadWarningThreshold, column.downloadCriticalThreshold)
+        }
         return (column.warningThreshold, column.criticalThreshold)
     }
 
