@@ -48,11 +48,9 @@ GLIMPSE_RENDER_ARTIFACTS=/path/to/folder swift test --filter MetricCardRendering
 
 ## Architecture
 
-- `GlimpseCore` contains Sendable value snapshots/settings, normalization and explicit-unit formatting, CPU/rate arithmetic, threshold handling, and bounded history. Invalid settings are repaired to safe defaults.
-- `GlimpseMonitor.NativeSampler` owns mutable native-reader state. It has no internal timer and is not thread safe by itself. The app's private SamplingWorker confines every operation to one serial utility queue; only value snapshots cross back to the main thread.
-- `GlimpseApp.MonitoringStore` owns the main-thread display state, persisted settings, timer lifecycle, and sleep/power notifications. Old results from replaced configurations are discarded.
-- `StatusController` renders a single AppKit status item and presents the SwiftUI status panel. `SettingsView` edits settings through the store. Sparkle is the only bundled external framework; there is no web runtime.
-- `BandwidthReadout` measures a four-character numeric budget in the displayed units instead of reserving 80 points. `DuplexGaugeLayout` keeps directional fills independent. `StatusPanelLayout` is shared by the SwiftUI view and popover controller so their sizing agrees.
+Modules, data flow, threading, editions and the build pipeline are described in [architecture.md](architecture.md).
+
+### Sampling and demand details
 
 The default icon collects CPU, memory and download. Each network meter and panel chooses Auto or its own interface; the optional numeric readout has a separate choice. NetworkHistory stores bounded histories by actual interface identity and direction. A single native counter read feeds all demanded interfaces, with Auto and explicit duplicates sharing one rate calculation. Interface type, local addresses and service-scoped DNS/search domains are cached for ten seconds while settings/network details are visible. No remote address lookup or visited-domain collector is implemented. Legacy global interface selections migrate into existing network meters/cards; explicit Auto choices remain independent in new settings. The optional bandwidth block also demands upload. Opening status demands only configured Detailed View panels; removed panels add no demand unless a meter needs the same metric. Opening settings permits network inventory enumeration for the picker without publishing hidden readings or creating rate baselines. CPU and network read at the selected cadence; memory caches for 2 seconds, battery for 10, disk capacity for 30 and thermal state for 5. Low Power Mode imposes a 5-second minimum cadence. Sampling pauses during system sleep and rate baselines are reset before wake sampling. Settings changes preserve elapsed-time rate calculations; a newly selected interface begins with an unavailable baseline reading.
 

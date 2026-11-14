@@ -26,6 +26,8 @@ The menu-bar renderer will use AppKit. Settings may use SwiftUI APIs available o
 ## Documentation and development
 
 - [Public project board](https://github.com/users/nairdaleo/projects/10): upcoming work and validation.
+- [Architecture](docs/architecture.md): modules, data flow, threading, editions and the build/release pipeline.
+- [Contributing](CONTRIBUTING.md): how to propose changes, and how to build, test, run CI and release by hand.
 - [Design](docs/design.md): user experience, sampling, compatibility, performance goals, and validation.
 - [iGlance assessment](docs/iglance-assessment.md): what we studied and what remains unverified.
 - [License decision](docs/licensing.md): why MIT was selected and how third-party code is handled.
@@ -53,7 +55,7 @@ Sparkle 2.10.1 is the sole external dependency, pinned by SwiftPM for signed dir
 
 Glimpse's monitoring features will remain fully free. Optional developer tips and review requests are planned for a separate Mac App Store edition; they do not unlock features. See the distribution roadmap before preparing a store submission.
 
-Contributions are welcome through issues and pull requests. For proposed behaviour, identify the user need and discuss changes to the design before implementation. Include relevant accuracy or performance evidence for changes to monitoring. Do not commit signing credentials or personal diagnostics.
+Contributions are welcome through issues and pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Inspiration and license
 
