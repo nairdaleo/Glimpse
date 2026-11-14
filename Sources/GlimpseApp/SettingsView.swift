@@ -441,7 +441,8 @@ private struct ColumnEditor: View {
                     Text("Upload / Download").tag("combinedNetwork")
                     ForEach(MetricID.allCases) { Text($0.title).tag($0.rawValue) }
                 }
-                if !configuration.isCombinedNetwork {
+                // Battery shows its colour inside the Colours section instead.
+                if !configuration.isCombinedNetwork && configuration.metric != .battery {
                     colourPicker("Colour", keyPath: \.colour).frame(width: 155)
                 }
             }
@@ -533,17 +534,19 @@ private struct ColumnEditor: View {
             })) {
                 ForEach(1...3, id: \.self) { Text("\($0)").tag($0) }
             }.pickerStyle(.segmented).frame(width: 220)
+            colourPicker(stops.isEmpty ? "Colour" : "Colour 1", keyPath: \.colour)
             ForEach(stops.indices, id: \.self) { index in
-                HStack {
-                    Text("At or above").font(.caption)
-                    DecimalField(placeholder: "%", value: Binding(get: { stops[index].threshold }, set: { value in
-                        edit { $0.colourBands?.stops[index].threshold = value }
-                    })).frame(width: 50)
-                    Text("%").font(.caption)
-                    ColorPicker("Colour \(index + 2)", selection: Binding(get: { Color(stops[index].colour.nsColor) }, set: { colour in
-                        guard let rgb = NSColor(colour).usingColorSpace(.sRGB) else { return }
-                        edit { $0.colourBands?.stops[index].colour = .custom(red: Double(rgb.redComponent), green: Double(rgb.greenComponent), blue: Double(rgb.blueComponent)) }
-                    }), supportsOpacity: false).labelsHidden()
+                HStack(alignment: .top, spacing: 12) {
+                    HStack {
+                        Text("At or above").font(.caption)
+                        DecimalField(placeholder: "%", value: Binding(get: { stops[index].threshold }, set: { value in
+                            edit { $0.colourBands?.stops[index].threshold = value }
+                        })).frame(width: 50)
+                        Text("%").font(.caption)
+                    }
+                    PaletteColourPicker(title: "Colour \(index + 2)", selection: Binding(get: { stops[index].colour }, set: { colour in
+                        edit { $0.colourBands?.stops[index].colour = colour }
+                    }))
                 }
             }
             if let bands {
