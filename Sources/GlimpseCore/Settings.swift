@@ -274,6 +274,27 @@ public struct AppSettings: Codable, Sendable {
         panelShortcut = nil
     }
 
+    /// What a new install (and Reset settings) starts with: the layout shown in the App Store
+    /// screenshots. `init()` keeps the original values because decoding fills missing fields
+    /// from it, and older saved documents must not change layout.
+    public static var initial: AppSettings {
+        var settings = AppSettings()
+        var battery = ColumnConfiguration(metric: .battery, colour: .pink)
+        battery.colourBands = ColourBands(stops: [.init(threshold: 20, colour: .orange), .init(threshold: 80, colour: .green)], gradient: true)
+        settings.columns = [ColumnConfiguration(metric: .cpu, colour: .mint, warningThreshold: 70, criticalThreshold: 90),
+                            ColumnConfiguration(metric: .memory, colour: .purple, warningThreshold: 70, criticalThreshold: 90),
+                            ColumnConfiguration(metric: .download, colour: .blue, isCombinedNetwork: true, secondaryColour: .mint),
+                            battery]
+        settings.panels = [PanelConfiguration(metric: .cpu, appearance: PanelAppearance(size: .large, largeOrientation: .horizontal)),
+                           PanelConfiguration(metric: .download, isCombinedNetwork: true, appearance: PanelAppearance(size: .large, showsConnectionDetails: true)),
+                           PanelConfiguration(metric: .disk, appearance: PanelAppearance(size: .compact)),
+                           PanelConfiguration(metric: .battery, appearance: PanelAppearance(size: .compact)),
+                           PanelConfiguration(metric: .memory)]
+        settings.panelColumns = 3
+        settings.bandwidthInBits = true
+        return settings
+    }
+
     /// Compatibility projections for callers that still organize one card per metric.
     /// Identity-aware callers use panels directly and may keep repeated network metrics.
     public var panelMetrics: [MetricID] {

@@ -26,7 +26,7 @@ final class MonitoringStore: ObservableObject {
 
     static func savedSettings(_ defaults: UserDefaults = .standard) -> AppSettings {
         guard let data = defaults.data(forKey: settingsKey),
-              let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) else { return AppSettings() }
+              let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) else { return AppSettings.initial }
         return decoded.validated()
     }
 
@@ -57,7 +57,7 @@ final class MonitoringStore: ObservableObject {
     }
 
     func resetSettings() {
-        change { $0 = AppSettings() }
+        change { $0 = AppSettings.initial }
     }
 
     func setDetailVisible(_ visible: Bool) {

@@ -75,3 +75,22 @@ final class CardWidthDefaultTests: XCTestCase {
         XCTAssertEqual(AppSettings().panelCardWidth, 188)
     }
 }
+
+final class InitialLayoutTests: XCTestCase {
+    func testNewInstallsStartWithTheScreenshotLayout() {
+        let settings = AppSettings.initial
+        XCTAssertEqual(settings.columns.map(\.metric), [.cpu, .memory, .download, .battery])
+        XCTAssertTrue(settings.columns[2].isCombinedNetwork)
+        XCTAssertEqual(settings.columns[3].colourBands?.gradient, true)
+        XCTAssertEqual(settings.panels.map(\.metric), [.cpu, .download, .disk, .battery, .memory])
+        XCTAssertEqual(settings.panels.map(\.appearance.size), [.large, .large, .compact, .compact, .regular])
+        XCTAssertEqual(settings.panels[0].appearance.largeOrientation, .horizontal)
+        XCTAssertTrue(settings.panels[1].isCombinedNetwork && settings.panels[1].appearance.showsConnectionDetails)
+        XCTAssertEqual(settings.panelColumns, 3)
+        XCTAssertEqual(settings.panelCardWidth, 188)
+        XCTAssertEqual(settings.refreshInterval, 2)
+        XCTAssertTrue(settings.bandwidthInBits)
+        XCTAssertEqual(settings.validated().columns.count, 4) // survives validation unchanged
+        XCTAssertEqual(settings.validated().panels.count, 5)
+    }
+}
