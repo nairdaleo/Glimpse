@@ -15,6 +15,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
     private let showSettings: (UUID?) -> Void
     private var maximumPanelSize = CGSize(width: 1400, height: 850)
     private var renderedAppearance: NSAppearance.Name?
+    private var displaysAsleep = false
 
     init(store: MonitoringStore, showSettings: @escaping (UUID?) -> Void) {
         self.store = store
@@ -39,6 +40,14 @@ final class StatusController: NSObject, NSPopoverDelegate {
                 self.render()
             }
         }
+        // Nobody can see the icon while the displays sleep; sampling and history continue.
+        let workspace = NSWorkspace.shared.notificationCenter
+        displaysAsleep = CGDisplayIsAsleep(CGMainDisplayID()) != 0
+        workspace.publisher(for: NSWorkspace.screensDidSleepNotification).sink { [weak self] _ in self?.displaysAsleep = true }.store(in: &subscriptions)
+        workspace.publisher(for: NSWorkspace.screensDidWakeNotification).sink { [weak self] _ in
+            self?.displaysAsleep = false
+            self?.render()
+        }.store(in: &subscriptions)
         render()
     }
 
@@ -79,7 +88,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
     }
 
     private func render() {
-        guard let button = statusItem.button else { return }
+        guard !displaysAsleep, let button = statusItem.button else { return }
         let settings = store.settings
         thresholds = thresholds.filter { id, _ in settings.columns.contains { $0.id == id } }
         downloadThresholds = downloadThresholds.filter { id, _ in settings.columns.contains { $0.id == id && $0.isCombinedNetwork } }
