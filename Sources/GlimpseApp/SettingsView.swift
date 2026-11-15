@@ -712,8 +712,10 @@ private struct ShortcutRecorder: View {
             HStack {
                 Text("Show or hide the panel")
                 Spacer()
-                Button(monitor != nil ? "Type a shortcut…" : (store.settings.panelShortcut?.display ?? "Record Shortcut")) {
-                    monitor == nil ? record() : stop()
+                Button { monitor == nil ? record() : stop() } label: {
+                    if monitor != nil { Text("Type a shortcut…") }
+                    else if let shortcut = store.settings.panelShortcut { Text(verbatim: shortcut.display) }
+                    else { Text("Record Shortcut") }
                 }
                 if store.settings.panelShortcut != nil && monitor == nil {
                     Button("Clear") { store.change { $0.panelShortcut = nil } }

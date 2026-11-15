@@ -143,3 +143,7 @@ build/Glimpse.app/Contents/MacOS/Glimpse -GlimpseScreenshotMode YES --render-car
 ```
 
 For the App Store edition, `defaults` must target its sandbox container (see "Editing saved settings by hand"). Captions and the app's language are separate: launch with `-AppleLanguages '(de)'` so the UI matches each locale's screenshots.
+
+## Localization
+
+User-facing text lives in `Sources/GlimpseApp/Resources/Localizable.xcstrings` (en source; de, es-MX, fr, fr-CA, ja, ko, pt-BR). SwiftPM writes `.stringsdata` files for every compiled source; sync them into the catalog with `xcrun xcstringstool sync`. **Build both editions** (a normal build and `GLIMPSE_APP_STORE=1`), because `#if APP_STORE` code such as the tip jar only compiles in the store edition. Literals inside `Text("…")`, `Button("…")` and other SwiftUI initializers are localized automatically; strings built in code need `String(localized:)`, and computed button labels need a `Text` per case. Translate with the translator MCP, then review every string (glossary: `docs/l10n/glossary.md`).

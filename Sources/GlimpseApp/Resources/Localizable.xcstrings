@@ -2631,12 +2631,6 @@
             "value": "Clique pour copier %@"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Clique para copiar %@"
-          }
-        },
         "ja": {
           "stringUnit": {
             "state": "translated",
@@ -2647,6 +2641,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "클릭하여 %@ 복사"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clique para copiar %@"
           }
         }
       }
@@ -3321,12 +3321,6 @@
             "value": "Copié"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copiado"
-          }
-        },
         "ja": {
           "stringUnit": {
             "state": "translated",
@@ -3337,6 +3331,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "복사됨"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiado"
           }
         }
       }
@@ -3367,12 +3367,6 @@
             "value": "Copie la valeur"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copia o valor"
-          }
-        },
         "ja": {
           "stringUnit": {
             "state": "translated",
@@ -3383,6 +3377,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "값을 복사합니다"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia o valor"
           }
         }
       }
@@ -4720,6 +4720,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "O Glimpse é gratuito e de código aberto. Se ele for útil para você, um café ajuda a mantê-lo vivo."
+          }
+        }
+      }
+    },
+    "Glimpse is free, with every feature included. If it is useful to you, a tip helps keep it going.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glimpse ist kostenlos, mit allen Funktionen. Wenn es dir nützt, hilft ein Trinkgeld, es weiterzuentwickeln."
+          }
+        },
+        "es-MX": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glimpse es gratis e incluye todas las funciones. Si te resulta útil, una propina ayuda a mantenerlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glimpse est gratuit, toutes fonctionnalités comprises. S’il t’est utile, un pourboire aide à le faire vivre."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Glimpse é gratuito, com todos os recursos. Se ele for útil para você, uma gorjeta ajuda a mantê-lo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glimpse はすべての機能を無料で使えます。役に立ったら、チップで開発を応援してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glimpse는 모든 기능을 무료로 제공합니다. 유용하다면 팁으로 개발을 응원해 주세요."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glimpse est gratuit, toutes fonctionnalités comprises. S’il t’est utile, un pourboire aide à le faire vivre."
           }
         }
       }
@@ -7441,6 +7487,52 @@
         }
       }
     },
+    "Record Shortcut": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tastenkürzel aufnehmen"
+          }
+        },
+        "es-MX": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabar atajo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer un raccourci"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gravar atalho"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ショートカットを記録"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "단축키 기록"
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer un raccourci"
+          }
+        }
+      }
+    },
     "Refresh": {
       "localizations": {
         "de": {
@@ -9143,6 +9235,52 @@
         }
       }
     },
+    "Thank you for supporting Glimpse! 💜": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danke, dass du Glimpse unterstützt! 💜"
+          }
+        },
+        "es-MX": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Gracias por apoyar Glimpse! 💜"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merci de soutenir Glimpse ! 💜"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrigado por apoiar o Glimpse! 💜"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glimpse を応援していただきありがとうございます！💜"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glimpse를 응원해 주셔서 감사합니다! 💜"
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merci de soutenir Glimpse! 💜"
+          }
+        }
+      }
+    },
     "The login helper is missing from this build.": {
       "localizations": {
         "de": {
@@ -9185,6 +9323,144 @@
           "stringUnit": {
             "state": "translated",
             "value": "O auxiliar de início de sessão está ausente desta compilação."
+          }
+        }
+      }
+    },
+    "The purchase could not be verified.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Kauf konnte nicht bestätigt werden."
+          }
+        },
+        "es-MX": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo verificar la compra."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’achat n’a pas pu être vérifié."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível verificar a compra."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入を確認できませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매를 확인할 수 없습니다."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’achat n’a pas pu être vérifié."
+          }
+        }
+      }
+    },
+    "The purchase failed: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Kauf ist fehlgeschlagen: %@"
+          }
+        },
+        "es-MX": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La compra falló: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’achat a échoué : %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A compra falhou: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入に失敗しました: %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매 실패: %@"
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’achat a échoué : %@"
+          }
+        }
+      }
+    },
+    "The purchase is waiting for approval.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Kauf wartet auf Freigabe."
+          }
+        },
+        "es-MX": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La compra está esperando aprobación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’achat est en attente d’approbation."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A compra está aguardando aprovação."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入は承認待ちです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매가 승인 대기 중입니다."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’achat est en attente d’approbation."
           }
         }
       }
@@ -9281,6 +9557,52 @@
         }
       }
     },
+    "Tips are unavailable right now.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trinkgeld ist gerade nicht verfügbar."
+          }
+        },
+        "es-MX": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las propinas no están disponibles por ahora."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les pourboires ne sont pas disponibles pour le moment."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As gorjetas não estão disponíveis no momento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在チップは利用できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 팁을 사용할 수 없습니다."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les pourboires ne sont pas disponibles pour le moment."
+          }
+        }
+      }
+    },
     "Tunnel": {
       "localizations": {
         "de": {
@@ -9327,6 +9649,52 @@
         }
       }
     },
+    "Type a shortcut…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tastenkürzel drücken …"
+          }
+        },
+        "es-MX": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pulsa un atajo…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appuie sur un raccourci…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pressione um atalho…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ショートカットを押してください…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "단축키를 누르세요…"
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appuie sur un raccourci…"
+          }
+        }
+      }
+    },
     "Unknown system thermal state": {
       "localizations": {
         "de": {
@@ -9369,6 +9737,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Estado térmico do sistema desconhecido"
+          }
+        }
+      }
+    },
+    "Updates are delivered by the App Store.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates kommen über den App Store."
+          }
+        },
+        "es-MX": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las actualizaciones llegan a través de la App Store."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les mises à jour sont distribuées par l’App Store."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As atualizações chegam pela App Store."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデートは App Store から配信されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트는 App Store를 통해 제공됩니다."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les mises à jour sont distribuées par l’App Store."
           }
         }
       }
