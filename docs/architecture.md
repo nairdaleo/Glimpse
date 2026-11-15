@@ -84,7 +84,7 @@ One source tree, two builds. The App Store edition is selected at build time wit
 | `scripts/make-pkg.sh` | App Store edition `.pkg`; `--upload` sends it to App Store Connect and tags the build |
 | `scripts/release.sh` | The whole release: tests, notarized DMG, tag, GitHub release, App Store upload, Sparkle appcast, Homebrew cask |
 
-Releases run only on the owner's Mac; GitHub holds no signing, Sparkle or App Store Connect secrets. CI (`.github/workflows/ci.yml`) tests and builds both editions on Apple silicon and Intel runners and scans for secrets. Build numbers are the commit count. Details: [releasing.md](releasing.md); manual equivalents of every step: [CONTRIBUTING.md](../CONTRIBUTING.md#doing-everything-by-hand).
+Releases run only on the owner's Mac; GitHub holds no signing, Sparkle or App Store Connect secrets. CI (`.github/workflows/ci.yml`) tests and builds both editions on Apple silicon and Intel runners and scans for secrets. Build numbers are the commit count. Details: [releasing.md](releasing.md); manual equivalents: [development.md](development.md#running-the-ci-checks-by-hand) and [releasing.md](releasing.md#manual-release).
 
 ## Tests
 

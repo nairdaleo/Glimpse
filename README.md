@@ -27,7 +27,8 @@ The menu-bar renderer will use AppKit. Settings may use SwiftUI APIs available o
 
 - [Public project board](https://github.com/users/nairdaleo/projects/10): upcoming work and validation.
 - [Architecture](docs/architecture.md): modules, data flow, threading, editions and the build/release pipeline.
-- [Contributing](CONTRIBUTING.md): how to propose changes, and how to build, test, run CI and release by hand.
+- [Contributing](CONTRIBUTING.md): how to propose changes, and the AI guidelines.
+- [AGENTS.md](AGENTS.md): the shared rules for AI coding agents working on Glimpse.
 - [Design](docs/design.md): user experience, sampling, compatibility, performance goals, and validation.
 - [iGlance assessment](docs/iglance-assessment.md): what we studied and what remains unverified.
 - [License decision](docs/licensing.md): why MIT was selected and how third-party code is handled.
