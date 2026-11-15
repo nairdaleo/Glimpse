@@ -16,6 +16,9 @@ final class StatusController: NSObject, NSPopoverDelegate {
     private var maximumPanelSize = CGSize(width: 1400, height: 850)
     private var renderedAppearance: NSAppearance.Name?
     private var displaysAsleep = false
+    /// Uptime when the popover closed with the pointer on the menu-bar icon.
+    private var closedOverIcon: TimeInterval?
+    private var closingFromToggle = false
 
     init(store: MonitoringStore, showSettings: @escaping (UUID?) -> Void) {
         self.store = store
@@ -53,13 +56,33 @@ final class StatusController: NSObject, NSPopoverDelegate {
 
     @objc private func togglePanel() {
         guard let button = statusItem.button else { return }
-        if popover.isShown { popover.performClose(nil) }
-        else {
-            store.setDetailVisible(true)
-            updatePanelHost()
-            NSApp.activate(ignoringOtherApps: true)
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+        if popover.isShown {
+            closingFromToggle = true
+            popover.performClose(nil)
+            closingFromToggle = false
+            return
+        }
+        // Clicking the icon closes the transient popover 15-40 ms before this action
+        // runs (sometimes after the button is already released). A close that
+        // recent, with the pointer on the icon, was this click: don't reopen.
+        if let closedAt = closedOverIcon {
+            closedOverIcon = nil
+            if ProcessInfo.processInfo.systemUptime - closedAt < 0.3 { return }
+        }
+        store.setDetailVisible(true)
+        updatePanelHost()
+        NSApp.activate(ignoringOtherApps: true)
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        popover.contentViewController?.view.window?.makeKey()
+    }
+
+    func popoverWillClose(_ notification: Notification) {
+        // A transient popover closes when the menu-bar icon is clicked, just before
+        // the button's action runs. Remember a close with the pointer on the icon.
+        guard !closingFromToggle, let button = statusItem.button, let window = button.window else { return }
+        let iconOnScreen = window.convertToScreen(button.convert(button.bounds, to: nil))
+        if iconOnScreen.contains(NSEvent.mouseLocation) {
+            closedOverIcon = ProcessInfo.processInfo.systemUptime
         }
     }
 
