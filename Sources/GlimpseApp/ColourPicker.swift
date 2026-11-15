@@ -5,7 +5,7 @@ import GlimpseCore
 /// Preset swatches followed by a rainbow-ringed swatch that opens the
 /// system colour panel; the ring shows the current colour.
 struct PaletteColourPicker: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var selection: MeterColour
     /// The title stays as the accessibility label when hidden.
     var showsTitle = true

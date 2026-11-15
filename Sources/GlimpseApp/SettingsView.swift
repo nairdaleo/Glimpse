@@ -22,8 +22,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Make room for what matters.").font(.system(size: 22, weight: .semibold, design: .rounded))
-                    Text("Your meters, in your order.").foregroundColor(.secondary)
+                    Text("Your meters, in your order.").font(.system(size: 22, weight: .semibold, design: .rounded))
                 }
                 Spacer()
                 Image(systemName: "chart.bar.fill").font(.system(size: 30)).foregroundColor(.accentColor)
@@ -73,7 +72,7 @@ struct SettingsView: View {
                 ScrollView(.horizontal, showsIndicators: true) {
                     HStack(spacing: 8) {
                         ForEach(Array(store.settings.columns.enumerated()), id: \.element.id) { index, column in
-                            OrganizationTile(payload: .column(column.id), kind: .column, isSelected: selectedID == column.id, label: "Meter \(index + 1), \(column.displayTitle)", select: { selectedColumnID = column.id }, drop: { payload, edge in
+                            OrganizationTile(payload: .column(column.id), kind: .column, isSelected: selectedID == column.id, label: String(localized: "Meter \(index + 1), \(column.displayTitle)"), select: { selectedColumnID = column.id }, drop: { payload, edge in
                                 completeDrop(payload, target: .column(column.id), edge: edge)
                             }) {
                                 VStack(spacing: 7) {
@@ -181,7 +180,7 @@ struct SettingsView: View {
                             ForEach(Array(store.settings.panels.enumerated()), id: \.element.id) { index, panel in
                                 if let rect = layout.placements[panel.id] {
                                     OrganizationTile(payload: .panel(panel.id), kind: .panel, isSelected: selectedPanel?.id == panel.id,
-                                                     label: "Panel \(index + 1), \(panel.displayTitle), \(panel.appearance.size.title)", select: { selectedPanelID = panel.id }, drop: { payload, edge in
+                                                     label: String(localized: "Panel \(index + 1), \(panel.displayTitle), \(panel.appearance.size.title)"), select: { selectedPanelID = panel.id }, drop: { payload, edge in
                                         completeDrop(payload, target: .panel(panel.id), edge: edge)
                                     }, hover: { incoming, edge in
                                         let next = destinationPreview(incoming, edge, target: .panel(panel.id))
@@ -268,7 +267,7 @@ struct SettingsView: View {
                 .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
             Divider()
             Text("Network columns full at").font(.headline)
-            ForEach([(\AppSettings.networkCeiling, "Download"), (\AppSettings.uploadCeiling, "Upload")], id: \.1) { keyPath, title in
+            ForEach([(\AppSettings.networkCeiling, String(localized: "Download")), (\AppSettings.uploadCeiling, String(localized: "Upload"))], id: \.1) { keyPath, title in
                 HStack {
                     let bits = store.settings.bandwidthInBits
                     let units = store.settings.bandwidthUnits
@@ -571,7 +570,7 @@ private struct ColumnEditor: View {
         Binding(get: { configuration[keyPath: keyPath] }, set: { value in edit { $0[keyPath: keyPath] = value } })
     }
 
-    private func colourPicker(_ title: String, keyPath: WritableKeyPath<ColumnConfiguration, MeterColour>) -> some View {
+    private func colourPicker(_ title: LocalizedStringKey, keyPath: WritableKeyPath<ColumnConfiguration, MeterColour>) -> some View {
         PaletteColourPicker(title: title, selection: column(keyPath))
     }
 
@@ -721,8 +720,8 @@ private struct ShortcutRecorder: View {
                 }
             }
             Text(store.shortcutUnavailable
-                 ? "Another app already uses this shortcut. Choose a different one."
-                 : "Works from any app. Use at least one of ⌘, ⌥ or ⌃; Esc cancels recording.")
+                 ? String(localized: "Another app already uses this shortcut. Choose a different one.")
+                 : String(localized: "Works from any app. Use at least one of ⌘, ⌥ or ⌃; Esc cancels recording."))
                 .font(.caption).foregroundColor(store.shortcutUnavailable ? .red : .secondary)
         }
         .onDisappear(perform: stop)

@@ -11,7 +11,7 @@ struct AboutView: View {
     private var commit: String { info["GlimpseCommit"] as? String ?? "—" }
     private var architecture: String {
         #if arch(arm64)
-        return "Apple silicon"
+        return String(localized: "Apple silicon")
         #else
         return "Intel"
         #endif
@@ -73,7 +73,7 @@ struct AboutView: View {
         }
     }
 
-    private func row(_ label: String, _ value: String) -> some View {
+    private func row(_ label: LocalizedStringKey, _ value: String) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(label).foregroundColor(.secondary).frame(width: 80, alignment: .leading)
             Text(value).textSelection(.enabled)

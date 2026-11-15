@@ -32,9 +32,9 @@ final class TipJar: ObservableObject {
         guard products.isEmpty else { return }
         do {
             products = try await Product.products(for: Self.productIDs).sorted { $0.price < $1.price }
-            if products.isEmpty { message = "Tips are unavailable right now." }
+            if products.isEmpty { message = String(localized: "Tips are unavailable right now.") }
         } catch {
-            message = "Tips are unavailable right now."
+            message = String(localized: "Tips are unavailable right now.")
         }
     }
 
@@ -46,18 +46,18 @@ final class TipJar: ObservableObject {
             switch try await product.purchase() {
             case .success(.verified(let transaction)):
                 await transaction.finish()
-                message = "Thank you for supporting Glimpse! 💜"
+                message = String(localized: "Thank you for supporting Glimpse! 💜")
             case .success(.unverified):
-                message = "The purchase could not be verified."
+                message = String(localized: "The purchase could not be verified.")
             case .pending:
-                message = "The purchase is waiting for approval."
+                message = String(localized: "The purchase is waiting for approval.")
             case .userCancelled:
                 break
             @unknown default:
                 break
             }
         } catch {
-            message = "The purchase failed: \(error.localizedDescription)"
+            message = String(localized: "The purchase failed: \(error.localizedDescription)")
         }
     }
 }

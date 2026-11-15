@@ -160,7 +160,7 @@ struct MetricCardContent: View {
     private var interfaceIdentifier: some View {
         let name = panel.networkInterface ?? snapshot.automaticNetworkInterface
         let kind = snapshot.interfaceDetails.first { $0.name == name }?.displayName
-        return Text((panel.networkInterface == nil ? "Auto · " : "") + (name ?? "unavailable") + (kind.map { " · " + $0 } ?? ""))
+        return Text((panel.networkInterface == nil ? String(localized: "Auto") + " · " : "") + (name ?? String(localized: "unavailable")) + (kind.map { " · " + $0 } ?? ""))
             .font(.system(size: compact ? 9 : 10)).foregroundColor(.secondary).lineLimit(1)
             .help(snapshot.interfaceLabel(panel.networkInterface))
     }
@@ -170,7 +170,7 @@ struct MetricCardContent: View {
     private func readingDetail(lines: Int, size: CGFloat, shrinks: Bool = false) -> some View {
         // Each reader line stays one line, shrinking a little before truncating,
         // so a long line never pushes the next one out of the card.
-        let detailLines = (reading?.detail ?? "Waiting for a reading").components(separatedBy: "\n").prefix(lines)
+        let detailLines = (reading?.detail ?? String(localized: "Waiting for a reading")).components(separatedBy: "\n").prefix(lines)
         return VStack(alignment: .leading, spacing: shrinks ? 0 : 1) {
             ForEach(Array(detailLines.enumerated()), id: \.offset) { _, line in
                 Text(line).lineLimit(1).minimumScaleFactor(0.85).fixedSize(horizontal: false, vertical: true)

@@ -60,7 +60,7 @@ public final class NativeSampler {
                 let ticks = try NativeSystemReader.cpuTicks()
                 let value = CPUUsage.percentage(previous: cpuBaseline, current: ticks)
                 cpuBaseline = ticks
-                readings[.cpu] = MetricReading(value: value, detail: value == nil ? "Collecting CPU baseline" : "CPU activity across all cores", timestamp: now)
+                readings[.cpu] = MetricReading(value: value, detail: value == nil ? String(localized: "Collecting CPU baseline") : String(localized: "CPU activity across all cores"), timestamp: now)
                 let coreTicks = try NativeSystemReader.perCoreTicks()
                 if coreBaselines.count == coreTicks.count {
                     cpuCores = zip(coreBaselines, coreTicks).compactMap { CPUUsage.percentage(previous: $0, current: $1) }
@@ -143,7 +143,7 @@ public final class NativeSampler {
                         if let counter = InterfaceSelection.select(counters, preferred: selection, primary: primary, physical: physical) {
                             chosen[counter.name] = counter
                         } else if let name = selection {
-                            let missing = MetricReading(value: nil, detail: "Interface \(name) unavailable", timestamp: now)
+                            let missing = MetricReading(value: nil, detail: String(localized: "Interface \(name) unavailable"), timestamp: now)
                             networkReadings[name] = NetworkInterfaceReading(identity: "\(name):unavailable", name: name, download: missing, upload: missing)
                         }
                     }
@@ -155,7 +155,7 @@ public final class NativeSampler {
                         var tracker = networkRates[counter.identity] ?? InterfaceRateTracker()
                         let rate = tracker.update(identity: counter.identity, received: counter.received, sent: counter.sent, timestamp: now)
                         networkRates[counter.identity] = tracker
-                        let detail = rate == nil ? "Collecting \(counter.name) baseline" : "\(counter.name) only; other interfaces excluded"
+                        let detail = rate == nil ? String(localized: "Collecting \(counter.name) baseline") : String(localized: "\(counter.name) only; other interfaces excluded")
                         networkReadings[counter.name] = NetworkInterfaceReading(identity: counter.identity, name: counter.name,
                             download: MetricReading(value: rate?.download, detail: detail, timestamp: now),
                             upload: MetricReading(value: rate?.upload, detail: detail, timestamp: now))
@@ -166,7 +166,7 @@ public final class NativeSampler {
                     for metric in [MetricID.download, .upload] where demanded.contains(metric) {
                         let selected = networkReadings[interface]
                         let reading = metric == .download ? selected?.download : selected?.upload
-                        readings[metric] = reading ?? MetricReading(value: nil, detail: interface.isEmpty ? "No active physical interface" : "Interface \(interface) is not being sampled", timestamp: now)
+                        readings[metric] = reading ?? MetricReading(value: nil, detail: interface.isEmpty ? String(localized: "No active physical interface") : String(localized: "Interface \(interface) is not being sampled"), timestamp: now)
                     }
                 } else {
                     // The settings picker needs inventory, not traffic samples or a baseline.
@@ -269,20 +269,20 @@ enum NativeSystemReader {
         let usedText = DataSizePresentation.string(bytes: Double(min(used, total)), units: units)
         let totalText = DataSizePresentation.string(bytes: Double(total), units: units)
         return MetricReading(value: min(100, Double(used) / Double(total) * 100),
-                             detail: "\(usedText) used of \(totalText)", timestamp: timestamp)
+                             detail: String(localized: "\(usedText) used of \(totalText)"), timestamp: timestamp)
     }
 
     static func battery(timestamp: TimeInterval) -> MetricReading {
         guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let sources = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef] else {
-            return MetricReading(value: nil, detail: "Power source information unavailable", timestamp: timestamp)
+            return MetricReading(value: nil, detail: String(localized: "Power source information unavailable"), timestamp: timestamp)
         }
         for source in sources {
             guard let description = IOPSGetPowerSourceDescription(info, source)?.takeUnretainedValue() as? [String: Any],
                   description[kIOPSTypeKey] as? String == kIOPSInternalBatteryType else { continue }
             guard let current = description[kIOPSCurrentCapacityKey] as? NSNumber,
                   let maximum = description[kIOPSMaxCapacityKey] as? NSNumber, maximum.doubleValue > 0 else {
-                return MetricReading(value: nil, detail: "Battery capacity unavailable", timestamp: timestamp)
+                return MetricReading(value: nil, detail: String(localized: "Battery capacity unavailable"), timestamp: timestamp)
             }
             let charging = (description[kIOPSIsChargingKey] as? NSNumber)?.boolValue == true
             let charged = (description[kIOPSIsChargedKey] as? NSNumber)?.boolValue == true
@@ -295,22 +295,22 @@ enum NativeSystemReader {
             // they stay raw strings here. -1 means the estimate is calculating.
             if charging {
                 if let minutes = (description["Time to Full Charge"] as? NSNumber)?.doubleValue, minutes > 0 {
-                    power.append("full in " + duration(minutes: minutes))
+                    power.append(String(localized: "full in \(duration(minutes: minutes))"))
                 }
             } else if !charged, state != kIOPSACPowerValue {
                 // The per-source estimate is often absent; the system-wide one is not.
                 let seconds = IOPSGetTimeRemainingEstimate()
                 if let minutes = (description["Time to Empty"] as? NSNumber)?.doubleValue, minutes > 0 {
-                    power.append(duration(minutes: minutes) + " left")
+                    power.append(String(localized: "\(duration(minutes: minutes)) left", comment: "Battery time remaining"))
                 } else if seconds > 0 {
-                    power.append(duration(minutes: seconds / 60) + " left")
+                    power.append(String(localized: "\(duration(minutes: seconds / 60)) left", comment: "Battery time remaining"))
                 } else {
-                    power.append("estimating time left")
+                    power.append(String(localized: "estimating time left", comment: "Battery time remaining is being calculated"))
                 }
-                if let watts = smart.flatMap(drawWatts) { power.append(String(format: "%.1f W draw", locale: Locale(identifier: "en_US_POSIX"), watts)) }
+                if let watts = smart.flatMap(drawWatts) { power.append(String(localized: "\(watts.formatted(.number.precision(.fractionLength(1)))) W draw", comment: "Battery power draw in watts")) }
             }
             if let watts = externalAdapterWatts(), state == kIOPSACPowerValue {
-                power.append("\(Int(watts.rounded())) W adapter")
+                power.append(String(localized: "\(Int(watts.rounded())) W adapter", comment: "Power adapter wattage"))
             }
             if !power.isEmpty { lines.append(power.joined(separator: " · ")) }
             var health: [String] = []
@@ -319,20 +319,20 @@ enum NativeSystemReader {
                 ((smart?[key] ?? (smart?["BatteryData"] as? [String: Any])?[key]) as? NSNumber)?.doubleValue
             }
             if let raw = capacity("AppleRawMaxCapacity"), let design = capacity("DesignCapacity"), raw > 0, design > 0 {
-                health.append("Health \(Int((min(1, raw / design) * 100).rounded()))%")
+                health.append(String(localized: "Health \(Int((min(1, raw / design) * 100).rounded()))%"))
             }
-            if let cycles = (smart?["CycleCount"] as? NSNumber)?.intValue { health.append("\(cycles) cycles") }
+            if let cycles = (smart?["CycleCount"] as? NSNumber)?.intValue { health.append(String(localized: "\(cycles) cycles", comment: "Battery charge cycle count")) }
             if !health.isEmpty { lines.append(health.joined(separator: " · ")) }
             return MetricReading(value: min(100, max(0, current.doubleValue / maximum.doubleValue * 100)),
                                  detail: lines.joined(separator: "\n"), timestamp: timestamp)
         }
-        return MetricReading(value: nil, detail: "No internal battery", timestamp: timestamp)
+        return MetricReading(value: nil, detail: String(localized: "No internal battery"), timestamp: timestamp)
     }
 
     private static func batteryState(charging: Bool, charged: Bool, state: String?) -> String {
-        if charging { return "Charging" }
-        if charged { return "Charged" }
-        return state == kIOPSACPowerValue ? "Connected to power" : "On battery"
+        if charging { return String(localized: "Charging") }
+        if charged { return String(localized: "Charged") }
+        return state == kIOPSACPowerValue ? String(localized: "Connected to power") : String(localized: "On battery")
     }
 
     /// Charger wattage via the public external-adapter dictionary; absent on
@@ -367,8 +367,8 @@ enum NativeSystemReader {
         let total = max(1, Int(minutes.rounded()))
         let hours = total / 60
         let minutesPart = total % 60
-        if hours > 0 { return minutesPart == 0 ? "\(hours) hr" : "\(hours) hr \(minutesPart) min" }
-        return "\(minutesPart) min"
+        if hours > 0 { return minutesPart == 0 ? String(localized: "\(hours) hr") : String(localized: "\(hours) hr \(minutesPart) min") }
+        return String(localized: "\(minutesPart) min")
     }
 
     static func disk(timestamp: TimeInterval, units: CapacityUnits) throws -> MetricReading {
@@ -383,18 +383,18 @@ enum NativeSystemReader {
         let totalText = DataSizePresentation.string(bytes: Double(total), units: units)
         let freeText = DataSizePresentation.string(bytes: Double(max(0, available)), units: units)
         return MetricReading(value: min(100, max(0, (1 - Double(available) / Double(total)) * 100)),
-                             detail: "Free: \(freeText)\n\(usedText) used of \(totalText)", timestamp: timestamp)
+                             detail: String(localized: "Free: \(freeText)\n\(usedText) used of \(totalText)"), timestamp: timestamp)
     }
 
     static func thermal(timestamp: TimeInterval) -> MetricReading {
         let value: Double
         let detail: String
         switch ProcessInfo.processInfo.thermalState {
-        case .nominal: (value, detail) = (0, "Nominal")
-        case .fair: (value, detail) = (1, "Fair")
-        case .serious: (value, detail) = (2, "Serious")
-        case .critical: (value, detail) = (3, "Critical")
-        @unknown default: return MetricReading(value: nil, detail: "Unknown system thermal state", timestamp: timestamp)
+        case .nominal: (value, detail) = (0, String(localized: "Nominal"))
+        case .fair: (value, detail) = (1, String(localized: "Fair"))
+        case .serious: (value, detail) = (2, String(localized: "Serious"))
+        case .critical: (value, detail) = (3, String(localized: "Critical"))
+        @unknown default: return MetricReading(value: nil, detail: String(localized: "Unknown system thermal state"), timestamp: timestamp)
         }
         return MetricReading(value: value, detail: detail, timestamp: timestamp)
     }

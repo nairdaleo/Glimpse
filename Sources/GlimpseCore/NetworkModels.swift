@@ -53,7 +53,7 @@ public struct NetworkInterfaceInfo: Codable, Equatable, Sendable, Identifiable {
         self.proxies = proxies
     }
 
-    public var statusText: String { isUp ? (isRunning ? "Active" : "Enabled, no link") : "Inactive" }
+    public var statusText: String { isUp ? (isRunning ? String(localized: "Active") : String(localized: "Enabled, no link")) : String(localized: "Inactive") }
 
     /// Label/value rows for the chosen fields, in a fixed reading order.
     /// Extra values get an empty label; missing values read "—"; proxy rows
@@ -103,29 +103,29 @@ public enum NetworkDetailField: String, Codable, CaseIterable, Identifiable, Sen
     /// Short row label for cards.
     public var label: String {
         switch self {
-        case .status: return "Status"
+        case .status: return String(localized: "Status")
         case .ipv4: return "IPv4"
-        case .subnetMask: return "Mask"
-        case .router: return "Router"
+        case .subnetMask: return String(localized: "Mask")
+        case .router: return String(localized: "Router")
         case .ipv6: return "IPv6"
         case .dns: return "DNS"
-        case .searchDomains: return "Search"
+        case .searchDomains: return String(localized: "Search")
         case .mac: return "MAC"
-        case .proxy: return "Proxy"
+        case .proxy: return String(localized: "Proxy")
         }
     }
     /// Full name for settings.
     public var title: String {
         switch self {
-        case .status: return "Link status"
-        case .ipv4: return "IPv4 address"
-        case .subnetMask: return "Subnet mask"
-        case .router: return "Router"
-        case .ipv6: return "IPv6 address"
-        case .dns: return "DNS servers"
-        case .searchDomains: return "Search domains"
-        case .mac: return "MAC address"
-        case .proxy: return "Proxy (if set)"
+        case .status: return String(localized: "Link status")
+        case .ipv4: return String(localized: "IPv4 address")
+        case .subnetMask: return String(localized: "Subnet mask")
+        case .router: return String(localized: "Router")
+        case .ipv6: return String(localized: "IPv6 address")
+        case .dns: return String(localized: "DNS servers")
+        case .searchDomains: return String(localized: "Search domains")
+        case .mac: return String(localized: "MAC address")
+        case .proxy: return String(localized: "Proxy (if set)")
         }
     }
 }

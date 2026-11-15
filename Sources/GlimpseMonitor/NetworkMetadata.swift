@@ -14,10 +14,10 @@ enum NativeNetworkMetadata {
                 let type = SCNetworkInterfaceGetInterfaceType(interface) as String?
                 let displayName = SCNetworkInterfaceGetLocalizedDisplayName(interface) as String? ?? name
                 let kind: String
-                if type == (kSCNetworkInterfaceTypeIEEE80211 as String) { kind = "Wi-Fi" }
-                else if type == (kSCNetworkInterfaceTypeEthernet as String) { kind = "Wired" }
-                else if type == (kSCNetworkInterfaceTypeWWAN as String) { kind = "Cellular" }
-                else if type == (kSCNetworkInterfaceTypeBluetooth as String) { kind = "Bluetooth" }
+                if type == (kSCNetworkInterfaceTypeIEEE80211 as String) { kind = String(localized: "Wi-Fi") }
+                else if type == (kSCNetworkInterfaceTypeEthernet as String) { kind = String(localized: "Wired") }
+                else if type == (kSCNetworkInterfaceTypeWWAN as String) { kind = String(localized: "Cellular") }
+                else if type == (kSCNetworkInterfaceTypeBluetooth as String) { kind = String(localized: "Bluetooth") }
                 else { kind = fallbackKind(name: name, flags: 0) }
                 descriptions[name] = (displayName, kind)
             }
@@ -43,9 +43,9 @@ enum NativeNetworkMetadata {
     }
 
     private static func fallbackKind(name: String, flags: Int32) -> String {
-        if flags & Int32(IFF_LOOPBACK) != 0 || name == "lo0" { return "Loopback" }
-        if ["utun", "tun", "tap", "ppp", "ipsec"].contains(where: name.hasPrefix) { return "Tunnel" }
-        return "Other"
+        if flags & Int32(IFF_LOOPBACK) != 0 || name == "lo0" { return String(localized: "Loopback") }
+        if ["utun", "tun", "tap", "ppp", "ipsec"].contains(where: name.hasPrefix) { return String(localized: "Tunnel") }
+        return String(localized: "Other")
     }
 
     struct LocalAddresses { var ipv4: [String] = []; var ipv6: [String] = []; var masks: [String] = []; var mac: String? }
@@ -120,7 +120,7 @@ enum NativeNetworkMetadata {
         if enabled("ProxyAutoConfigEnable"), let url = settings["ProxyAutoConfigURLString"] as? String, !url.isEmpty {
             result.append("PAC \(url)")
         }
-        if enabled("ProxyAutoDiscoveryEnable") { result.append("Auto-discovery") }
+        if enabled("ProxyAutoDiscoveryEnable") { result.append(String(localized: "Auto-discovery")) }
         return result
     }
 }

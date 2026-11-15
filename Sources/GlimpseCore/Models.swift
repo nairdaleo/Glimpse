@@ -6,12 +6,12 @@ public enum MetricID: String, Codable, CaseIterable, Identifiable, Sendable {
     public var title: String {
         switch self {
         case .cpu: return "CPU"
-        case .memory: return "Memory"
-        case .download: return "Download"
-        case .upload: return "Upload"
-        case .battery: return "Battery"
-        case .disk: return "Disk"
-        case .thermal: return "Thermal"
+        case .memory: return String(localized: "Memory")
+        case .download: return String(localized: "Download")
+        case .upload: return String(localized: "Upload")
+        case .battery: return String(localized: "Battery")
+        case .disk: return String(localized: "Disk")
+        case .thermal: return String(localized: "Thermal")
         }
     }
 }
@@ -129,8 +129,15 @@ public enum MeterColour: RawRepresentable, Hashable, Codable, CaseIterable, Iden
     }
     public var id: String { rawValue }
     public var title: String {
-        if case .custom = self { return "Custom" }
-        return rawValue.capitalized
+        switch self {
+        case .mint: return String(localized: "Mint")
+        case .green: return String(localized: "Green")
+        case .blue: return String(localized: "Blue")
+        case .purple: return String(localized: "Purple")
+        case .orange: return String(localized: "Orange")
+        case .pink: return String(localized: "Pink")
+        case .custom: return String(localized: "Custom")
+        }
     }
 
     public init(from decoder: Decoder) throws {

@@ -9,14 +9,14 @@ extension Snapshot {
 
     func interfaceLabel(_ selected: String?) -> String {
         let name = selected ?? automaticNetworkInterface
-        guard let name else { return "no active physical interface" }
+        guard let name else { return String(localized: "no active physical interface") }
         let info = interfaceDetails.first { $0.name == name }
         return name + (info.map { " · \($0.kind)" } ?? "")
     }
 }
 
 struct NetworkInterfacePicker: View {
-    var title = "Interface"
+    var title: LocalizedStringKey = "Interface"
     @Binding var selection: String?
     let snapshot: Snapshot
 

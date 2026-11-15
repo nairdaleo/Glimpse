@@ -37,7 +37,7 @@ public struct ColumnConfiguration: Codable, Equatable, Identifiable, Sendable {
         return result
     }
 
-    public var displayTitle: String { isCombinedNetwork ? "Upload / Download" : metric.title }
+    public var displayTitle: String { isCombinedNetwork ? String(localized: "Upload / Download") : metric.title }
     public var requiredMetrics: [MetricID] { isCombinedNetwork ? [.upload, .download] : [metric] }
     public var isNetwork: Bool { isCombinedNetwork || metric == .upload || metric == .download }
 
@@ -123,7 +123,13 @@ private struct ColumnInterfacePresence: Decodable {
 public enum PanelCardSize: String, Codable, CaseIterable, Identifiable, Sendable {
     case compact, regular, large
     public var id: String { rawValue }
-    public var title: String { rawValue.capitalized }
+    public var title: String {
+        switch self {
+        case .compact: return String(localized: "Compact")
+        case .regular: return String(localized: "Regular")
+        case .large: return String(localized: "Large")
+        }
+    }
 }
 
 /// Byte-count presentation for capacity readings: SI powers of 1000 (GB) or
@@ -139,8 +145,8 @@ public enum PanelLargeOrientation: String, Codable, CaseIterable, Identifiable, 
     public var id: String { rawValue }
     public var title: String {
         switch self {
-        case .vertical: return "1 × 2 · Vertical"
-        case .horizontal: return "2 × 1 · Horizontal"
+        case .vertical: return String(localized: "1 × 2 · Vertical")
+        case .horizontal: return String(localized: "2 × 1 · Horizontal")
         }
     }
 }
@@ -197,7 +203,7 @@ public struct PanelConfiguration: Codable, Equatable, Identifiable, Sendable {
         self.appearance = appearance
     }
 
-    public var displayTitle: String { isCombinedNetwork ? "Upload / Download" : metric.title }
+    public var displayTitle: String { isCombinedNetwork ? String(localized: "Upload / Download") : metric.title }
     public var requiredMetrics: [MetricID] { isCombinedNetwork ? [.upload, .download] : [metric] }
     public var isNetwork: Bool { isCombinedNetwork || metric == .upload || metric == .download }
 

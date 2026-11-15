@@ -13,7 +13,7 @@ final class LifecycleServices: ObservableObject {
     @Published private(set) var automaticDownloads = false
     @Published private(set) var canCheckForUpdates = false
     @Published private(set) var updateConfigured = false
-    @Published private(set) var updateStatus = "Updates are not configured for this build."
+    @Published private(set) var updateStatus = String(localized: "Updates are not configured for this build.")
     @Published private(set) var loginStatus = ""
 
     private static let helperIdentifier = "com.tastyjam.glimpse.loginhelper"
@@ -39,7 +39,7 @@ final class LifecycleServices: ObservableObject {
             DispatchQueue.main.async {
                 if let error {
                     let alert = NSAlert()
-                    alert.messageText = "Glimpse could not be moved to the Trash"
+                    alert.messageText = String(localized: "Glimpse could not be moved to the Trash")
                     alert.informativeText = error.localizedDescription + " Quit Glimpse and drag it to the Trash instead."
                     alert.runModal()
                     return
@@ -67,7 +67,7 @@ final class LifecycleServices: ObservableObject {
             let helperURL = Bundle.main.bundleURL.appendingPathComponent("Contents/Library/LoginItems/GlimpseLoginHelper.app")
             guard Bundle(url: helperURL)?.bundleIdentifier == Self.helperIdentifier else {
                 refreshLoginStatus()
-                loginStatus = "The login helper is missing from this build."
+                loginStatus = String(localized: "The login helper is missing from this build.")
                 return
             }
             // Monterey has no supported query for the actual state of this legacy item.
@@ -86,13 +86,13 @@ final class LifecycleServices: ObservableObject {
             switch SMAppService.mainApp.status {
             case .enabled:
                 loginEnabled = true
-                loginStatus = "Glimpse will start when you log in."
+                loginStatus = String(localized: "Glimpse will start when you log in.")
             case .requiresApproval:
                 loginEnabled = false
-                loginStatus = "Approval required. Enable Glimpse in System Settings > General > Login Items."
+                loginStatus = String(localized: "Approval required. Enable Glimpse in System Settings > General > Login Items.")
             case .notRegistered:
                 loginEnabled = false
-                loginStatus = "Start at login is off."
+                loginStatus = String(localized: "Start at login is off.")
             case .notFound:
                 loginEnabled = false
                 loginStatus = "macOS could not find this app's login item. Keep Glimpse in Applications and try again."
@@ -103,8 +103,8 @@ final class LifecycleServices: ObservableObject {
         } else {
             let request = UserDefaults.standard.object(forKey: Self.legacyLoginRequestKey) as? Bool
             loginEnabled = request ?? false
-            let saved = request.map { $0 ? "Last successful request: on." : "Last successful request: off." }
-                ?? "No start-at-login request saved."
+            let saved = request.map { $0 ? String(localized: "Last successful request: on.") : String(localized: "Last successful request: off.") }
+                ?? String(localized: "No start-at-login request saved.")
             loginStatus = "\(saved) macOS 12 does not report the actual login-item state; verify by logging out and back in."
         }
     }
@@ -114,7 +114,7 @@ final class LifecycleServices: ObservableObject {
     func setAutomaticChecks(_ enabled: Bool) {}
     func setAutomaticDownloads(_ enabled: Bool) {}
     func checkForUpdates() {}
-    private func configureUpdater() { updateStatus = "Updates are delivered by the App Store." }
+    private func configureUpdater() { updateStatus = String(localized: "Updates are delivered by the App Store.") }
 #else
     func setAutomaticChecks(_ enabled: Bool) {
         guard updateConfigured, let updater = updaterController?.updater else { return }
@@ -170,7 +170,7 @@ final class LifecycleServices: ObservableObject {
             refreshUpdateState()
         } catch {
             updaterController = nil
-            updateStatus = "Updates are unavailable: \(error.localizedDescription)"
+            updateStatus = String(localized: "Updates are unavailable: \(error.localizedDescription)")
         }
     }
 
@@ -179,7 +179,7 @@ final class LifecycleServices: ObservableObject {
         automaticChecks = updater.automaticallyChecksForUpdates
         automaticDownloads = updater.automaticallyDownloadsUpdates
         canCheckForUpdates = updater.canCheckForUpdates
-        updateStatus = automaticChecks ? "Automatic update checks are on." : "Check manually or enable automatic update checks."
+        updateStatus = automaticChecks ? String(localized: "Automatic update checks are on.") : String(localized: "Check manually or enable automatic update checks.")
     }
 #endif
 }

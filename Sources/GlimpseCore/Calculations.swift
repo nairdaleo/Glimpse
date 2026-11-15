@@ -74,7 +74,7 @@ public enum MetricPresentation: Sendable {
             return String(format: "%.*f %@", locale: Locale(identifier: "en_US_POSIX"), decimals, scaled, units[unit])
         case .thermal:
             guard value >= 0, value <= 3, value.rounded() == value else { return "—" }
-            return ["Nominal", "Fair", "Serious", "Critical"][Int(value)]
+            return [String(localized: "Nominal"), String(localized: "Fair"), String(localized: "Serious"), String(localized: "Critical")][Int(value)]
         default:
             return String(format: "%.0f%%", locale: Locale(identifier: "en_US_POSIX"), min(100, max(0, value)))
         }
