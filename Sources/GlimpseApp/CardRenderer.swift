@@ -13,10 +13,10 @@ enum CardRenderer {
         let sampler = NativeSampler()
         var history = MetricHistory()
         var networkHistory = NetworkHistory()
-        var snapshot = sampler.sample(settings: settings, detailVisible: true)
+        var snapshot = sampler.sample(settings: settings, detailVisible: true).screenshotSafeIfRequested
         for _ in 0..<5 {
             Thread.sleep(forTimeInterval: 1.05)
-            snapshot = sampler.sample(settings: settings, detailVisible: true)
+            snapshot = sampler.sample(settings: settings, detailVisible: true).screenshotSafeIfRequested
             history.append(snapshot)
             networkHistory.append(snapshot)
         }
@@ -51,4 +51,8 @@ enum CardRenderer {
         }
         print("Rendered \(count) cards from \(settings.panels.count) saved panels to \(url.path)")
     }
+}
+
+private extension Snapshot {
+    var screenshotSafeIfRequested: Snapshot { ScreenshotMode.isOn ? screenshotSafe : self }
 }

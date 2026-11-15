@@ -130,3 +130,16 @@ Without betterleaks installed the hook refuses to push rather than skipping the 
 ## Editing saved settings by hand
 
 The direct build stores settings in `~/Library/Preferences/com.tastyjam.glimpse.plist` (key `glimpse.settings.v1`, JSON data). Once the sandboxed App Store edition has run, `defaults read/write com.tastyjam.glimpse` targets the sandbox container (`~/Library/Containers/com.tastyjam.glimpse`) instead. Pass the plist path to `defaults` to edit the direct build's settings, and quit Glimpse first.
+
+## Screenshot mode
+
+Store screenshots must not show this Mac's network details. Screenshot mode replaces every interface's addresses with documentation-only values (192.0.2.x, 2001:db8::, the MAC 02:00:5e:00:53:24, example.com) while every reading stays live:
+
+```bash
+open build/Glimpse.app --args -GlimpseScreenshotMode YES                 # one launch
+defaults write com.tastyjam.glimpse GlimpseScreenshotMode -bool YES      # until deleted; restart Glimpse
+defaults delete com.tastyjam.glimpse GlimpseScreenshotMode               # back to real values
+build/Glimpse.app/Contents/MacOS/Glimpse -GlimpseScreenshotMode YES --render-cards <dir>
+```
+
+For the App Store edition, `defaults` must target its sandbox container (see "Editing saved settings by hand"). Captions and the app's language are separate: launch with `-AppleLanguages '(de)'` so the UI matches each locale's screenshots.

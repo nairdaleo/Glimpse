@@ -117,6 +117,7 @@ final class MonitoringStore: ObservableObject {
             worker.sample(settings: configuration, detailVisible: visible, configurationVisible: configuring) { [weak self] result in
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self, self.generation == version else { return }
+                    let result = ScreenshotMode.isOn ? result.screenshotSafe : result
                     self.snapshot = result
                     self.history.append(result)
                     self.networkHistory.append(result)

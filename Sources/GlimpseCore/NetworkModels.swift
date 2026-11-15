@@ -129,3 +129,29 @@ public enum NetworkDetailField: String, Codable, CaseIterable, Identifiable, Sen
         }
     }
 }
+
+extension NetworkInterfaceInfo {
+    /// The same fields with documentation-only values (RFC 5737 / RFC 3849 addresses, a locally
+    /// administered MAC, example.com), so screenshots never show this Mac's network details.
+    public var screenshotSafe: NetworkInterfaceInfo {
+        var copy = self
+        copy.ipv4Addresses = ipv4Addresses.indices.map { "192.0.2.\(24 + $0)" }
+        copy.ipv6Addresses = ipv6Addresses.indices.map { "2001:db8::\(String(0x24 + $0, radix: 16))" }
+        copy.routers = routers.indices.map { "192.0.2.\(1 + $0)" }
+        copy.dnsServers = dnsServers.indices.map { "192.0.2.\(53 + $0)" }
+        copy.subnetMasks = subnetMasks.map { _ in "255.255.255.0" }
+        copy.searchDomains = searchDomains.indices.map { $0 == 0 ? "example.com" : "example\($0).com" }
+        copy.macAddress = macAddress.map { _ in "02:00:5e:00:53:24" }
+        copy.proxies = proxies.map { _ in "HTTPS proxy.example.com:8080" }
+        return copy
+    }
+}
+
+extension Snapshot {
+    /// This snapshot with every interface's details replaced by `screenshotSafe` values.
+    public var screenshotSafe: Snapshot {
+        var copy = self
+        copy.interfaceDetails = interfaceDetails.map(\.screenshotSafe)
+        return copy
+    }
+}
