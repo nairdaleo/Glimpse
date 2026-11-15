@@ -15,7 +15,19 @@ MacBook Air M3 (Mac15,13), macOS 27.2, ad-hoc arm64 build at 2c2ce4c, user's sav
 
 App bundle: 5.7 MB (arm64). Footprint is what Activity Monitor's Memory column shows; RSS (65–95 MB) also counts shared system framework pages and is not the budget metric. Freed panel memory is not returned to the OS immediately, so footprint stays near its post-open level.
 
-Two regressions found and fixed while measuring: an appearance-observer redraw loop that pinned a full core, and a closed panel's hosting view that kept updating every sample.
+Fixed while measuring: an appearance-observer redraw loop that pinned a full core, and closed panel and Settings windows whose hosting views kept re-rendering every sample (Settings grew the footprint to ~40 MB).
+
+## Re-measured the same afternoon
+
+Same Mac, same settings (1 s refresh), built from a91f9e0 onward, run from a copy, 120 s windows:
+
+| Scenario | CPU (one core) | Footprint |
+| --- | --- | --- |
+| Display awake, icon updating every second | ~1.75% | 13 MB |
+| Same build with icon updates disabled (diagnostic only) | ~0.9% | 13 MB |
+| Display asleep, icon drawing paused (4528d5d) | ~0.66% | 13 MB |
+
+The morning build (2c2ce4c) measured 1.9% under the same afternoon conditions, so the jump from the morning's 0.36% is environmental, not a code regression. The cause is unidentified. Roughly half of the awake cost is AppKit pushing the changed status-item image to its menu-bar replicas (`-[NSStatusItem _updateReplicants]`). Rasterising the image and skipping pixel-identical updates made no measurable difference, so it was not kept. With the display awake at a 1 s refresh, the 0.5% budget is **not met** under these conditions. Slower refresh settings (2 s or more) are the user-facing lever.
 
 ## How to measure
 
@@ -27,4 +39,4 @@ top -l 2 -pid $pid -stats cpu,idlew,power | tail -1
 sample Glimpse 3                      # where time goes if CPU is high
 ```
 
-Not yet measured: eight-hour soak, Intel and macOS 12, low-power mode, sleep/wake, energy impact over a day, a universal Developer ID build.
+Not yet measured: why the morning baseline was lower, eight-hour soak (an attempt was disturbed by concurrent rebuilds; run soaks from a copy of the app), Intel and macOS 12, low-power mode, sleep/wake, energy impact over a day, a universal Developer ID build.
