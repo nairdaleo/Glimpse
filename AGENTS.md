@@ -36,7 +36,7 @@ Read docs/architecture.md first, then README.md, CONTRIBUTING.md, docs/design.md
 
 - Run `swift test` before every commit and keep commits small and focused; describe what was verified and what was not (hardware, macOS 12, Intel, sleep/wake).
 - Mark agent-written commits with a `Co-Authored-By` trailer for the model.
-- Never read, print, move or commit secrets: certificates, `.p12`/`.p8` keys, provisioning profiles, env files, the Sparkle private key. Never run `scripts/release.sh`, create tags or publish releases unless the maintainer asks in that session.
+- Never print, export or commit secrets: certificates, `.p12`/`.p8` keys, provisioning profiles, env files, the Sparkle private key. Publishing releases, signing certificates and Apple account changes stay with the maintainer, and uploads to App Store Connect are done from the maintainer's machine. Don't run `scripts/release.sh`, create tags or publish releases unless the maintainer asks in that session.
 - Measure before claiming: performance and accuracy statements need the numbers and how they were taken (see docs/performance.md).
 - Don't put local paths, hostnames, account emails or personal diagnostics in commits, issues or docs.
 - Maintainers may keep extra, private agent instructions in `AGENTS.local.md` or `CLAUDE.local.md`; both are gitignored and must never be committed.
