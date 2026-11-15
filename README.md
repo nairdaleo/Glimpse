@@ -8,6 +8,16 @@ Click the icon for live status and recent graphs. The **Detailed View** settings
 
 **Status: first development version.** A runnable app can be built from source. There is no signed/notarized public release yet. Glimpse is a working name.
 
+## Install
+
+- **Download:** [tastyjam.ca/glimpse](https://tastyjam.ca/glimpse/) or the [latest GitHub release](https://github.com/nairdaleo/Glimpse/releases/latest). Use the notarized universal DMG for Apple silicon and Intel, macOS 12 or later.
+- **Homebrew:**
+  ```bash
+  brew trust --cask nairdaleo/tastyjam/glimpse   # current Homebrew asks you to trust casks from third-party taps
+  brew install --cask nairdaleo/tastyjam/glimpse
+  ```
+- **Mac App Store:** coming soon.
+
 ## Current experience
 
 - One compact icon by default, with configurable meter count, width, metrics, colours, thresholds, and drag-to-reorder controls.

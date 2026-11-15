@@ -17,7 +17,7 @@ scripts/release.sh --env <private env file> --version 1.0.0          # final rel
 | `appcast.xml` regenerated with Sparkle's `generate_appcast` using the key in the login keychain (account `com.tastyjam.glimpse`), committed and pushed to `main` | — | ✓ |
 | Cask `Casks/glimpse.rb` in the tap `nairdaleo/homebrew-tastyjam` rendered from `packaging/homebrew/glimpse.rb.template` and pushed with your own git credentials | — | ✓ |
 
-The env file provides `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_PRIVATE_KEY_PATH` (notarization and upload) and `PROVISIONING_PROFILE` (App Store). The build number is the commit count, so it always increases, and every uploaded build is tagged at the commit it was built from. Users install with `brew install --cask nairdaleo/tastyjam/glimpse`.
+The env file provides `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_PRIVATE_KEY_PATH` (notarization and upload) and `PROVISIONING_PROFILE` (App Store). The build number is the commit count, so it always increases, and every uploaded build is tagged at the commit it was built from. Users install with `brew trust --cask nairdaleo/tastyjam/glimpse` (current Homebrew refuses casks from untrusted third-party taps) and then `brew install --cask nairdaleo/tastyjam/glimpse`. The cask template passes `brew style` and `brew audit --cask --online`.
 
 One-time setup (owner): the Developer ID Application certificate in the login keychain (#12), and the public tap repository `nairdaleo/homebrew-tastyjam` (#15). If the script fails partway, every step can be run by hand: see [Manual release](#manual-release).
 
@@ -65,7 +65,7 @@ git -C "$tap" add Casks/glimpse.rb && git -C "$tap" commit -m "glimpse $V" && gi
 brew audit --cask --online nairdaleo/tastyjam/glimpse
 ```
 
-**Check it as a user:** download the DMG on another Mac (Apple silicon and Intel) and open it. Run `brew install --cask nairdaleo/tastyjam/glimpse`. In an older installed version, **Check for Updates** should offer the new one.
+**Check it as a user:** download the DMG on another Mac (Apple silicon and Intel) and open it. Run `brew trust --cask nairdaleo/tastyjam/glimpse && brew install --cask nairdaleo/tastyjam/glimpse`. In an older installed version, **Check for Updates** should offer the new one.
 
 **Pull a bad release:** `gh release delete vX.Y.Z --cleanup-tag`, then revert the appcast commit and the cask commit in the tap. Never reuse a version number for different bytes.
 
