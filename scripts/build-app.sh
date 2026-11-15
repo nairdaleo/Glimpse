@@ -154,6 +154,10 @@ cat > "$helper/Contents/Info.plist" <<PLIST
 <key>LSUIElement</key><true/>
 </dict></plist>
 PLIST
+if [[ "$app_store" == "1" ]]; then
+    # Downloaded provisioning profiles can carry quarantine into the package.
+    xattr -cr "$bundle"
+fi
 codesign "${helper_sign_flags[@]}" "$helper"
 codesign "${app_sign_flags[@]}" "$bundle"
 codesign --verify --deep --strict "$bundle"

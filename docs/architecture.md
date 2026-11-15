@@ -79,7 +79,7 @@ One source tree, two builds. The App Store edition is selected at build time wit
 
 | Script | Does |
 | --- | --- |
-| `scripts/build-app.sh` | `swift build`, assembles the `.app` bundle (Info.plist, resources, icon, Sparkle or sandbox entitlements, login helper), signs inside-out. `ARCH`, `VERSION`, `BUILD_NUMBER`, `CODESIGN_IDENTITY`, `APP_STORE` |
+| `scripts/build-app.sh` | `swift build`, assembles the `.app` bundle (Info.plist, resources, icon, Sparkle or sandbox entitlements, login helper), clears extended attributes from the App Store bundle before signing, and signs inside-out. `ARCH`, `VERSION`, `BUILD_NUMBER`, `CODESIGN_IDENTITY`, `APP_STORE` |
 | `scripts/make-icon.sh` | Renders the icon master `packaging/icon/Glimpse.svg` to `.icns` (called by `build-app.sh`) |
 | `scripts/make-dmg.sh` | Universal build + drag-to-Applications DMG; Developer ID signing, notarization and stapling when credentials are present |
 | `scripts/make-pkg.sh` | App Store edition `.pkg`; `--upload` sends it to App Store Connect and tags the build |
