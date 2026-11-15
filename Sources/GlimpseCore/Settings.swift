@@ -260,7 +260,7 @@ public struct AppSettings: Codable, Sendable {
         columnScale = 1
         panels = MetricID.allCases.map { PanelConfiguration(metric: $0) }
         panelColumns = 2
-        panelCardWidth = 156
+        panelCardWidth = 188
         legacyPanelAppearances = [:]
         showBandwidth = false
         bandwidthInBits = false
@@ -333,7 +333,8 @@ public struct AppSettings: Codable, Sendable {
             panelMetrics = rawPanels.compactMap(MetricID.init(rawValue:))
         }
         panelColumns = (try? values.decode(Int.self, forKey: .panelColumns)) ?? panelColumns
-        panelCardWidth = (try? values.decode(Double.self, forKey: .panelCardWidth)) ?? panelCardWidth
+        // Documents from before the setting existed keep the old 156 pt so their layout doesn't change.
+        panelCardWidth = (try? values.decode(Double.self, forKey: .panelCardWidth)) ?? 156
         showBandwidth = (try? values.decode(Bool.self, forKey: .showBandwidth)) ?? showBandwidth
         bandwidthInBits = (try? values.decode(Bool.self, forKey: .bandwidthInBits)) ?? bandwidthInBits
         networkCeiling = (try? values.decode(Double.self, forKey: .networkCeiling)) ?? networkCeiling
@@ -395,7 +396,7 @@ public struct AppSettings: Codable, Sendable {
             while !panelIDs.insert(result.panels[index].id).inserted { result.panels[index].id = UUID() }
         }
         result.panelColumns = min(8, max(1, panelColumns))
-        result.panelCardWidth = panelCardWidth.isFinite ? min(240, max(120, panelCardWidth)) : 156
+        result.panelCardWidth = panelCardWidth.isFinite ? min(240, max(120, panelCardWidth)) : 188
         result.legacyPanelAppearances = legacyPanelAppearances.filter { MetricID(rawValue: $0.key) != nil }
         if !networkCeiling.isFinite || networkCeiling <= 0 { result.networkCeiling = defaults.networkCeiling }
         if !uploadCeiling.isFinite || uploadCeiling <= 0 { result.uploadCeiling = result.networkCeiling }

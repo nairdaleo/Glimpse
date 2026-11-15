@@ -55,16 +55,49 @@ struct NetworkInterfaceDetails: View {
     }
 
     var body: some View {
+        // The label column fits its longest label, so translated labels (Routeur, ルーター) never truncate.
+        let font = NSFont.systemFont(ofSize: size)
+        let labelWidth = ceil(rows.map { ($0.label as NSString).size(withAttributes: [.font: font]).width }.max() ?? 0) + 1
         VStack(alignment: .leading, spacing: size * 0.25) {
             ForEach(rows.indices, id: \.self) { index in
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(rows[index].label).foregroundColor(.secondary)
-                        .frame(width: size * 3.6, alignment: .leading)
-                    Text(rows[index].value).lineLimit(1).truncationMode(.middle)
-                        .help(rows[index].value)
+                    Text(rows[index].label).foregroundColor(.secondary).lineLimit(1)
+                        .frame(width: labelWidth, alignment: .leading)
+                    CopyableValue(value: rows[index].value)
                 }
             }
-        }.font(.system(size: size)).textSelection(.enabled)
+        }.font(.system(size: size))
+    }
+}
+
+/// A detail value that copies itself when clicked: pointing-hand cursor and accent colour on hover,
+/// a "Click to copy" tooltip, and a brief "Copied" confirmation.
+struct CopyableValue: View {
+    let value: String
+    @State private var hovering = false
+    @State private var copied = false
+
+    var body: some View {
+        let copyable = value != "—" && !value.isEmpty
+        Text(copied ? String(localized: "Copied") : value).lineLimit(1).truncationMode(.middle)
+            .foregroundColor(copyable && hovering ? .accentColor : .primary)
+            .contentShape(Rectangle())
+            .onHover { inside in
+                guard copyable else { return }
+                hovering = inside
+                if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .onTapGesture {
+                guard copyable else { return }
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(value, forType: .string)
+                copied = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { copied = false }
+            }
+            .help(copyable ? String(localized: "Click to copy \(value)") : value)
+            .accessibilityAddTraits(copyable ? .isButton : [])
+            .accessibilityHint(copyable ? String(localized: "Copies the value") : "")
+            .onDisappear { if hovering { NSCursor.pop() } }
     }
 }
 

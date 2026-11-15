@@ -31,11 +31,16 @@ struct StatusPanel: View {
                         ZStack(alignment: .topLeading) {
                             ForEach(store.settings.panels) { panel in
                                 if let placement = layout.placements[panel.id] {
-                                    Button { editCard(panel.id) } label: {
-                                        MetricCardContent(panel: panel, snapshot: store.snapshot, history: store.history,
-                                                          networkHistory: store.networkHistory, settings: store.settings,
-                                                          width: placement.width, height: placement.height)
-                                    }.buttonStyle(.plain)
+                                    // A tap target rather than a Button, so values inside the card (click to copy)
+                                    // receive their own clicks first; VoiceOver still sees a button.
+                                    MetricCardContent(panel: panel, snapshot: store.snapshot, history: store.history,
+                                                      networkHistory: store.networkHistory, settings: store.settings,
+                                                      width: placement.width, height: placement.height)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture { editCard(panel.id) }
+                                        .accessibilityElement(children: .contain)
+                                        .accessibilityAddTraits(.isButton)
+                                        .accessibilityAction { editCard(panel.id) }
                                         .accessibilityHint("Opens settings for this panel")
                                         .help("Edit \(panel.displayTitle) panel settings")
                                         .offset(x: placement.minX, y: placement.minY)

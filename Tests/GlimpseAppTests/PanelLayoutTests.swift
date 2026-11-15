@@ -5,6 +5,7 @@ import GlimpseCore
 final class PanelLayoutTests: XCTestCase {
     func testMoreCardsPerRowMakesTheDropdownWiderAndShorter() {
         var settings = AppSettings()
+        settings.panelCardWidth = 156 // geometry below assumes the original width
         settings.panelColumns = 1
         let tall = StatusPanelLayout(settings: settings, maximumSize: CGSize(width: 4000, height: 4000))
         settings.panelColumns = 8
@@ -17,6 +18,7 @@ final class PanelLayoutTests: XCTestCase {
 
     func testPerCardSizeAndScreenBoundsPreserveRequestedGrid() {
         var settings = AppSettings()
+        settings.panelCardWidth = 156 // geometry below assumes the original width
         settings.panelMetrics = [.cpu]
         settings.panelAppearances[MetricID.cpu.rawValue] = PanelAppearance(size: .compact)
         let compact = StatusPanelLayout(settings: settings, maximumSize: CGSize(width: 4000, height: 4000))
@@ -37,6 +39,7 @@ final class PanelLayoutTests: XCTestCase {
 
     func testEmptyPanelSetStillProvidesReachableSettingsAndNoSpuriousCards() {
         var settings = AppSettings()
+        settings.panelCardWidth = 156 // geometry below assumes the original width
         settings.panelMetrics = []
         let empty = StatusPanelLayout(settings: settings, maximumSize: CGSize(width: 500, height: 500))
         XCTAssertTrue(empty.cardHeights.isEmpty)
@@ -46,6 +49,7 @@ final class PanelLayoutTests: XCTestCase {
 
     func testTwoCompactPanelsStackIntoOneRegularFootprint() {
         var settings = AppSettings()
+        settings.panelCardWidth = 156 // geometry below assumes the original width
         settings.panelColumns = 1
         settings.panels = [PanelConfiguration(metric: .cpu, appearance: PanelAppearance(size: .regular))]
         let regular = StatusPanelLayout(settings: settings, maximumSize: CGSize(width: 4000, height: 4000))
@@ -58,6 +62,7 @@ final class PanelLayoutTests: XCTestCase {
 
     func testCompactPairsShareARegularSlotBeforeMovingToTheNextColumn() throws {
         var settings = AppSettings()
+        settings.panelCardWidth = 156 // geometry below assumes the original width
         settings.panelColumns = 2
         settings.panels = [.init(metric: .cpu, appearance: .init(size: .compact)),
                            .init(metric: .memory, appearance: .init(size: .compact)),
@@ -78,6 +83,7 @@ final class PanelLayoutTests: XCTestCase {
 
     func testCompactCardsStackAsSeparateHalfSlotsWithoutMerging() throws {
         var settings = AppSettings()
+        settings.panelCardWidth = 156 // geometry below assumes the original width
         settings.panelColumns = 1
         settings.panels = [.init(metric: .disk, appearance: .init(size: .compact)),
                            .init(metric: .battery, appearance: .init(size: .compact))]
@@ -89,6 +95,7 @@ final class PanelLayoutTests: XCTestCase {
 
     func testLargeOrientationsUseTwoRegularSlotsWithoutChangingTheChosenOrientation() {
         var settings = AppSettings()
+        settings.panelCardWidth = 156 // geometry below assumes the original width
         settings.panelColumns = 1
         settings.panelCardWidth = 190
         let panel = PanelConfiguration(metric: .cpu, appearance: .init(size: .large, largeOrientation: .vertical))
@@ -109,6 +116,7 @@ final class PanelLayoutTests: XCTestCase {
 
     func testMixedSpansNeverOverlapOrBackfillEarlierSlots() throws {
         var settings = AppSettings()
+        settings.panelCardWidth = 156 // geometry below assumes the original width
         settings.panelColumns = 3
         let appearances: [PanelAppearance] = [.init(size: .compact), .init(size: .large), .init(size: .compact),
                                                .init(size: .regular), .init(size: .large, largeOrientation: .horizontal)]
@@ -141,6 +149,7 @@ final class PanelLayoutTests: XCTestCase {
 
     func testScreenClampKeepsWidePlacementAndAllowsScrollingInsteadOfRotating() {
         var settings = AppSettings()
+        settings.panelCardWidth = 156 // geometry below assumes the original width
         settings.panelColumns = 1
         settings.panelCardWidth = 240
         settings.panels = [.init(metric: .upload, appearance: .init(size: .large, largeOrientation: .horizontal))]

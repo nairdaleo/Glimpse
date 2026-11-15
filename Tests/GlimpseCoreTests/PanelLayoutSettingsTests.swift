@@ -39,7 +39,7 @@ final class PanelLayoutSettingsTests: XCTestCase {
             settings.panelColumns = input
             XCTAssertEqual(settings.validated().panelColumns, expected)
         }
-        let widths: [(Double, Double)] = [(-1, 120), (119, 120), (120, 120), (190, 190), (240, 240), (500, 240), (.nan, 156), (.infinity, 156), (-.infinity, 156)]
+        let widths: [(Double, Double)] = [(-1, 120), (119, 120), (120, 120), (190, 190), (240, 240), (500, 240), (.nan, 188), (.infinity, 188), (-.infinity, 188)]
         for (input, expected) in widths {
             settings.panelCardWidth = input
             XCTAssertEqual(settings.validated().panelCardWidth, expected)
@@ -67,5 +67,11 @@ final class PanelLayoutSettingsTests: XCTestCase {
         XCTAssertEqual(settings.panelAppearance(for: .memory), PanelAppearance(size: .large, colour: .blue, showsHistory: true))
         XCTAssertEqual(settings.panelAppearance(for: .thermal), PanelAppearance())
         XCTAssertEqual(Set(settings.panelAppearances.keys), ["cpu", "memory", "thermal"])
+    }
+}
+
+final class CardWidthDefaultTests: XCTestCase {
+    func testNewInstallsGetRoomForTranslatedLabels() {
+        XCTAssertEqual(AppSettings().panelCardWidth, 188)
     }
 }
