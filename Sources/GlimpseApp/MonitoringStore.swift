@@ -37,9 +37,14 @@ final class MonitoringStore: ObservableObject {
         workspaceObservers.append(center.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.sleep() }
         })
-        workspaceObservers.append(center.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.wake() }
-        })
+        // didWake can arrive late (after a dark wake, or only once the lock screen is passed),
+        // which left the panel "Paused" for a minute or more. Resume on whichever sign of the
+        // Mac being back comes first; wake() ignores the rest.
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
+            workspaceObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.wake() }
+            })
+        }
         observers.append(NotificationCenter.default.addObserver(forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.schedule() }
         })
@@ -97,6 +102,7 @@ final class MonitoringStore: ObservableObject {
     }
 
     private func wake() {
+        guard sleeping else { return }
         sleeping = false
         schedule()
     }
