@@ -89,7 +89,7 @@ Temperature and fan RPM are later capabilities requiring separate hardware and A
 
 ## Low overhead
 
-Proposed default cadence: CPU and network every second; memory every two seconds; disk capacity every 30 seconds; battery and thermal changes use notifications where possible, with limited fallback reads. Users may choose slower refresh. Sample only metrics required by visible content or an open panel. Use timer tolerance, bounded histories, and no continuous animation loop. Suspend sampling during sleep and re-baseline rate counters after wake. Reduce cadence in Low Power Mode and avoid persistent per-sample logs.
+Default cadence: CPU and network every two seconds (one second available in settings); memory every two seconds; disk capacity every 30 seconds; battery and thermal changes use notifications where possible, with limited fallback reads. Users may choose slower refresh. Sample only metrics required by visible content or an open panel. Use timer tolerance, bounded histories, and no continuous animation loop. Suspend sampling during sleep and re-baseline rate counters after wake. Reduce cadence in Low Power Mode and avoid persistent per-sample logs.
 
 Initial acceptance budgets, not measurements: under 0.5% of one CPU core on average while idle with default monitoring, under 50 MiB resident memory after warm-up, and no sustained memory growth over an eight-hour run. Record CPU normalization and Instruments/Activity Monitor measurement method so results are comparable. Measure app size, wakeups, energy impact, and panel-open cost as well. Adjust budgets with documented evidence rather than claiming them before measurement.
 

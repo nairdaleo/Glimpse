@@ -60,3 +60,5 @@ The icon really changes every second (91 updates in 90 s), so skipping pixel-ide
 | After the change (2 runs) | 102, 109 bn | 0.22% (480 M) |
 
 Glimpse's own work fell by about 40%. WindowServer was too busy and noisy that night (82–109 bn) to show the effect; repeat with the screen unlocked and idle.
+
+Since 2026-11-14 new installs refresh every 2 s (owner decision on #5); 1 s remains available in Settings, and saved choices are kept.

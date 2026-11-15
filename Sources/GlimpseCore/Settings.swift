@@ -261,7 +261,7 @@ public struct AppSettings: Codable, Sendable {
         networkInterface = nil
         networkCeiling = 12_500_000
         uploadCeiling = 12_500_000
-        refreshInterval = 1
+        refreshInterval = 2
         monochrome = false
         capacityUnits = .si
         bandwidthUnits = .si
