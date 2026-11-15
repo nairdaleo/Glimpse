@@ -1,0 +1,13 @@
+O Glimpse reúne os sinais vitais do seu Mac em um pequeno ícone na barra de menus. Veja CPU, memória, rede, bateria, disco e estado térmico num relance; clique para ver valores exatos e históricos curtos.
+
+• De um a oito medidores, na ordem e nas cores que você escolher
+• Cores de aviso quando uma leitura passa do seu limite
+• Upload e download por interface de rede, incluindo VPNs
+• Saúde da bateria, ciclos e tempo restante
+• Um painel detalhado que você organiza e um atalho de teclado opcional
+
+Nativo e leve: o Glimpse lê os contadores do próprio sistema e pausa enquanto o Mac está em repouso. Sem conta e sem análises; suas leituras nunca saem do seu Mac.
+
+Todos os recursos são gratuitos. As gorjetas opcionais ficam em Ajustes › Sobre.
+
+Feito com 💜 na Colúmbia Britânica pela Tasty Jam App Development.

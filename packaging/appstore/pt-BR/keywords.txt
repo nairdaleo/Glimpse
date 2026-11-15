@@ -1,0 +1,1 @@
+barra de menus,bateria,disco,largura de banda,térmico,atividade,estatísticas,uso,medidor,ram

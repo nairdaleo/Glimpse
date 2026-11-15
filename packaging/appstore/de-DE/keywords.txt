@@ -1,0 +1,1 @@
+Menüleiste,Akku,Festplatte,Bandbreite,Temperatur,Aktivität,Statistik,Auslastung,Anzeige,Speicher

@@ -1,0 +1,1 @@
+Consulta CPU, memoria, red, batería, disco y estado térmico desde un solo ícono compacto en la barra de menús. Gratis, privado y nativo para tu Mac.

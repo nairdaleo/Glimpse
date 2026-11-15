@@ -1,0 +1,114 @@
+{
+ "de-DE": {
+  "small": {
+   "name": "Kleines Trinkgeld",
+   "description": "Ein kleines Dankeschön für Glimpse."
+  },
+  "medium": {
+   "name": "Mittleres Trinkgeld",
+   "description": "Ein großzügiges Dankeschön für Glimpse."
+  },
+  "large": {
+   "name": "Großes Trinkgeld",
+   "description": "Ein großes Dankeschön für Glimpse."
+  }
+ },
+ "es-MX": {
+  "small": {
+   "name": "Propina pequeña",
+   "description": "Un pequeño agradecimiento para Glimpse."
+  },
+  "medium": {
+   "name": "Propina mediana",
+   "description": "Un generoso agradecimiento para Glimpse."
+  },
+  "large": {
+   "name": "Propina grande",
+   "description": "Un gran agradecimiento para Glimpse."
+  }
+ },
+ "fr-FR": {
+  "small": {
+   "name": "Petit pourboire",
+   "description": "Un petit merci pour soutenir Glimpse."
+  },
+  "medium": {
+   "name": "Pourboire moyen",
+   "description": "Un merci généreux pour soutenir Glimpse."
+  },
+  "large": {
+   "name": "Gros pourboire",
+   "description": "Un grand merci pour soutenir Glimpse."
+  }
+ },
+ "pt-BR": {
+  "small": {
+   "name": "Gorjeta pequena",
+   "description": "Um pequeno agradecimento ao Glimpse."
+  },
+  "medium": {
+   "name": "Gorjeta média",
+   "description": "Um agradecimento generoso ao Glimpse."
+  },
+  "large": {
+   "name": "Gorjeta grande",
+   "description": "Um grande agradecimento ao Glimpse."
+  }
+ },
+ "ja": {
+  "small": {
+   "name": "チップ（小）",
+   "description": "Glimpse へのささやかな感謝。"
+  },
+  "medium": {
+   "name": "チップ（中）",
+   "description": "Glimpse への心のこもった感謝。"
+  },
+  "large": {
+   "name": "チップ（大）",
+   "description": "Glimpse への大きな感謝。"
+  }
+ },
+ "ko": {
+  "small": {
+   "name": "작은 팁",
+   "description": "Glimpse에 전하는 작은 감사."
+  },
+  "medium": {
+   "name": "보통 팁",
+   "description": "Glimpse에 전하는 넉넉한 감사."
+  },
+  "large": {
+   "name": "큰 팁",
+   "description": "Glimpse에 전하는 큰 감사."
+  }
+ },
+ "fr-CA": {
+  "small": {
+   "name": "Petit pourboire",
+   "description": "Un petit merci pour soutenir Glimpse."
+  },
+  "medium": {
+   "name": "Pourboire moyen",
+   "description": "Un merci généreux pour soutenir Glimpse."
+  },
+  "large": {
+   "name": "Gros pourboire",
+   "description": "Un grand merci pour soutenir Glimpse."
+  }
+ },
+ "en-CA": {
+  "small": {
+   "name": "Small Tip",
+   "description": "A small thank-you that supports Glimpse."
+  },
+  "medium": {
+   "name": "Medium Tip",
+   "description": "A generous thank-you that supports Glimpse."
+  },
+  "large": {
+   "name": "Large Tip",
+   "description": "A big thank-you that supports Glimpse."
+  }
+ }
+}
