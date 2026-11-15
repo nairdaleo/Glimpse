@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 configuration="${CONFIGURATION:-release}"
 architecture="${ARCH:-$(uname -m)}"
 signing_identity="${CODESIGN_IDENTITY:--}"
-version="${VERSION:-0.3.0}"
+version="${VERSION:-1.0.0}"
 build_number="${BUILD_NUMBER:-$(git rev-list --count HEAD 2>/dev/null || echo 1)}"
 # APP_STORE=1 builds the Mac App Store edition: sandboxed, without Sparkle or
 # the update feed, into build/AppStore/Glimpse.app. PROVISIONING_PROFILE (a Mac

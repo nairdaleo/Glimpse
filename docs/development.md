@@ -36,7 +36,7 @@ To quit, click **Quit** in the dropdown panel (⌘Q while it is open). `defaults
 ```bash
 APP_STORE=1 ./scripts/build-app.sh                            # sandboxed, no Sparkle → build/AppStore/Glimpse.app
 build/AppStore/Glimpse.app/Contents/MacOS/Glimpse --diagnose  # readers inside the sandbox
-scripts/make-pkg.sh --version 0.3.0                           # + installer package; unsigned without store certificates
+scripts/make-pkg.sh --version 1.0.0                           # + installer package; unsigned without store certificates
 ```
 
 Its settings live in the sandbox container (`~/Library/Containers/com.tastyjam.glimpse`). Signing and upload are in [releasing.md](releasing.md#mac-app-store).

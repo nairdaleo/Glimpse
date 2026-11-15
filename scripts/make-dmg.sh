@@ -2,7 +2,7 @@
 # Builds a universal Glimpse.app and packages it as build/Glimpse-<version>.dmg
 # with a drag-to-Applications window.
 #
-#   VERSION=0.3.0 BUILD_NUMBER=42 scripts/make-dmg.sh
+#   VERSION=1.0.0 BUILD_NUMBER=42 scripts/make-dmg.sh
 #
 # Signing: uses CODESIGN_IDENTITY, else the first "Developer ID Application"
 # identity in the keychain, else ad-hoc (local testing only; Gatekeeper blocks
@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-version="${VERSION:-0.3.0}"
+version="${VERSION:-1.0.0}"
 build_number="${BUILD_NUMBER:-$(git rev-list --count HEAD)}"
 identity="${CODESIGN_IDENTITY:-$(security find-identity -v -p codesigning | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)}"
 identity="${identity:--}"

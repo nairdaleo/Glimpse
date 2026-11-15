@@ -1,28 +1,13 @@
-Glimpse puts your Mac's vital signs in one small menu-bar icon: a row of slim meters you can read at a glance. Click it for exact values, short histories and network details.
+Glimpse puts your Mac's vital signs in one small menu-bar icon. Read CPU, memory, network, battery, disk and thermal state at a glance; click for exact values and short histories.
 
-WHAT IT SHOWS
-• CPU activity, with per-core bars in the panel
-• Memory in use
-• Network upload and download, separately or as one split meter, for the interface you choose (Wi-Fi, Ethernet or a VPN)
-• Battery charge, time remaining, health and cycle count
-• Free disk space
-• Thermal state
+• One to eight meters, in the order and colours you choose
+• Warning colours when a reading crosses your threshold
+• Upload and download per network interface, including VPNs
+• Battery health, cycles and time remaining
+• A detailed panel you arrange yourself, and an optional keyboard shortcut
 
-MAKE IT YOURS
-• One to eight meters, in any order and colour
-• Warning and critical thresholds that recolour a meter when it matters
-• Monochrome mode for a quieter menu bar
-• A detailed panel of cards you arrange and size yourself
-• An optional keyboard shortcut to show or hide the panel from any app
-• Bits or bytes, decimal (GB) or binary (GiB) units
+Native and light: Glimpse reads the system's own counters and pauses while your Mac sleeps. No account, no analytics; your readings never leave your Mac.
 
-LIGHT ON YOUR MAC
-Glimpse is a native app that reads the system's own counters. It samples only what is on screen, pauses while your Mac sleeps, and redraws the icon only when something visibly changes.
-
-PRIVATE BY DESIGN
-No account, no analytics, no tracking. Your readings never leave your Mac.
-
-FREE
-Every feature is free. If Glimpse is useful to you, you can leave an optional tip in Settings › About.
+Every feature is free. Optional tips are in Settings › About.
 
 Made with 💜 in BC by Tasty Jam App Development.

@@ -6,7 +6,7 @@
 #
 #   --env <file>     source credentials and settings from a private env file
 #                    (same as KEYS_ENV=<file>)
-#   --version x.y.z  marketing version (same as VERSION=x.y.z; default 0.3.0)
+#   --version x.y.z  marketing version (same as VERSION=x.y.z; default 1.0.0)
 #   --upload         upload to App Store Connect (same as UPLOAD=1)
 #
 # The environment variables still work; a flag wins over its variable, and
@@ -46,14 +46,14 @@ if [[ -n "$keys_env" ]]; then
 fi
 [[ -z "$version_flag" ]] || VERSION="$version_flag"
 if [[ -n "${VERSION:-}" && ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Version must look like 0.3.0, got: $VERSION" >&2; exit 2
+    echo "Version must look like 1.2.3, got: $VERSION" >&2; exit 2
 fi
 if [[ "$upload" == "1" ]]; then
     : "${VERSION:?Set --version for an upload}" "${PROVISIONING_PROFILE:?}" "${ASC_KEY_ID:?}" "${ASC_ISSUER_ID:?}" "${ASC_PRIVATE_KEY_PATH:?}"
     # The upload is tagged at this commit, so it must be exactly what was built.
     [[ -z "$(git status --porcelain)" ]] || { echo "Commit or stash changes before uploading." >&2; exit 1; }
 fi
-version="${VERSION:-0.3.0}"
+version="${VERSION:-1.0.0}"
 build_number="${BUILD_NUMBER:-$(git rev-list --count HEAD)}"
 identities="$(security find-identity -v)"
 first_identity() { sed -n "s/.*\"\\($1: [^\"]*\\)\".*/\\1/p" <<<"$identities" | head -1; }
