@@ -317,6 +317,22 @@ final class NativeSamplerTests: XCTestCase {
         XCTAssertNil(sampler.sample(settings: AppSettings(), detailVisible: true).readings[.cpu]?.value)
     }
 
+    func testAutomaticRateNeverAddsTunnelTrafficToThePhysicalInterface() {
+        // A VPN carries the same bytes twice: once inside utun, once encrypted on en0.
+        var now: TimeInterval = 10
+        var step: UInt64 = 0
+        let sampler = NativeSampler(networkReader: {
+            [InterfaceCounter(name: "en0", index: 1, flags: Int32(IFF_UP | IFF_RUNNING), received: 1_000 + step * 10_000, sent: 500 + step * 2_000),
+             InterfaceCounter(name: "utun4", index: 9, flags: Int32(IFF_UP | IFF_RUNNING), received: 1_000 + step * 9_000, sent: 500 + step * 1_800)]
+        }, clock: { now }, physicalReader: { ["en0"] }, primaryReader: { "utun4" }, metadataReader: { _ in [] })
+        let settings = AppSettings()
+        XCTAssertNil(sampler.sample(settings: settings, detailVisible: false).readings[.download]?.value)
+        step = 1; now = 12
+        let reading = sampler.sample(settings: settings, detailVisible: false)
+        XCTAssertEqual(reading.readings[.download]?.value, 5_000) // en0 only: 10 000 bytes over 2 s
+        XCTAssertEqual(reading.automaticNetworkInterface, "en0")
+    }
+
     private func fixture(_ name: String, index: UInt32, flags: Int32 = Int32(IFF_UP | IFF_RUNNING)) -> InterfaceCounter {
         InterfaceCounter(name: name, index: index, flags: flags, received: 100, sent: 200)
     }
