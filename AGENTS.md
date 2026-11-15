@@ -41,6 +41,15 @@ Read docs/architecture.md first, then README.md, CONTRIBUTING.md, docs/design.md
 - Don't put local paths, hostnames, account emails or personal diagnostics in commits, issues or docs.
 - Maintainers may keep extra, private agent instructions in `AGENTS.local.md` or `CLAUDE.local.md`; both are gitignored and must never be committed.
 
+## Coding guidelines
+
+Adapted from Andrej Karpathy's guidelines for reducing common LLM coding mistakes:
+
+1. **Think before coding.** State assumptions explicitly. If a request has several readings, name them instead of picking one silently. If something is unclear, stop and ask. Say so when a simpler approach exists.
+2. **Simplicity first.** Write the minimum code that solves the issue: no speculative features, single-use abstractions or unrequested configurability. If 200 lines could be 50, rewrite it.
+3. **Surgical changes.** Touch only what the task needs. Don't reformat or refactor adjacent code, match the existing style, and remove only the imports, variables and functions your own change made unused.
+4. **Goal-driven execution.** Turn the task into a check that can pass or fail: a test, `--diagnose` output, a card render or a measurement. Loop until it passes, and state for a multi-step task how each step will be verified.
+
 ## Project Tracking
 
 github_repo: nairdaleo/Glimpse
