@@ -19,6 +19,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
     /// Uptime when the popover closed with the pointer on the menu-bar icon.
     private var closedOverIcon: TimeInterval?
     private var closingFromToggle = false
+    private var shortcut: GlobalShortcut?
 
     init(store: MonitoringStore, showSettings: @escaping (UUID?) -> Void) {
         self.store = store
@@ -43,6 +44,11 @@ final class StatusController: NSObject, NSPopoverDelegate {
                 self.render()
             }
         }
+        shortcut = GlobalShortcut { [weak self] in self?.togglePanel() }
+        store.$settings.map(\.panelShortcut).removeDuplicates().sink { [weak self] value in
+            guard let self else { return }
+            self.store.shortcutUnavailable = !(self.shortcut?.update(value) ?? true)
+        }.store(in: &subscriptions)
         // Nobody can see the icon while the displays sleep; sampling and history continue.
         let workspace = NSWorkspace.shared.notificationCenter
         displaysAsleep = CGDisplayIsAsleep(CGMainDisplayID()) != 0

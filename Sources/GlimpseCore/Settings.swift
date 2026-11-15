@@ -246,6 +246,8 @@ public struct AppSettings: Codable, Sendable {
     public var capacityUnits: CapacityUnits
     /// Prefix base for upload/download rates and the network ceiling.
     public var bandwidthUnits: CapacityUnits
+    /// Optional global shortcut that toggles the detailed panel; nil means none.
+    public var panelShortcut: KeyboardShortcut?
 
     public init() {
         columns = [ColumnConfiguration(metric: .cpu, colour: .mint), ColumnConfiguration(metric: .memory, colour: .purple), ColumnConfiguration(metric: .download, colour: .blue)]
@@ -263,6 +265,7 @@ public struct AppSettings: Codable, Sendable {
         monochrome = false
         capacityUnits = .si
         bandwidthUnits = .si
+        panelShortcut = nil
     }
 
     /// Compatibility projections for callers that still organize one card per metric.
@@ -302,7 +305,7 @@ public struct AppSettings: Codable, Sendable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, uploadCeiling, refreshInterval, monochrome, capacityUnits, bandwidthUnits }
+    private enum CodingKeys: String, CodingKey { case columns, columnScale, panels, panelMetrics, panelColumns, panelCardWidth, panelAppearances, showBandwidth, bandwidthInBits, networkInterface, networkCeiling, uploadCeiling, refreshInterval, monochrome, capacityUnits, bandwidthUnits, panelShortcut }
     public init(from decoder: Decoder) throws {
         self.init()
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -332,6 +335,7 @@ public struct AppSettings: Codable, Sendable {
         uploadCeiling = (try? values.decode(Double.self, forKey: .uploadCeiling)) ?? networkCeiling
         refreshInterval = (try? values.decode(Double.self, forKey: .refreshInterval)) ?? refreshInterval
         monochrome = (try? values.decode(Bool.self, forKey: .monochrome)) ?? monochrome
+        panelShortcut = try? values.decodeIfPresent(KeyboardShortcut.self, forKey: .panelShortcut)
         capacityUnits = (try? values.decode(CapacityUnits.self, forKey: .capacityUnits)) ?? capacityUnits
         bandwidthUnits = (try? values.decode(CapacityUnits.self, forKey: .bandwidthUnits)) ?? bandwidthUnits
         self = validated()
@@ -353,6 +357,7 @@ public struct AppSettings: Codable, Sendable {
         try values.encode(uploadCeiling, forKey: .uploadCeiling)
         try values.encode(refreshInterval, forKey: .refreshInterval)
         try values.encode(monochrome, forKey: .monochrome)
+        try values.encodeIfPresent(panelShortcut, forKey: .panelShortcut)
         try values.encode(capacityUnits, forKey: .capacityUnits)
         try values.encode(bandwidthUnits, forKey: .bandwidthUnits)
     }
@@ -391,5 +396,18 @@ public struct AppSettings: Codable, Sendable {
         result.refreshInterval = refreshInterval.isFinite ? min(60, max(1, refreshInterval)) : defaults.refreshInterval
         result.networkInterface = cleanedInterface(networkInterface)
         return result
+    }
+}
+
+/// A key plus modifiers in Carbon terms (virtual key code, cmdKey/optionKey/controlKey/shiftKey bits),
+/// with the symbols shown to the user, e.g. "⌃⌥G".
+public struct KeyboardShortcut: Codable, Equatable, Sendable {
+    public var keyCode: UInt32
+    public var modifiers: UInt32
+    public var display: String
+    public init(keyCode: UInt32, modifiers: UInt32, display: String) {
+        self.keyCode = keyCode
+        self.modifiers = modifiers
+        self.display = display
     }
 }

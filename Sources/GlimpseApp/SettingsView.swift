@@ -307,6 +307,8 @@ struct SettingsView: View {
             Text(services.loginStatus).font(.caption).foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Divider()
+            ShortcutRecorder(store: store)
+            Divider()
             Toggle("Automatically check for updates", isOn: Binding(get: { services.automaticChecks }, set: { services.setAutomaticChecks($0) }))
                 .disabled(!services.updateConfigured)
             Toggle("Automatically download updates", isOn: Binding(get: { services.automaticDownloads }, set: { services.setAutomaticDownloads($0) }))
@@ -698,5 +700,46 @@ private struct ConnectionFieldsEditor: View {
                 })).font(.caption)
             }
         }
+    }
+}
+
+/// Records the optional global shortcut that shows or hides the detailed panel.
+private struct ShortcutRecorder: View {
+    @ObservedObject var store: MonitoringStore
+    @State private var monitor: Any?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text("Show or hide the panel")
+                Spacer()
+                Button(monitor != nil ? "Type a shortcut…" : (store.settings.panelShortcut?.display ?? "Record Shortcut")) {
+                    monitor == nil ? record() : stop()
+                }
+                if store.settings.panelShortcut != nil && monitor == nil {
+                    Button("Clear") { store.change { $0.panelShortcut = nil } }
+                }
+            }
+            Text(store.shortcutUnavailable
+                 ? "Another app already uses this shortcut. Choose a different one."
+                 : "Works from any app. Use at least one of ⌘, ⌥ or ⌃; Esc cancels recording.")
+                .font(.caption).foregroundColor(store.shortcutUnavailable ? .red : .secondary)
+        }
+        .onDisappear(perform: stop)
+    }
+
+    private func record() {
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 53 { stop(); return nil } // Esc
+            guard let shortcut = GlobalShortcut.shortcut(from: event) else { NSSound.beep(); return nil }
+            store.change { $0.panelShortcut = shortcut }
+            stop()
+            return nil
+        }
+    }
+
+    private func stop() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
     }
 }

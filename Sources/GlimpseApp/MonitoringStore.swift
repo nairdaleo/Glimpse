@@ -10,6 +10,8 @@ final class MonitoringStore: ObservableObject {
     @Published private(set) var history = MetricHistory()
     @Published private(set) var networkHistory = NetworkHistory()
     @Published private(set) var detailVisible = false
+    /// True when the saved panel shortcut could not be registered (another app owns it).
+    @Published var shortcutUnavailable = false
 
     private let worker = SamplingWorker()
     private let defaults: UserDefaults

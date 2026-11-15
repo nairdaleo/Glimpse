@@ -126,3 +126,7 @@ git config core.hooksPath .githooks
 ```
 
 Without betterleaks installed the hook refuses to push rather than skipping the scan. Mark a false positive with a `betterleaks:allow` comment on its line, or list it in `.betterleaksignore`. CI also scans the full history with gitleaks on every push.
+
+## Editing saved settings by hand
+
+The direct build stores settings in `~/Library/Preferences/com.tastyjam.glimpse.plist` (key `glimpse.settings.v1`, JSON data). Once the sandboxed App Store edition has run, `defaults read/write com.tastyjam.glimpse` targets the sandbox container (`~/Library/Containers/com.tastyjam.glimpse`) instead. Pass the plist path to `defaults` to edit the direct build's settings, and quit Glimpse first.
