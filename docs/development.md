@@ -81,3 +81,14 @@ Current evidence on the Apple silicon development Mac:
 Not verified: macOS 12 runtime, Intel hardware runtime, live VPN/physical-interface transitions, actual system sleep/wake, VoiceOver/keyboard/appearance/crowded-menu-bar behaviour, eight-hour stability, and release performance budgets. Computer-use inspection could not start because its Node runtime was unavailable. Successful compilation and native-reader tests do not prove these UI and hardware behaviours.
 
 The proposed CPU/RSS/energy budgets in the design are still acceptance targets. Source-derived architecture choices are not performance measurements. Signed update installation, login registration/logging out, notarization and sandboxed App Store distribution need runtime/release validation. There is no public notarized release, tip jar/review integration, sensor-temperature implementation, import/export UI, or disk-I/O meter yet. Track these investigations in the [GitHub project](https://github.com/users/nairdaleo/projects/10).
+
+## Secret scan before every push
+
+`.githooks/pre-push` runs [betterleaks](https://betterleaks.com) on the commits being pushed and blocks the push if it finds a secret. Enable it once per clone:
+
+```bash
+brew install betterleaks
+git config core.hooksPath .githooks
+```
+
+Without betterleaks installed the hook refuses to push rather than skipping the scan. Mark a false positive with a `betterleaks:allow` comment on its line, or list it in `.betterleaksignore`. CI also scans the full history with gitleaks on every push.
