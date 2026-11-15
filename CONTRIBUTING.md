@@ -37,7 +37,7 @@ build/Glimpse.app/Contents/MacOS/Glimpse --diagnose
 
 ## AI guidelines
 
-**How we use AI.** The maintainer builds Glimpse with AI coding agents (such as Claude Code and Codex). They write code, tests and docs, and measure performance. Every change still goes through `swift test`, CI and maintainer review. Agents never handle signing keys, credentials or releases; those steps stay with the maintainer. Agent-written commits carry a `Co-Authored-By` trailer.
+**How we use AI.** The maintainer builds Glimpse with AI coding agents (such as Claude Code and Codex). They write code, tests and docs, and measure performance. Every change still goes through `swift test`, CI and maintainer review. Publishing releases, signing certificates and Apple account changes stay with the maintainer, and uploads to App Store Connect are done from the maintainer's machine. Agent-written commits carry a `Co-Authored-By` trailer.
 
 **The rules agents follow** are in [AGENTS.md](AGENTS.md): constraints, build and verify commands, which docs to keep current, and coding guidelines adapted from Andrej Karpathy (think before coding, simplicity first, surgical changes, goal-driven execution). Point your own agent at it.
 
