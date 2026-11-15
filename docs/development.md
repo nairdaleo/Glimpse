@@ -84,7 +84,7 @@ The proposed CPU/RSS/energy budgets in the design are still acceptance targets. 
 
 ## Secret scan before every push
 
-`.githooks/pre-push` runs [betterleaks](https://betterleaks.com) on the commits being pushed and blocks the push if it finds a secret. Enable it once per clone:
+`.githooks/pre-push` runs [betterleaks](https://betterleaks.com) on the commits being pushed and blocks the push if it finds a secret. `./setup.sh` installs betterleaks (after asking) and enables the hook; by hand:
 
 ```bash
 brew install betterleaks
