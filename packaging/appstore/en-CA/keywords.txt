@@ -1,0 +1,1 @@
+menu bar,cpu,ram,memory,network,bandwidth,battery,disk,thermal,activity,stats,usage,meter

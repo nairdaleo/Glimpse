@@ -93,3 +93,5 @@ The store edition includes optional tips: three consumable in-app purchases, `co
 ## CI
 
 `ci.yml` runs on every push and pull request: `swift test`, the universal app build, the sandboxed App Store edition build and the native-reader diagnostic in both on Apple silicon (`macos-15`) and Intel (`macos-15-intel`) runners, card renders uploaded as artifacts for visual review, and a full-history gitleaks secret scan. GitHub secret scanning with push protection, Dependabot alerts and security updates are enabled for the repository; `dependabot.yml` checks SwiftPM (Sparkle) and the pinned GitHub Actions weekly. Third-party actions are pinned to commit SHAs with the version in a comment, so Dependabot updates them explicitly. Hardware-specific behaviour (battery, Wi-Fi changes, sleep/wake, start at login) still needs a real Mac.
+
+The Mac App Store listing text lives in `packaging/appstore/<locale>/` (name, subtitle, promotional text, keywords, description, review notes), and App Store Connect is updated from it by hand. Translations are tracked in #23.

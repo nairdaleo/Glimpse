@@ -1,0 +1,1 @@
+See CPU, memory, network, battery, disk and thermal state from one compact menu-bar icon. Free, private, and native to your Mac.

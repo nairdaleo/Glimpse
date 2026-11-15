@@ -1,0 +1,5 @@
+Glimpse is a menu-bar utility with no Dock icon. After launch, click the small row of meters in the menu bar to open the detailed panel; the gear button opens Settings.
+
+All features are free. The three consumable in-app purchases (com.tastyjam.glimpse.tip.small/.medium/.large) are optional tips in Settings › About › Support; they unlock nothing.
+
+Glimpse reads local system counters only (CPU, memory, network interface counters, battery, disk capacity, thermal state). It makes no network requests, has no account and collects no data. It is sandboxed and needs no special permissions.
