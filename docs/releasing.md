@@ -19,7 +19,55 @@ scripts/release.sh --env <private env file> --version 0.3.0          # final rel
 
 The env file provides `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_PRIVATE_KEY_PATH` (notarization and upload) and `PROVISIONING_PROFILE` (App Store). The build number is the commit count, so it always increases, and every uploaded build is tagged at the commit it was built from. Users install with `brew install --cask nairdaleo/tastyjam/glimpse`.
 
-One-time setup (owner): the Developer ID Application certificate in the login keychain (#12), and the public tap repository `nairdaleo/homebrew-tastyjam` (#15). If the script fails partway, every step can be run by hand: see [CONTRIBUTING.md](../CONTRIBUTING.md#release-maintainer-only).
+One-time setup (owner): the Developer ID Application certificate in the login keychain (#12), and the public tap repository `nairdaleo/homebrew-tastyjam` (#15). If the script fails partway, every step can be run by hand: see [Manual release](#manual-release).
+
+## Manual release
+
+`scripts/release.sh` does all of this. If it fails partway, resume by hand from a clean `main` that matches `origin/main`. The private env file defines `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_PATH` and `PROVISIONING_PROFILE`. The login keychain holds the Developer ID Application, Apple Distribution and Mac Installer Distribution certificates and the Sparkle key (account `com.tastyjam.glimpse`).
+
+```bash
+set -a; . <private env file>; set +a
+V=X.Y.Z                                          # tag vX.Y.Z (or vX.Y.Z-rc.N)
+
+# 1. Test
+swift test
+
+# 2. Notarized DMG (build, Developer ID signing, notarytool, stapler, spctl)
+VERSION=$V scripts/make-dmg.sh
+xcrun stapler validate build/Glimpse-$V.dmg      # must succeed before publishing
+#    notarization alone, if needed:
+#    xcrun notarytool submit build/Glimpse-$V.dmg --key "$ASC_PRIVATE_KEY_PATH" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID" --wait
+#    xcrun notarytool log <submission-id> --key "$ASC_PRIVATE_KEY_PATH" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID"
+#    xcrun stapler staple build/Glimpse-$V.dmg
+
+# 3. Tag and GitHub release (--prerelease instead of --latest for an rc)
+git tag -a v$V -m "Glimpse $V" && git push origin v$V
+gh release create v$V --verify-tag --latest --generate-notes --title "Glimpse $V" \
+  build/Glimpse-$V.dmg build/Glimpse-$V.dmg.sha256
+
+# 4. App Store upload (also tags vX.Y.Z-build<N>); then TestFlight and submit in App Store Connect
+scripts/make-pkg.sh --version $V --upload
+
+# 5. Sparkle appcast (final releases only)
+feed=$(mktemp -d) && cp appcast.xml build/Glimpse-$V.dmg "$feed"/
+.build/artifacts/sparkle/Sparkle/bin/generate_appcast --account com.tastyjam.glimpse \
+  --download-url-prefix "https://github.com/nairdaleo/Glimpse/releases/download/v$V/" \
+  --link "https://tastyjam.ca/glimpse/" "$feed"
+cp "$feed"/appcast.xml appcast.xml
+git commit -m "release: appcast for Glimpse $V" appcast.xml && git push origin main
+
+# 6. Homebrew cask (final releases only; git add because the file is new on the first release)
+tap=$(mktemp -d) && git clone https://github.com/nairdaleo/homebrew-tastyjam.git "$tap"
+mkdir -p "$tap"/Casks
+sed -e "s/{{VERSION}}/$V/" -e "s/{{SHA256}}/$(cut -d' ' -f1 build/Glimpse-$V.dmg.sha256)/" \
+  packaging/homebrew/glimpse.rb.template > "$tap"/Casks/glimpse.rb
+git -C "$tap" add Casks/glimpse.rb && git -C "$tap" commit -m "glimpse $V" && git -C "$tap" push
+brew audit --cask --online nairdaleo/tastyjam/glimpse
+```
+
+**Check it as a user:** download the DMG on another Mac (Apple silicon and Intel) and open it. Run `brew install --cask nairdaleo/tastyjam/glimpse`. In an older installed version, **Check for Updates** should offer the new one.
+
+**Pull a bad release:** `gh release delete vX.Y.Z --cleanup-tag`, then revert the appcast commit and the cask commit in the tap. Never reuse a version number for different bytes.
 
 ## Mac App Store
 

@@ -9,3 +9,5 @@ xcuserdata/
 .env
 .env.*
 .swiftpm/
+AGENTS.local.md
+CLAUDE.local.md

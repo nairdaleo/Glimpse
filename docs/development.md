@@ -29,6 +29,42 @@ codesign --verify --deep --strict build/Glimpse.app
 
 Start at login is configured in the General settings tab. **Remove Glimpse…** there uninstalls (login item off, optional settings removal, app to Trash, quit); manually, turn it off, quit via the status panel and move the app to the Trash. Remove any separately/manually added login item in macOS Login Items. Preferences remain in the `com.tastyjam.glimpse` defaults domain; remove them separately only if you want to reset saved choices. Update signing and distribution details are in [updates.md](updates.md).
 
+To quit, click **Quit** in the dropdown panel (⌘Q while it is open). `defaults delete com.tastyjam.glimpse` resets saved settings.
+
+## Mac App Store edition
+
+```bash
+APP_STORE=1 ./scripts/build-app.sh                            # sandboxed, no Sparkle → build/AppStore/Glimpse.app
+build/AppStore/Glimpse.app/Contents/MacOS/Glimpse --diagnose  # readers inside the sandbox
+scripts/make-pkg.sh --version 0.3.0                           # + installer package; unsigned without store certificates
+```
+
+Its settings live in the sandbox container (`~/Library/Containers/com.tastyjam.glimpse`). Signing and upload are in [releasing.md](releasing.md#mac-app-store).
+
+## Running the CI checks by hand
+
+The same steps CI runs:
+
+```bash
+swift test
+ARCH=universal ./scripts/build-app.sh && build/Glimpse.app/Contents/MacOS/Glimpse --diagnose
+APP_STORE=1 ARCH=universal ./scripts/build-app.sh && build/AppStore/Glimpse.app/Contents/MacOS/Glimpse --diagnose
+GLIMPSE_RENDER_ARTIFACTS="$TMPDIR/cards" swift test --filter MetricCardRenderingTests
+gitleaks detect --source . --log-opts=--all   # optional: brew install gitleaks
+```
+
+On GitHub, CI runs on every push to `main` and every pull request:
+
+```bash
+gh workflow run ci.yml --ref <branch>   # or Actions → CI → Run workflow
+gh run list --workflow ci.yml --limit 5
+gh run watch                            # follow the latest run
+gh run view <run-id> --log-failed       # logs of failed steps
+gh run download <run-id>                # card renders uploaded by CI
+```
+
+Dependabot opens weekly pull requests for Sparkle and the pinned GitHub Actions.
+
 ## Reader diagnostic
 
 ```bash
