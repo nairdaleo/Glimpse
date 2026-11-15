@@ -333,6 +333,31 @@ final class NativeSamplerTests: XCTestCase {
         XCTAssertEqual(reading.automaticNetworkInterface, "en0")
     }
 
+    func testFallbackIgnoresInterfacesWithoutARoutableAddress() {
+        // A USB/virtual Ethernet adapter can report UP|RUNNING with no link (owner saw en3 picked with Wi-Fi off).
+        let interfaces = [fixture("en0", index: 1), fixture("en3", index: 3)]
+        XCTAssertNil(InterfaceSelection.select(interfaces, preferred: nil, primary: nil, physical: ["en0", "en3"], connected: []))
+        XCTAssertEqual(InterfaceSelection.select(interfaces, preferred: nil, primary: nil, physical: ["en0", "en3"], connected: ["en3"])?.name, "en3")
+        XCTAssertEqual(InterfaceSelection.select(interfaces, preferred: nil, primary: "en0", physical: ["en0", "en3"], connected: [])?.name, "en0")
+        XCTAssertEqual(InterfaceSelection.select(interfaces, preferred: "en3", primary: nil, physical: ["en0", "en3"], connected: [])?.name, "en3")
+    }
+
+    func testRoutableAddressRules() {
+        XCTAssertTrue(NativeNetworkReader.isRoutableIPv4(0xC000_0218))   // 192.0.2.24
+        XCTAssertFalse(NativeNetworkReader.isRoutableIPv4(0xA9FE_0101))  // 169.254.1.1 self-assigned
+        XCTAssertFalse(NativeNetworkReader.isRoutableIPv4(0x7F00_0001))  // loopback
+        XCTAssertFalse(NativeNetworkReader.isRoutableIPv4(0))
+        XCTAssertTrue(NativeNetworkReader.isRoutableIPv6(first: 0x20, second: 0x01))  // 2001:db8::
+        XCTAssertFalse(NativeNetworkReader.isRoutableIPv6(first: 0xFE, second: 0x80)) // fe80:: link-local
+        XCTAssertFalse(NativeNetworkReader.isRoutableIPv6(first: 0, second: 0))       // ::, ::1
+    }
+
+    func testSamplerReportsNoInterfaceWhenNothingIsConnected() {
+        let sampler = NativeSampler(networkReader: { [self.fixture("en3", index: 3)] }, clock: { 1 },
+                                    physicalReader: { ["en3"] }, connectedReader: { [] }, primaryReader: { nil }, metadataReader: { _ in [] })
+        XCTAssertNil(sampler.sample(settings: AppSettings(), detailVisible: false).automaticNetworkInterface)
+    }
+
     private func fixture(_ name: String, index: UInt32, flags: Int32 = Int32(IFF_UP | IFF_RUNNING)) -> InterfaceCounter {
         InterfaceCounter(name: name, index: index, flags: flags, received: 100, sent: 200)
     }

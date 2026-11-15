@@ -21,6 +21,7 @@ public final class NativeSampler {
     private let readNetworkCounters: () throws -> [InterfaceCounter]
     private let clock: () -> TimeInterval
     private let readPhysicalInterfaces: () -> Set<String>
+    private let readConnectedInterfaces: () -> Set<String>
     private let readPrimaryInterface: () -> String?
     private let readMetadata: ([InterfaceCounter]) -> [NetworkInterfaceInfo]
 
@@ -29,11 +30,13 @@ public final class NativeSampler {
     internal init(networkReader: @escaping () throws -> [InterfaceCounter],
                   clock: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
                   physicalReader: @escaping () -> Set<String> = NativeNetworkReader.physicalInterfaces,
+                  connectedReader: @escaping () -> Set<String> = NativeNetworkReader.connectedInterfaces,
                   primaryReader: @escaping () -> String? = NativeNetworkReader.primaryInterface,
                   metadataReader: @escaping ([InterfaceCounter]) -> [NetworkInterfaceInfo] = NativeNetworkMetadata.read) {
         readNetworkCounters = networkReader
         self.clock = clock
         readPhysicalInterfaces = physicalReader
+        readConnectedInterfaces = connectedReader
         readPrimaryInterface = primaryReader
         readMetadata = metadataReader
     }
@@ -136,11 +139,13 @@ public final class NativeSampler {
                 // this small dynamic-store value each sample, not with inventory.
                 // Configuration can resolve Auto without establishing rate state.
                 primary = readPrimaryInterface()
-                automatic = InterfaceSelection.select(counters, preferred: nil, primary: primary, physical: physical)?.name
+                // Addresses change instantly (Wi-Fi off), unlike the cached physical inventory.
+                let connected = primary.map(physical.contains) == true ? nil : readConnectedInterfaces()
+                automatic = InterfaceSelection.select(counters, preferred: nil, primary: primary, physical: physical, connected: connected)?.name
                 if networkDemanded {
                     var chosen: [String: InterfaceCounter] = [:]
                     for selection in selections {
-                        if let counter = InterfaceSelection.select(counters, preferred: selection, primary: primary, physical: physical) {
+                        if let counter = InterfaceSelection.select(counters, preferred: selection, primary: primary, physical: physical, connected: connected) {
                             chosen[counter.name] = counter
                         } else if let name = selection {
                             let missing = MetricReading(value: nil, detail: String(localized: "Interface \(name) unavailable"), timestamp: now)

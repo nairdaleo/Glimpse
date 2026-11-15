@@ -54,12 +54,14 @@ enum InterfaceCounterParser {
 
 enum InterfaceSelection {
     /// Exactly one interface is returned; physical and tunnel traffic are never summed.
-    static func select(_ interfaces: [InterfaceCounter], preferred: String?, primary: String?, physical: Set<String>) -> InterfaceCounter? {
+    /// Without a physical primary route, the fallback only considers interfaces in `connected`
+    /// (those with a routable address): an adapter can report up and running with no link.
+    static func select(_ interfaces: [InterfaceCounter], preferred: String?, primary: String?, physical: Set<String>, connected: Set<String>? = nil) -> InterfaceCounter? {
         let usable = interfaces.filter(\.usable)
         if let preferred { return usable.first { $0.name == preferred } }
         let physicalInterfaces = usable.filter { physical.contains($0.name) }
         if let primary, let match = physicalInterfaces.first(where: { $0.name == primary }) { return match }
-        return physicalInterfaces.sorted { $0.index < $1.index }.first
+        return physicalInterfaces.filter { connected?.contains($0.name) ?? true }.sorted { $0.index < $1.index }.first
     }
 }
 
@@ -108,6 +110,36 @@ enum NativeNetworkReader {
                   let name = SCNetworkInterfaceGetBSDName(interface) as String? else { return nil }
             return name
         })
+    }
+
+    /// Interfaces holding a routable address: IPv4 outside 169.254/16, or IPv6 outside fe80::/10.
+    static func connectedInterfaces() -> Set<String> {
+        var head: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&head) == 0, let first = head else { return [] }
+        defer { freeifaddrs(head) }
+        var names: Set<String> = []
+        for entry in sequence(first: first, next: { $0.pointee.ifa_next }) {
+            guard let address = entry.pointee.ifa_addr else { continue }
+            let name = String(cString: entry.pointee.ifa_name)
+            switch Int32(address.pointee.sa_family) {
+            case AF_INET:
+                let ipv4 = address.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { UInt32(bigEndian: $0.pointee.sin_addr.s_addr) }
+                if isRoutableIPv4(ipv4) { names.insert(name) }
+            case AF_INET6:
+                let first16 = address.withMemoryRebound(to: sockaddr_in6.self, capacity: 1) { ($0.pointee.sin6_addr.__u6_addr.__u6_addr8.0, $0.pointee.sin6_addr.__u6_addr.__u6_addr8.1) }
+                if isRoutableIPv6(first: first16.0, second: first16.1) { names.insert(name) }
+            default: continue
+            }
+        }
+        return names
+    }
+
+    static func isRoutableIPv4(_ address: UInt32) -> Bool {
+        address != 0 && address >> 16 != 0xA9FE && address >> 24 != 127
+    }
+
+    static func isRoutableIPv6(first: UInt8, second: UInt8) -> Bool {
+        !(first == 0xFE && second & 0xC0 == 0x80) && !(first == 0 && second == 0)
     }
 
     static func primaryInterface() -> String? {
