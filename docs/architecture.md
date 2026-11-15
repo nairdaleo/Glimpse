@@ -48,7 +48,11 @@ MonitoringStore (main thread) ── @Published snapshot/settings ──► Stat
 
 - Only value snapshots cross from the sampling queue to the main thread. Results from a configuration that has since been replaced are discarded.
 - Rates use measured monotonic elapsed time between samples; a failed or missing read is reported as unavailable, never as zero. Baselines reset on interface changes, read failures and wake.
-- Demand-driven: a metric is read only while a meter, the open panel or open settings needs it. Slow metrics are cached (memory 2 s, thermal 5 s, battery 10 s, disk 30 s). The panel's hosting view is built when the popover opens and released when it closes, so a closed panel costs nothing.
+- Demand-driven: a metric is read only while a meter, the open panel or open settings needs it. Slow metrics are cached (memory 2 s, thermal 5 s, battery 10 s, disk 30 s).
+- UI exists only while visible, because hidden SwiftUI hosting views keep re-rendering on every sample (idle CPU and memory):
+  - The detail panel's `NSHostingController` is created when the popover opens (`StatusController.togglePanel`) and released in `popoverDidClose`.
+  - The Settings window is released in `AppDelegate.windowWillClose` and rebuilt by `showSettings` the next time Settings opens.
+  - `StatusController` stops drawing the menu-bar icon while the displays sleep (`NSWorkspace.screensDidSleep/WakeNotification`, plus `CGDisplayIsAsleep` at launch); sampling and history keep running.
 - Everything is event-driven: no polling loops besides the one sampling timer, no subprocesses.
 
 Metric definitions and the evidence behind them are in [development.md](development.md#what-the-numbers-mean).
