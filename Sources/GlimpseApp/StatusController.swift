@@ -20,6 +20,8 @@ final class StatusController: NSObject, NSPopoverDelegate {
     private var closedOverIcon: TimeInterval?
     private var closingFromToggle = false
     private var shortcut: GlobalShortcut?
+    /// Meter states in the image currently shown; nil forces the next redraw.
+    private var shownMeters: [MeterState]?
 
     init(store: MonitoringStore, showSettings: @escaping (UUID?) -> Void) {
         self.store = store
@@ -44,6 +46,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
                 self.render()
             }
         }
+        store.$settings.sink { [weak self] _ in self?.shownMeters = nil }.store(in: &subscriptions)
         shortcut = GlobalShortcut { [weak self] in self?.togglePanel() }
         store.$settings.map(\.panelShortcut).removeDuplicates().sink { [weak self] value in
             guard let self else { return }
@@ -135,10 +138,23 @@ final class StatusController: NSObject, NSPopoverDelegate {
             downloadThresholds[column.id] = latch
             return result
         }
-        renderedAppearance = button.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua])
-        button.image = MeterImage.make(settings: settings, snapshot: store.snapshot, levels: levels, secondaryLevels: secondaryLevels, appearance: button.effectiveAppearance)
-        button.title = ""
-        statusItem.length = max(NSStatusItem.squareLength, (button.image?.size.width ?? 0) + 8)
+        var meters: [MeterState] = []
+        for (index, column) in settings.columns.enumerated() {
+            for (metric, level) in column.isCombinedNetwork ? [(MetricID.upload, levels[index]), (.download, secondaryLevels[index])] : [(column.metric, levels[index])] {
+                let value = store.snapshot.displayReading(for: metric, interface: column.networkInterface)?.value
+                meters.append(MeterState(fill: MetricPresentation.normalized(value: value, metric: metric, networkCeiling: settings.networkCeiling(for: metric)), level: level))
+            }
+        }
+        let appearance = button.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua])
+        // The bandwidth readout shows exact numbers, so it redraws every sample.
+        if appearance != renderedAppearance || settings.showBandwidth || IconRefresh.needsRedraw(shown: shownMeters, next: meters) || button.image == nil {
+            shownMeters = meters
+            renderedAppearance = appearance
+            button.image = MeterImage.make(settings: settings, snapshot: store.snapshot, levels: levels, secondaryLevels: secondaryLevels, appearance: button.effectiveAppearance)
+        }
+        if !button.title.isEmpty { button.title = "" }
+        let length = max(NSStatusItem.squareLength, (button.image?.size.width ?? 0) + 8)
+        if statusItem.length != length { statusItem.length = length }
         if popover.isShown {
             popover.contentSize = StatusPanelLayout(settings: settings, maximumSize: maximumPanelSize).size
             popover.positioningRect = button.bounds

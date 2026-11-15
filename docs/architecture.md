@@ -27,7 +27,7 @@ Sparkle 2.10.1 (direct-download edition only)
 | --- | --- |
 | Entry and modes | `GlimpseMain.swift`: `AppDelegate`; command-line modes `--diagnose` (print native readings, no UI), `--render-cards <dir>` (`CardRenderer.swift`), `--settings` |
 | State and sampling | `MonitoringStore.swift`: main-thread `@Published` snapshot/settings, settings persistence in `UserDefaults`, the sampling timer, sleep/wake and Low Power Mode handling; its private `SamplingWorker` owns the `NativeSampler` on one serial utility queue |
-| Menu-bar icon | `StatusController.swift` (status item, popover lifecycle), `GlobalShortcut.swift` (optional system-wide toggle shortcut, Carbon `RegisterEventHotKey`; no Accessibility permission, sandbox-safe), `MeterImage.swift` (draws the meter image), `StatusWidgetLayout.swift` / `DuplexGaugeLayout`, `BandwidthReadout.swift` |
+| Menu-bar icon | `StatusController.swift` (status item, popover lifecycle; redraws the image only when `IconRefresh.needsRedraw` reports a visible change), `GlobalShortcut.swift` (optional system-wide toggle shortcut, Carbon `RegisterEventHotKey`; no Accessibility permission, sandbox-safe), `MeterImage.swift` (draws the meter image), `StatusWidgetLayout.swift` / `DuplexGaugeLayout`, `BandwidthReadout.swift` |
 | Dropdown panel | `StatusPanel.swift`, `StatusPanelLayout.swift` (shared sizing for the SwiftUI view and the popover), `MetricCardContent.swift` (cards and history graphs), `NetworkPresentation.swift` |
 | Settings | `SettingsView.swift` (tabs, meter and panel editors), `OrganizationDrop.swift` (AppKit drag and drop for reordering), `ColourPicker.swift`, `AboutView.swift` |
 | System services | `LifecycleServices.swift`: start at login, Sparkle updater (direct edition), **Remove Glimpse…** |

@@ -40,3 +40,23 @@ sample Glimpse 3                      # where time goes if CPU is high
 ```
 
 Not yet measured: why the morning baseline was lower, eight-hour soak (an attempt was disturbed by concurrent rebuilds; run soaks from a copy of the app), Intel and macOS 12, low-power mode, sleep/wake, energy impact over a day, a universal Developer ID build.
+
+## WindowServer attribution
+
+Glimpse's own CPU is only part of its cost: every menu-bar image change makes WindowServer recomposite the menu bar. Measured with `ps` CPU time and `top` instruction counts over 90 s for WindowServer, ControlCenter and Glimpse, display awake, 1 s refresh:
+
+| Glimpse state (afternoon, screen in use) | WindowServer instructions / 90 s | Glimpse CPU |
+| --- | --- | --- |
+| Quit | ~34 bn | — |
+| Running, icon updates disabled (diagnostic build) | ~35 bn | 0.8% |
+| Running, icon redrawn every sample | 51–62 bn | 1.9% |
+
+The icon really changes every second (91 updates in 90 s), so skipping pixel-identical images does nothing. Since 2026-11-14 the icon is redrawn only when a meter moves more than 5% of its height, changes threshold level or availability, or when settings or light/dark appearance change (`IconRefresh.needsRedraw`). The optional bandwidth readout shows exact numbers and still redraws every sample. Sampling, history and the panel keep their full cadence.
+
+| Same night, display kept awake, screen likely locked | WindowServer instructions / 90 s | Glimpse CPU (instructions) |
+| --- | --- | --- |
+| Quit (2 runs) | 82, 82 bn | — |
+| Before the change (2 runs) | 96, 106 bn | 0.41% (825 M) |
+| After the change (2 runs) | 102, 109 bn | 0.22% (480 M) |
+
+Glimpse's own work fell by about 40%. WindowServer was too busy and noisy that night (82–109 bn) to show the effect; repeat with the screen unlocked and idle.
