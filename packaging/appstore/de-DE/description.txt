@@ -10,4 +10,4 @@ Nativ und sparsam: Glimpse liest die Zähler des Systems und pausiert, während 
 
 Alle Funktionen sind kostenlos. Ein optionales Trinkgeld findest du unter Einstellungen › Über.
 
-Mit 💜 in BC gemacht von Tasty Jam App Development.
+Mit Liebe in BC gemacht von Tasty Jam App Development.

@@ -10,4 +10,4 @@ Nativo e leve: o Glimpse lê os contadores do próprio sistema e pausa enquanto 
 
 Todos os recursos são gratuitos. As gorjetas opcionais ficam em Ajustes › Sobre.
 
-Feito com 💜 na Colúmbia Britânica pela Tasty Jam App Development.
+Feito com carinho na Colúmbia Britânica pela Tasty Jam App Development.

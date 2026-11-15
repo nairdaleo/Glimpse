@@ -10,4 +10,4 @@ Nativo y ligero: Glimpse lee los contadores del propio sistema y se pausa mientr
 
 Todas las funciones son gratis. Las propinas opcionales están en Ajustes › Acerca de.
 
-Hecho con 💜 en BC por Tasty Jam App Development.
+Hecho con cariño en BC por Tasty Jam App Development.

@@ -10,4 +10,4 @@ Native and light: Glimpse reads the system's own counters and pauses while your 
 
 Every feature is free. Optional tips are in Settings › About.
 
-Made with 💜 in BC by Tasty Jam App Development.
+Made with love in BC by Tasty Jam App Development.

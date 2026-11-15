@@ -10,4 +10,4 @@ Glimpse는 Mac의 핵심 상태를 작은 메뉴 막대 아이콘 하나에 담�
 
 모든 기능은 무료입니다. 선택 사항인 팁은 설정 › 정보에 있습니다.
 
-Tasty Jam App Development가 BC에서 💜을 담아 만들었습니다.
+Tasty Jam App Development가 BC에서 정성을 담아 만들었습니다.

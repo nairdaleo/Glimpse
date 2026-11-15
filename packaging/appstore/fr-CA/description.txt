@@ -10,4 +10,4 @@ Natif et léger : Glimpse lit les compteurs du système et se met en pause penda
 
 Toutes les fonctionnalités sont gratuites. Les pourboires facultatifs se trouvent dans Réglages › À propos.
 
-Fait avec 💜 en C.-B. par Tasty Jam App Development.
+Fait avec amour en C.-B. par Tasty Jam App Development.
