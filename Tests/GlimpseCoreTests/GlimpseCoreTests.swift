@@ -58,7 +58,7 @@ final class GlimpseCoreTests: XCTestCase {
         XCTAssertEqual(settings.columns[0].warningThreshold, 20)
         XCTAssertEqual(settings.columns[0].thresholdDirection, .below)
         XCTAssertEqual(MetricPresentation.normalized(value: 6_250_000, metric: .download, networkCeiling: settings.networkCeiling), 0.5)
-        XCTAssertEqual(settings.refreshInterval, 1)
+        XCTAssertEqual(settings.refreshInterval, 2) // missing key → current default
         let roundTrip = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
         XCTAssertEqual(roundTrip.columns[0].metric, .battery)
         XCTAssertTrue(roundTrip.showBandwidth)
