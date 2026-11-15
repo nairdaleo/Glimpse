@@ -71,8 +71,9 @@ One source tree, two builds. The App Store edition is selected at build time wit
 | Build | `scripts/build-app.sh` → `build/Glimpse.app` | `APP_STORE=1 scripts/build-app.sh` or `scripts/make-pkg.sh` → `build/AppStore/Glimpse.app` |
 | Sandbox | No | Yes (`Configuration/AppStore.entitlements` + profile identifiers) |
 | Updates | Sparkle, opt-in, feed `appcast.xml` on `main` (`Configuration/Updates.plist`) | App Store |
-| Support | Ko-fi link in About | No external payment links allowed; optional in-app tips are tracked in #7 |
-| Code differences | — | `#if APP_STORE` in `LifecycleServices.swift` (no updater), `SettingsView.swift` (no **Remove Glimpse…**) |
+| Support | Ko-fi link in About | Optional in-app tips in About (`TipJar.swift`, StoreKit 2, three consumables); external payment links are not allowed |
+| Review prompt | None | `ReviewPrompt`: at most once per version, after 14 days, when Settings opens |
+| Code differences | — | `#if APP_STORE` in `LifecycleServices.swift` (no updater), `SettingsView.swift` (no **Remove Glimpse…**), `AboutView.swift` (tips instead of Ko-fi), `GlimpseMain.swift` (transaction listener at launch, review prompt when Settings opens), `TipJar.swift` (store edition only) |
 
 ## Build and release pipeline
 
