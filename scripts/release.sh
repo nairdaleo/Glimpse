@@ -72,7 +72,8 @@ dmg="build/Glimpse-$name.dmg"
 [[ "build/Glimpse-$version.dmg" == "$dmg" ]] || mv "build/Glimpse-$version.dmg" "$dmg"
 xcrun stapler validate "$dmg" || die "$dmg is not notarized; nothing was published."
 (cd build && shasum -a 256 "Glimpse-$name.dmg" > "Glimpse-$name.dmg.sha256")
-rm -f "build/Glimpse-$version.dmg.sha256"
+# make-dmg.sh writes Glimpse-$version.dmg.sha256; for a pre-release that is a stale name.
+[[ "$name" == "$version" ]] || rm -f "build/Glimpse-$version.dmg.sha256"
 
 git tag -a "$tag" -m "Glimpse $name"
 git push origin "$tag"

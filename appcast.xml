@@ -1,9 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-  <channel>
-    <title>Glimpse Updates</title>
-    <link>https://github.com/nairdaleo/Glimpse</link>
-    <description>Signed updates for Glimpse. No public binary release has been published yet.</description>
-    <language>en</language>
-  </channel>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Glimpse Updates</title>
+        <link>https://github.com/nairdaleo/Glimpse</link>
+        <description>Signed updates for Glimpse. No public binary release has been published yet.</description>
+        <language>en</language>
+        <item>
+            <title>1.0.0</title>
+            <pubDate>Sun, 15 Nov 2026 00:43:25 -0700</pubDate>
+            <link>https://tastyjam.ca/glimpse/</link>
+            <sparkle:version>72</sparkle:version>
+            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/nairdaleo/Glimpse/releases/download/v1.0.0/Glimpse-1.0.0.dmg" length="3783906" type="application/octet-stream" sparkle:edSignature="AL7gzEnqKX5XEjInAHmz4fkDzJQ+vm3cx8qGMFaxxf4JnOM0dCMxprisbLgVZ/R38jCwvv+dG6VkX0CT3GkrDw=="/>
+        </item>
+    </channel>
 </rss>
