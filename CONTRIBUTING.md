@@ -24,6 +24,15 @@ Ground rules:
 - macOS with Xcode 27.2 (or its command-line tools) selected: `sudo xcode-select -s /Applications/Xcode.app`.
 - Nothing else: SwiftPM fetches the pinned Sparkle framework. `make-dmg.sh` creates its own Python virtualenv for `dmgbuild`.
 
+Then run **`./setup.sh`** once. It explains each step and prints every command before running it:
+
+1. Checks the toolchain (read-only).
+2. Asks before installing [betterleaks](https://betterleaks.com) with Homebrew.
+3. Enables the repository's git hooks (`git config core.hooksPath .githooks`). The pre-push hook blocks a push that contains a secret.
+4. Resolves Swift packages.
+
+It never uses `sudo`, is safe to rerun, and ends with a list of what it changed and how to undo each change.
+
 ## Build, test and release
 
 ```bash
