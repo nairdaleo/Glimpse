@@ -9,6 +9,7 @@ let appStore = ProcessInfo.processInfo.environment["GLIMPSE_APP_STORE"] == "1"
 
 let package = Package(
     name: "Glimpse",
+    defaultLocalization: "en",
     platforms: [.macOS(.v12)],
     products: [
         .library(name: "GlimpseCore", targets: ["GlimpseCore"]),

@@ -51,6 +51,11 @@ if [[ ! -d "$binary_dir/$resource_bundle" ]]; then
     exit 1
 fi
 ditto "$binary_dir/$resource_bundle" "$bundle/Contents/Resources/$resource_bundle"
+# SwiftUI and String(localized:) look up the main bundle, so the compiled
+# Localizable.xcstrings languages go there too.
+for lproj in "$binary_dir/$resource_bundle"/Contents/Resources/*.lproj "$binary_dir/$resource_bundle"/*.lproj; do
+    if [[ -d "$lproj" ]]; then ditto "$lproj" "$bundle/Contents/Resources/$(basename "$lproj")"; fi
+done
 cat > "$bundle/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -58,6 +63,8 @@ cat > "$bundle/Contents/Info.plist" <<PLIST
 <key>CFBundleExecutable</key><string>Glimpse</string>
 <key>CFBundleIdentifier</key><string>com.tastyjam.glimpse</string>
 <key>CFBundleName</key><string>Glimpse</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>de</string><string>es-MX</string><string>fr</string><string>fr-CA</string><string>ja</string><string>ko</string><string>pt-BR</string></array>
 <key>CFBundleIconFile</key><string>Glimpse</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>$version</string>
