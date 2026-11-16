@@ -29,7 +29,7 @@ Click the icon for live status and recent graphs. The **Detailed View** settings
 
 ## Compatibility
 
-The deployment target is **macOS 12 Monterey**, with a universal Intel and Apple silicon build. Native-reader tests run on the current Apple silicon development Mac; Monterey and Intel runtime support still need verification. macOS 12 is the oldest deployment target supported by the currently selected Xcode 27.2 toolchain. Going lower remains a tracked investigation.
+The deployment target is **macOS 12 Monterey**, with a universal Intel and Apple silicon build. Native-reader tests run on the current Apple silicon development Mac. The owner tested the app on an Intel Mac running macOS 12.7.6, including start at login across a restart and a log out and back in. macOS 12 is the oldest deployment target supported by the currently selected Xcode 27.2 toolchain. Going lower remains a tracked investigation.
 
 The menu-bar renderer will use AppKit. Settings may use SwiftUI APIs available on macOS 12. Newer convenience APIs must not raise the minimum version without a documented reason.
 
