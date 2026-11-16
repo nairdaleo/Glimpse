@@ -29,6 +29,21 @@ Same Mac, same settings (1 s refresh), built from a91f9e0 onward, run from a cop
 
 The morning build (2c2ce4c) measured 1.9% under the same afternoon conditions, so the jump from the morning's 0.36% is environmental, not a code regression. The cause is unidentified. Roughly half of the awake cost is AppKit pushing the changed status-item image to its menu-bar replicas (`-[NSStatusItem _updateReplicants]`). Rasterising the image and skipping pixel-identical updates made no measurable difference, so it was not kept. With the display awake at a 1 s refresh, the 0.5% budget is **not met** under these conditions. Slower refresh settings (2 s or more) are the user-facing lever.
 
+## Eight-hour soak, 2026-11-16
+
+MacBook Air M3 (Mac15,13), macOS 27.2.1, on battery. Notarized Developer ID Glimpse 1.0.2 (`v1.0.2`, sha256 matching the release), run from a copy with the owner's saved layout at a **1 s refresh**. `ps` CPU time and `footprint` were sampled every 5 min; idle sleep was blocked with `caffeinate -i`.
+
+The lid was closed for the first hour, so the Mac slept and that hour is excluded. The window below runs with the display off and the system awake: 06:24–14:04 UTC, 7.7 h.
+
+| Metric | Result | Budget |
+| --- | --- | --- |
+| CPU, one core | 0.63% average (173 s CPU time over 7.67 h); 0.61% first half, 0.65% second half | below 0.5% — **not met** at 1 s |
+| Footprint | 13 MB throughout | below 50 MiB — met |
+| RSS | 62–63 MB, no upward trend | — |
+| Growth over the run | none in memory; CPU flat | none — met |
+
+The CPU figure matches the 0.66% measured earlier with the display asleep. The 1-minute load average stayed around 1.8 (other background work on the Mac), so this was not a fully idle machine. The 1 s refresh is not the default: new installs use 2 s, which has not been soaked yet.
+
 ## How to measure
 
 ```sh
@@ -39,7 +54,7 @@ top -l 2 -pid $pid -stats cpu,idlew,power | tail -1
 sample Glimpse 3                      # where time goes if CPU is high
 ```
 
-Not yet measured: why the morning baseline was lower, eight-hour soak (an attempt was disturbed by concurrent rebuilds; run soaks from a copy of the app), Intel and macOS 12, low-power mode, sleep/wake, energy impact over a day, a universal Developer ID build.
+Not yet measured: why the morning baseline was lower, an eight-hour soak at the default 2 s refresh, Intel and macOS 12 performance, low-power mode, sleep/wake, energy impact over a day, a universal Developer ID build.
 
 ## WindowServer attribution
 
