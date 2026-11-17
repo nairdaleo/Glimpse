@@ -1,12 +1,51 @@
-# Glimpse
+<p align="center">
+  <img src="packaging/icon/Glimpse.svg" width="128" height="128" alt="Glimpse app icon">
+</p>
 
-A compact, configurable, open-source system monitor for the macOS menu bar.
+<h1 align="center">Glimpse</h1>
 
-Glimpse is designed around a small icon containing one to eight configurable meter columns. Each column fills and changes colour according to information you choose. Drag meters into order in settings and adjust their width. Use the macOS colour picker or the suggested palette for custom colours. The special **Upload / Download** meter fills upward from its center for upload and downward for download, with separate colours. Enable the compact numeric bandwidth readout when you want exact speeds visible all the time.
+<p align="center">
+  <b>Your Mac's vital signs in one small menu-bar icon.</b><br>
+  CPU, memory, network, battery, disk and thermal state: at a glance, free and open source.
+</p>
 
-Click the icon for live status and recent graphs. The **Detailed View** settings tab has a **+ Add panel** control for configurable panels. Arrange and remove them, choose 1–8 panels per row and their width, and adjust each panel's metric, size, graph colour and history. Network meters and panels each choose Auto or an individual interface, so en0, en1 and en2 can be shown side by side. The Display & Network settings list interface type, local addresses and DNS/search-domain configuration. The dropdown expands to fit the selected grid within screen bounds. Clicking a dropdown card opens its settings; the Detailed View itself has no rearrangement or removal controls.
+<p align="center">
+  <a href="https://github.com/nairdaleo/Glimpse/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/nairdaleo/Glimpse?label=release&color=2f6fed"></a>
+  <img alt="macOS 12 or later" src="https://img.shields.io/badge/macOS-12%2B-555">
+  <img alt="Apple silicon and Intel" src="https://img.shields.io/badge/Apple%20silicon%20%26%20Intel-universal-555">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2ea44f"></a>
+</p>
 
-**Status: first development version.** A runnable app can be built from source. There is no signed/notarized public release yet. Glimpse is a working name.
+<p align="center">
+  <a href="https://github.com/nairdaleo/Glimpse/releases/latest"><b>Download</b></a> ·
+  <a href="#install">Homebrew</a> ·
+  <a href="https://tastyjam.ca/glimpse/">Website</a>
+</p>
+
+<p align="center">
+  <img src="docs/images/panel.png" width="820" alt="Glimpse's meters in the menu bar, with the detailed panel open showing CPU, memory, disk, battery and upload/download">
+</p>
+
+## Why Glimpse
+
+- **One compact icon.** One to eight thin meters live in a single menu-bar item. They fill and change colour as your Mac works.
+- **Click for detail.** A panel you arrange yourself shows exact readings and short histories for CPU, memory, network, battery, disk and thermal state.
+- **Yours to arrange.** Choose each meter's metric, order, width and colour, with optional warning and critical thresholds.
+- **Every network interface.** Upload and download per interface (Wi-Fi, Ethernet and more), side by side or on Auto. They are never added together.
+- **Light and native.** Reads the system's own counters, with no subprocess polling, and pauses while your Mac sleeps. Measured numbers are in [docs/performance.md](docs/performance.md).
+- **Private.** No account, no analytics, no network requests. Settings and readings stay on your Mac.
+- **Free.** Every feature is free. The Mac App Store edition has optional tips that unlock nothing.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/meters.png" alt="Settings: choosing menu-bar meters, their order, colours and warning thresholds"></td>
+    <td width="50%"><img src="docs/images/detailed-view.png" alt="Settings: arranging the cards of the detailed panel"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Pick meters, order, colours and thresholds</sub></td>
+    <td align="center"><sub>Arrange the detailed panel's cards</sub></td>
+  </tr>
+</table>
 
 ## Install
 
@@ -16,16 +55,11 @@ Click the icon for live status and recent graphs. The **Detailed View** settings
   brew trust --cask nairdaleo/tastyjam/glimpse   # current Homebrew asks you to trust casks from third-party taps
   brew install --cask nairdaleo/tastyjam/glimpse
   ```
-- **Mac App Store:** coming soon.
+- **Mac App Store:** in review.
 
-## Current experience
+## Using it
 
-- One compact icon by default, with configurable meter count, width, metrics, colours, thresholds, and drag-to-reorder controls.
-- Click for exact readings, labels, short histories, and collection status in a resizable card grid.
-- Optional upload/download readout with a stable width.
-- Native monitoring designed for low overhead; performance budgets still need measurement.
-- Local settings and measurements; no account or analytics service.
-- Opt-in start at login, automatic update checks/downloads, and manual update checks.
+Click the icon for live status and recent graphs; the gear button opens Settings. In **Columns**, add, drag and remove meters and set their width. The **Upload / Download** meter fills upward from its centre for upload and downward for download, in separate colours, and an optional numeric readout keeps exact speeds visible. In **Detailed View**, add panels with **+ Add panel**, choose 1–8 per row and their width, and set each card's metric, size, colour and history. Clicking a card in the dropdown opens its settings. **Display & Network** lists each interface's type, local addresses and DNS configuration. **General** has opt-in start at login, a show/hide shortcut, the refresh rate and, in the direct download, automatic updates.
 
 ## Compatibility
 
@@ -62,9 +96,9 @@ ARCH=universal ./scripts/build-app.sh
 build/Glimpse.app/Contents/MacOS/Glimpse --diagnose
 ```
 
-Sparkle 2.10.1 is the sole external dependency, pinned by SwiftPM for signed direct-download updates. The build script defaults to an ad-hoc signature; set `CODESIGN_IDENTITY` to a certificate identity for development signing. Distribution requires Developer ID signing and notarization. The configured update feed has no downloadable public release yet. Do not disable Gatekeeper to run a downloaded build.
+Sparkle 2.10.1 is the sole external dependency, pinned by SwiftPM for signed direct-download updates. The build script defaults to an ad-hoc signature; set `CODESIGN_IDENTITY` to a certificate identity for development signing. Distribution requires Developer ID signing and notarization. Do not disable Gatekeeper to run a downloaded build.
 
-Glimpse's monitoring features will remain fully free. Optional developer tips and review requests are planned for a separate Mac App Store edition; they do not unlock features. See the distribution roadmap before preparing a store submission.
+Glimpse's monitoring features will remain fully free. The separate Mac App Store edition is sandboxed, has no Sparkle, and offers optional tips and a review prompt; neither unlocks features. See [docs/updates.md](docs/updates.md).
 
 Contributions are welcome through issues and pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
