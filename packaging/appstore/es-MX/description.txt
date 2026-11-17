@@ -2,7 +2,7 @@ Glimpse reúne los signos vitales de tu Mac en un pequeño ícono de la barra de
 
 • De uno a ocho medidores, en el orden y los colores que elijas
 • Colores de advertencia cuando una lectura cruza tu umbral
-• Subida y descarga por interfaz de red, incluidas las VPN
+• Subida y descarga por interfaz de red, como Wi-Fi o Ethernet
 • Condición de la batería, ciclos y tiempo restante
 • Un panel detallado que organizas a tu manera y un atajo de teclado opcional
 

@@ -2,7 +2,7 @@ Glimpse puts your Mac's vital signs in one small menu-bar icon. Read CPU, memory
 
 • One to eight meters, in the order and colours you choose
 • Warning colours when a reading crosses your threshold
-• Upload and download per network interface, including VPNs
+• Upload and download for each network interface, such as Wi-Fi or Ethernet
 • Battery health, cycles and time remaining
 • A detailed panel you arrange yourself, and an optional keyboard shortcut
 

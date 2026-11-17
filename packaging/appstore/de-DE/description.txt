@@ -2,7 +2,7 @@ Glimpse bündelt die Vitalwerte deines Macs in einem kleinen Menüleisten-Symbol
 
 • Eine bis acht Anzeigen, in deiner Reihenfolge und deinen Farben
 • Warnfarben, wenn ein Wert deinen Schwellenwert überschreitet
-• Upload und Download pro Netzwerkschnittstelle, auch für VPNs
+• Upload und Download pro Netzwerkschnittstelle, etwa WLAN oder Ethernet
 • Akkuzustand, Ladezyklen und Restlaufzeit
 • Ein Detailpanel, das du selbst anordnest, und ein optionales Tastenkürzel
 

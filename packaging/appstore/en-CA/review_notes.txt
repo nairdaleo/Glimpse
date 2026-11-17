@@ -4,7 +4,7 @@ All features are free. The three consumable in-app purchases (com.tastyjam.glimp
 
 Glimpse reads local system counters only (CPU, memory, network interface counters, battery, disk capacity, thermal state). It makes no network requests, has no account and collects no data. It is sandboxed and needs no special permissions.
 
-VPN: Glimpse has no VPN functionality. It does not provide, configure or route VPN connections and does not use the Network Extension framework. Network meters only read byte counters of existing network interfaces; these may include VPN tunnels created by other apps, which is the only reason VPNs are mentioned in the description.
+VPN: Glimpse has no VPN functionality. It does not provide, configure or route VPN connections and does not use the Network Extension framework. Network meters only read byte counters of existing network interfaces; these may include VPN tunnels created by other apps, which is why an earlier description mentioned VPNs; that wording has been removed.
 - What user information is collected using VPN? None.
 - For what purposes? Not applicable; no data is collected. Counters are shown on screen and kept only in memory and local preferences on the Mac.
 - Is data shared with third parties? No. Glimpse makes no network requests and nothing leaves the Mac.
